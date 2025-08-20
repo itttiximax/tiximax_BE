@@ -86,7 +86,7 @@ public class AuthenticationService implements UserDetailsService {
 
             String token = tokenService.generateToken(account);
 
-            if (!account.getRole().equals(AccountRoles.KHACH_HANG)){
+            if (account instanceof Staff){
                 StaffReponse staffReponse = new StaffReponse();
                 staffReponse.setAccountId(account.getAccountId());
                 staffReponse.setUsername(account.getUsername());
@@ -102,7 +102,7 @@ public class AuthenticationService implements UserDetailsService {
                 staffReponse.setLocation(((Staff) account).getLocation());
                 staffReponse.setToken(token);
                 return staffReponse;
-            } else if (account.getRole().equals(AccountRoles.KHACH_HANG)){
+            } else if (account instanceof Customer){
                 CustomerReponse customerReponse = new CustomerReponse();
                 customerReponse.setAccountId(account.getAccountId());
                 customerReponse.setUsername(account.getUsername());

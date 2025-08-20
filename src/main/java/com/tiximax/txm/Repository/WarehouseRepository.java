@@ -19,4 +19,5 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
     List<Warehouse> findByPurchasePurchaseId(Long purchaseId);
 
+    boolean existsByPurchasePurchaseId(Long purchaseId);
 }

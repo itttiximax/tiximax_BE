@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -34,13 +35,20 @@ public class WarehouseService {
     private AccountUtils accountUtils;
 
     public Warehouse createWarehouseEntry(Long purchaseId, Long locationId, WarehouseRequest warehouseRequest) {
-
         Purchases purchase = purchasesRepository.findById(purchaseId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn mua hàng với ID: " + purchaseId));
 
         Orders order = purchase.getOrders();
         if (order == null) {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến đơn mua này!");
+        }
+
+        if (!ordersRepository.existsByOrderLinksLinkId(warehouseRequest.getOrderLinkId())) {
+            throw new IllegalArgumentException("Không tồn tại mã đơn hàng: " + warehouseRequest.getOrderLinkId());
+        }
+
+        if (warehouseRepository.existsByPurchasePurchaseId(purchaseId)) {
+            throw new IllegalArgumentException("Đã tồn tại mục kho cho đơn mua hàng với ID: " + purchaseId);
         }
 
         Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 6000;
@@ -51,11 +59,11 @@ public class WarehouseService {
         warehouse.setWidth(warehouseRequest.getWidth());
         warehouse.setHeight(warehouseRequest.getHeight());
         warehouse.setDim(dim);
-        warehouse.setWeight(warehouse.getWeight());
+        warehouse.setWeight(warehouseRequest.getWeight());
         warehouse.setNetWeight(warehouseRequest.getNetWeight());
         warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
         warehouse.setCreatedAt(LocalDateTime.now());
-        warehouse.setStaff((Staff) accountUtils.getAccountCurrent());
+//        warehouse.setStaff((Staff) accountUtils.getAccountCurrent());
         warehouse.setOrders(order);
         warehouse.setPurchase(purchase);
 
@@ -85,12 +93,10 @@ public class WarehouseService {
         return warehouses;
     }
 
-    public List<Warehouse> getWarehousesByPurchaseId(Long purchaseId) {
-        List<Warehouse> warehouses = warehouseRepository.findByPurchasePurchaseId(purchaseId);
-        if (warehouses.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy mục kho nào cho đơn mua hàng: " + purchaseId);
-        }
-        return warehouses;
+    public Warehouse getWarehouseByPurchaseId(Long purchaseId) {
+        return warehouseRepository.findByPurchasePurchaseId(purchaseId)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy mục kho nào cho đơn mua hàng: " + purchaseId));
     }
-
 }

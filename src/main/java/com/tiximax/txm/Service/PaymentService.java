@@ -99,13 +99,13 @@ public class PaymentService {
         }
     }
 
-//    public void deletePayment(String paymentCode) {
-//        if (paymentRepository.existsByPaymentCode(paymentCode)) {
-//            paymentRepository.deleteByPaymentCode(paymentCode);
-//        } else {
-//            throw new RuntimeException("Không tìm thấy giao dịch này!");
-//        }
-//    }
+    public void deletePayment(String paymentCode) {
+        if (paymentRepository.existsByPaymentCode(paymentCode)) {
+            paymentRepository.deleteByPaymentCode(paymentCode);
+        } else {
+            throw new RuntimeException("Không tìm thấy giao dịch này!");
+        }
+    }
 
     public String generatePaymentCode() {
         String paymentCode;

@@ -42,8 +42,8 @@ public class Purchases {
     @JsonIgnore
     Set<OrderLinks> orderLinks;
 
-    @OneToOne(mappedBy = "purchase", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL)
     @JsonIgnore
-    Warehouse warehouse;
+    Set<Warehouse> warehouses;
 
 }

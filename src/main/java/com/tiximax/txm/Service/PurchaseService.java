@@ -5,6 +5,7 @@ import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Entity.Purchases;
 import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Enums.OrderLinkStatus;
+import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PurchasesRepository;
@@ -29,6 +30,9 @@ public class PurchaseService {
 
     @Autowired
     private OrdersRepository ordersRepository;
+
+    @Autowired
+    private OrdersService ordersService;
 
     @Autowired
     private AccountUtils accountUtils;
@@ -69,6 +73,7 @@ public class PurchaseService {
         purchase = purchasesRepository.save(purchase);
         orderLinksRepository.saveAll(orderLinks);
 
+        ordersService.addProcessLog(order, ProcessLogAction.DA_MUA_HANG);
         return purchase;
     }
 

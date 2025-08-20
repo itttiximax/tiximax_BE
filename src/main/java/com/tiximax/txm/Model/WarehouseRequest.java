@@ -10,6 +10,8 @@ import lombok.Setter;
 
 public class WarehouseRequest {
 
+    private Long orderLinkId;
+
     private Double length;
 
     private Double width;

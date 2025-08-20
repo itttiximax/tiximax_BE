@@ -58,11 +58,11 @@ public class Warehouse {
     Orders orders;
 
     @ManyToOne
-    @JoinColumn(name="packing_id", nullable = false)
+    @JoinColumn(name="packing_id", nullable = true)
     @JsonIgnore
     Packing packing;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name="purchase_id", nullable = false)
     @JsonIgnore
     Purchases purchase;
