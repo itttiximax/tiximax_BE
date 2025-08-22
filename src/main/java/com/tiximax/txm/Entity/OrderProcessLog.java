@@ -1,8 +1,8 @@
 package com.tiximax.txm.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.ProcessLogAction;
-import com.tiximax.txm.Enums.StaffPosition;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,10 +20,13 @@ public class OrderProcessLog {
     private Long logId;
 
     @Enumerated(EnumType.STRING)
-    private StaffPosition roleAtTime;
+    private AccountRoles roleAtTime;
 
     @Enumerated(EnumType.STRING)
     private ProcessLogAction action;
+
+    @Column(nullable = false, updatable = false)
+    private String actionCode;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;

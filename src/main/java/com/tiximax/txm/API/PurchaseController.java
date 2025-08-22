@@ -20,8 +20,8 @@ public class PurchaseController {
     private PurchaseService purchaseService;
 
     @PostMapping("/add")
-    public ResponseEntity<Purchases> addPurchase(@RequestParam String orderCode, @RequestBody List<String> trackingCodes) {
-        Purchases purchase = purchaseService.createPurchase(orderCode, trackingCodes);
+    public ResponseEntity<Purchases> addPurchase(@RequestParam String orderCode, @RequestBody List<String> purchaseCode) {
+        Purchases purchase = purchaseService.createPurchase(orderCode, purchaseCode);
         return ResponseEntity.ok(purchase);
     }
 

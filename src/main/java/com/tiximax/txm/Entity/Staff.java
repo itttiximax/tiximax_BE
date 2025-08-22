@@ -2,7 +2,6 @@ package com.tiximax.txm.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tiximax.txm.Enums.StaffDepartment;
-import com.tiximax.txm.Enums.StaffPosition;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,9 +19,6 @@ public class Staff extends Account {
 
     @Enumerated(EnumType.STRING)
     private StaffDepartment department;
-
-    @Enumerated(EnumType.STRING)
-    private StaffPosition position;
 
     private String location;
 

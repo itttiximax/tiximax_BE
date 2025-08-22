@@ -78,8 +78,8 @@ public class OrdersService {
                 orderLink.setPriceWeb(linkRequest.getPriceWeb());
                 orderLink.setShipWeb(linkRequest.getShipWeb());
                 orderLink.setTotalWeb(linkRequest.getPriceWeb().add(linkRequest.getShipWeb()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP).add(linkRequest.getPurchaseFee()));
-//                linkRequest.getPriceWeb().add(linkRequest.getShipWeb()).add(linkRequest.getPurchaseFee()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP)
                 orderLink.setPurchaseFee(linkRequest.getPurchaseFee());
+                orderLink.setProductName(linkRequest.getProductName());
                 orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()));
                 orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
                 orderLink.setWebsite(linkRequest.getWebsite());
@@ -99,7 +99,7 @@ public class OrdersService {
         order.setOrderLinks(new HashSet<>(orderLinksList));
         order.setFinalPriceOrder(totalPriceVnd);
         order = ordersRepository.save(order);
-        addProcessLog(order, ProcessLogAction.XAC_NHAN_DON);
+        addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
         return order;
     }
 
@@ -125,13 +125,14 @@ public class OrdersService {
         return orderLinkCode;
     }
 
-    public void addProcessLog(Orders orders, ProcessLogAction processLogAction){
+    public void addProcessLog(Orders orders, String actionCode, ProcessLogAction processLogAction){
         OrderProcessLog orderProcessLog = new OrderProcessLog();
         orderProcessLog.setOrders(orders);
         orderProcessLog.setStaff((Staff) accountUtils.getAccountCurrent());
         orderProcessLog.setAction(processLogAction);
+        orderProcessLog.setActionCode(actionCode);
         orderProcessLog.setTimestamp(LocalDateTime.now());
-        orderProcessLog.setRoleAtTime(((Staff) accountUtils.getAccountCurrent()).getPosition());
+        orderProcessLog.setRoleAtTime(((Staff) accountUtils.getAccountCurrent()).getRole());
         processLogRepository.save(orderProcessLog);
     }
 }

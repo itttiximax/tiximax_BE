@@ -4,6 +4,7 @@ import com.tiximax.txm.Entity.OrderProcessLog;
 import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Entity.Payment;
 import com.tiximax.txm.Entity.Staff;
+import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.PaymentStatus;
 import com.tiximax.txm.Enums.PaymentType;
 import com.tiximax.txm.Enums.ProcessLogAction;
@@ -58,7 +59,7 @@ public class PaymentService {
         payment.setCustomer(orders.getCustomer());
         payment.setStaff((Staff) accountUtils.getAccountCurrent());
         payment.setOrders(orders);
-        ordersService.addProcessLog(orders, ProcessLogAction.TAO_THANH_TOAN);
+        ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN);
         return paymentRepository.save(payment);
     }
 
@@ -123,7 +124,9 @@ public class PaymentService {
                 payment.setStatus(PaymentStatus.DA_THANH_TOAN);
                 payment.setActionAt(LocalDateTime.now());
                 Orders orders = payment.getOrders();
-                ordersService.addProcessLog(orders, ProcessLogAction.DA_THANH_TOAN);
+                orders.setStatus(OrderStatus.CHO_MUA);
+                ordersRepository.save(orders);
+                ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
                 return paymentRepository.save(payment);
             } else {
                 throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");

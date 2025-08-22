@@ -5,6 +5,7 @@ import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Entity.Purchases;
 import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Enums.OrderLinkStatus;
+import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
@@ -37,11 +38,11 @@ public class PurchaseService {
     @Autowired
     private AccountUtils accountUtils;
 
-    public Purchases createPurchase(String orderCode, List<String> trackingCodes) {
+    public Purchases createPurchase(String orderCode, List<String> purchaseCode) {
         Orders order = ordersRepository.findByOrderCode(orderCode);
 
-        List<OrderLinks> orderLinks = orderLinksRepository.findByTrackingCodeIn(trackingCodes);
-        if (orderLinks.size() != trackingCodes.size()) {
+        List<OrderLinks> orderLinks = orderLinksRepository.findByTrackingCodeIn(purchaseCode);
+        if (orderLinks.size() != purchaseCode.size()) {
             throw new IllegalArgumentException("Một hoặc nhiều mã không được tìm thấy!");
         }
 
@@ -58,7 +59,7 @@ public class PurchaseService {
         }
 
         Purchases purchase = new Purchases();
-        purchase.setTrackingNumber(generatePurchaseTrackingNumber());
+        purchase.setPurchaseCode(generatePurchaseCode());
         purchase.setPurchaseTime(LocalDateTime.now());
         purchase.setStaff((Staff) accountUtils.getAccountCurrent());
         purchase.setOrders(order);
@@ -72,16 +73,17 @@ public class PurchaseService {
 
         purchase = purchasesRepository.save(purchase);
         orderLinksRepository.saveAll(orderLinks);
-
-        ordersService.addProcessLog(order, ProcessLogAction.DA_MUA_HANG);
+        order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+        ordersRepository.save(order);
+        ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_MUA_HANG);
         return purchase;
     }
 
-    private String generatePurchaseTrackingNumber() {
-        String trackingNumber;
+    private String generatePurchaseCode() {
+        String purchaseCode;
         do {
-            trackingNumber = "MM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
-        } while (purchasesRepository.existsByTrackingNumber(trackingNumber));
-        return trackingNumber;
+            purchaseCode = "MM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
+        } while (purchasesRepository.existsByPurchaseCode(purchaseCode));
+        return purchaseCode;
     }
 }

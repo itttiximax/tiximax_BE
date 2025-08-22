@@ -98,7 +98,6 @@ public class AuthenticationService implements UserDetailsService {
                 staffReponse.setCreatedAt(account.getCreatedAt());
                 staffReponse.setStaffCode(((Staff) account).getStaffCode());
                 staffReponse.setDepartment(((Staff) account).getDepartment());
-                staffReponse.setPosition(((Staff) account).getPosition());
                 staffReponse.setLocation(((Staff) account).getLocation());
                 staffReponse.setToken(token);
                 return staffReponse;
@@ -138,9 +137,8 @@ public class AuthenticationService implements UserDetailsService {
         staff.setRole(registerRequest.getRole());
         staff.setStatus(AccountStatus.HOAT_DONG);
         staff.setCreatedAt(LocalDateTime.now());
-        staff.setStaffCode("A");
+        staff.setStaffCode(generateStaffCode());
         staff.setDepartment(registerRequest.getDepartment());
-        staff.setPosition(registerRequest.getPosition());
         staff.setLocation(registerRequest.getLocation());
         return authenticationRepository.save(staff);
     }
@@ -155,7 +153,7 @@ public class AuthenticationService implements UserDetailsService {
         customer.setEmail(registerRequest.getEmail());
         customer.setPhone(registerRequest.getPhone());
         customer.setName(registerRequest.getName());
-        customer.setRole(AccountRoles.KHACH_HANG);
+        customer.setRole(AccountRoles.CUSTOMER);
         customer.setStatus(AccountStatus.HOAT_DONG);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setCustomerCode(generateCustomerCode());

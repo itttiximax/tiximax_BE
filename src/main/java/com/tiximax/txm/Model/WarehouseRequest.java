@@ -1,25 +1,31 @@
 package com.tiximax.txm.Model;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-@Data
+import java.util.List;
+
 @Getter
 @Setter
-
 public class WarehouseRequest {
 
-    private Long orderLinkId;
+    private List<ProductDetail> products;
 
-    private Double length;
+    @Getter
+    @Setter
+    public static class ProductDetail {
 
-    private Double width;
+        private Long orderLinkId;
 
-    private Double height;
+        private Double length;
 
-    private Double weight;
+        private Double width;
 
-    private Double netWeight;
+        private Double height;
 
+        private Double weight;
+
+        private Double netWeight;
+
+    }
 }

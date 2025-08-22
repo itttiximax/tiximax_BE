@@ -20,7 +20,7 @@ public class Purchases {
     private Long purchaseId;
 
     @Column(nullable = false)
-    private String trackingNumber;
+    private String purchaseCode;
 
     private String purchaseImage;
 

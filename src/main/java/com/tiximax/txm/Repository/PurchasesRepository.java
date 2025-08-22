@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 
 public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
 
-    boolean existsByTrackingNumber(String trackingNumber);
+    boolean existsByPurchaseCode(String purchaseCode);
 }

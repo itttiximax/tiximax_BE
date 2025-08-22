@@ -13,4 +13,6 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
     boolean existsByTrackingCode(String orderLinkCode);
 
     List<OrderLinks> findByTrackingCodeIn(List<String> trackingCodes);
+
+    List<OrderLinks> findByPurchasePurchaseId(Long purchaseId);
 }

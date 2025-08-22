@@ -67,4 +67,9 @@ public class Warehouse {
     @JsonIgnore
     Purchases purchase;
 
+    @ManyToOne
+    @JoinColumn(name="order_link_id", nullable = false)
+    @JsonIgnore
+    OrderLinks orderLink;
+
 }

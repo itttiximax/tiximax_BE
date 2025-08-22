@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -64,4 +65,8 @@ public class OrderLinks {
     @JoinColumn(name="purchase_id", nullable = true)
     @JsonIgnore
     Purchases purchase;
+
+    @OneToMany(mappedBy = "orderLink", cascade = CascadeType.ALL)
+    @JsonIgnore
+    Set<Warehouse> warehouses;
 }

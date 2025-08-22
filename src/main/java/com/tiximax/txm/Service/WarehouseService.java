@@ -1,9 +1,11 @@
 package com.tiximax.txm.Service;
 
 import com.tiximax.txm.Entity.*;
+import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Enums.WarehouseStatus;
 import com.tiximax.txm.Model.WarehouseRequest;
+import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PurchasesRepository;
 import com.tiximax.txm.Repository.WarehouseRepository;
@@ -16,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-
 public class WarehouseService {
 
     @Autowired
@@ -29,55 +30,82 @@ public class WarehouseService {
     private OrdersRepository ordersRepository;
 
     @Autowired
+    private OrderLinksRepository orderLinksRepository;
+
+    @Autowired
     private OrdersService ordersService;
 
     @Autowired
     private AccountUtils accountUtils;
 
-    public Warehouse createWarehouseEntry(Long purchaseId, Long locationId, WarehouseRequest warehouseRequest) {
+    public List<Warehouse> createWarehouseEntry(Long purchaseId, Long locationId, WarehouseRequest warehouseRequest) {
         Purchases purchase = purchasesRepository.findById(purchaseId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn mua hàng với ID: " + purchaseId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn mua hàng này!"));
 
         Orders order = purchase.getOrders();
         if (order == null) {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến đơn mua này!");
         }
 
-        if (!ordersRepository.existsByOrderLinksLinkId(warehouseRequest.getOrderLinkId())) {
-            throw new IllegalArgumentException("Không tồn tại mã đơn hàng: " + warehouseRequest.getOrderLinkId());
+        List<OrderLinks> orderLinks = orderLinksRepository.findByPurchasePurchaseId(purchaseId);
+        if (orderLinks.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy OrderLinks cho đơn mua hàng này!");
         }
 
-        if (warehouseRepository.existsByPurchasePurchaseId(purchaseId)) {
-            throw new IllegalArgumentException("Đã tồn tại mục kho cho đơn mua hàng với ID: " + purchaseId);
+        List<WarehouseRequest.ProductDetail> productDetails = warehouseRequest.getProducts();
+        if (productDetails.size() != orderLinks.size()) {
+            throw new IllegalArgumentException("Số lượng sản phẩm trong WarehouseRequest (" + productDetails.size() +
+                    ") không khớp với số lượng OrderLinks (" + orderLinks.size() + ")!");
         }
 
-        Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 6000;
+        Object currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff)) {
+            throw new IllegalStateException("Chỉ Staff được phép tạo mục kho.");
+        }
+        Staff staff = (Staff) currentAccount;
 
-        Warehouse warehouse = new Warehouse();
-        warehouse.setTrackingCode(purchase.getTrackingNumber());
-        warehouse.setLength(warehouseRequest.getLength());
-        warehouse.setWidth(warehouseRequest.getWidth());
-        warehouse.setHeight(warehouseRequest.getHeight());
-        warehouse.setDim(dim);
-        warehouse.setWeight(warehouseRequest.getWeight());
-        warehouse.setNetWeight(warehouseRequest.getNetWeight());
-        warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
-        warehouse.setCreatedAt(LocalDateTime.now());
-//        warehouse.setStaff((Staff) accountUtils.getAccountCurrent());
-        warehouse.setOrders(order);
-        warehouse.setPurchase(purchase);
+        List<Warehouse> warehouses = new ArrayList<>();
+        for (int i = 0; i < orderLinks.size(); i++) {
+            OrderLinks orderLink = orderLinks.get(i);
+            WarehouseRequest.ProductDetail productDetail = productDetails.get(i);
 
-        WarehouseLocation location = new WarehouseLocation();
-        location.setLocationId(locationId);
-        warehouse.setLocation(location);
+            if (!orderLink.getLinkId().equals(productDetail.getOrderLinkId())) {
+                throw new IllegalArgumentException("OrderLink ID " + productDetail.getOrderLinkId() +
+                        " không khớp với OrderLink tại vị trí " + i);
+            }
 
-        warehouse.setPacking(null);
+            if (warehouseRepository.existsByPurchasePurchaseIdAndOrderLinkLinkId(purchaseId, orderLink.getLinkId())) {
+                throw new IllegalArgumentException("Mục kho đã tồn tại cho OrderLink với ID: " + orderLink.getLinkId());
+            }
 
-        warehouse = warehouseRepository.save(warehouse);
+            Double dim = (productDetail.getLength() * productDetail.getWidth() * productDetail.getHeight()) / 5000;
 
-        ordersService.addProcessLog(order, ProcessLogAction.DA_NHAP_KHO_NN);
+            Warehouse warehouse = new Warehouse();
+            warehouse.setTrackingCode(orderLink.getTrackingCode());
+            warehouse.setLength(productDetail.getLength());
+            warehouse.setWidth(productDetail.getWidth());
+            warehouse.setHeight(productDetail.getHeight());
+            warehouse.setDim(dim);
+            warehouse.setWeight(productDetail.getWeight());
+            warehouse.setNetWeight(productDetail.getNetWeight());
+            warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
+            warehouse.setCreatedAt(LocalDateTime.now());
+            warehouse.setStaff(staff);
+            warehouse.setOrders(order);
+            warehouse.setPurchase(purchase);
+            warehouse.setOrderLink(orderLink);
+            warehouse.setPacking(null);
 
-        return warehouse;
+            WarehouseLocation location = new WarehouseLocation();
+            location.setLocationId(locationId);
+            warehouse.setLocation(location);
+
+            warehouses.add(warehouseRepository.save(warehouse));
+        }
+        order.setStatus(OrderStatus.CHO_DONG_GOI);
+        ordersRepository.save(order);
+        ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_NHAP_KHO_NN);
+        return warehouses;
     }
 
     public Warehouse getWarehouseByTrackingCode(String trackingCode) {
@@ -93,10 +121,23 @@ public class WarehouseService {
         return warehouses;
     }
 
-    public Warehouse getWarehouseByPurchaseId(Long purchaseId) {
-        return warehouseRepository.findByPurchasePurchaseId(purchaseId)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy mục kho nào cho đơn mua hàng: " + purchaseId));
+    public List<Warehouse> getWarehousesByPurchaseId(Long purchaseId) {
+        List<Warehouse> warehouses = warehouseRepository.findByPurchasePurchaseId(purchaseId);
+        if (warehouses.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy mục kho nào cho đơn mua hàng: " + purchaseId);
+        }
+        return warehouses;
+    }
+
+    public boolean isOrderLinkInWarehouse(Long orderLinkId) {
+        return warehouseRepository.existsByOrderLinkLinkId(orderLinkId);
+    }
+
+    public boolean isPurchaseFullyReceived(Long purchaseId) {
+        Purchases purchase = purchasesRepository.findById(purchaseId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn mua hàng này!"));
+        List<OrderLinks> orderLinks = orderLinksRepository.findByPurchasePurchaseId(purchaseId);
+        List<Warehouse> warehouses = warehouseRepository.findByPurchasePurchaseId(purchaseId);
+        return !orderLinks.isEmpty() && orderLinks.size() == warehouses.size();
     }
 }
