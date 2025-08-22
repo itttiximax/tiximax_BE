@@ -34,6 +34,16 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
+    @PostMapping("/shipping/{orderCode}")
+    public ResponseEntity<Payment> createShippingPayment(@PathVariable String orderCode) {
+        try {
+            Payment createdShippingPayment = paymentService.createShippingPayment(orderCode);
+            return ResponseEntity.ok(createdShippingPayment);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
     // Get a single Payment by ID
     @GetMapping("/{paymentCode}")
     public ResponseEntity<Payment> getPaymentById(@PathVariable String paymentCode) {

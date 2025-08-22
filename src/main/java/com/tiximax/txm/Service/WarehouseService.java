@@ -47,6 +47,10 @@ public class WarehouseService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến đơn mua này!");
         }
 
+        if (!order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN)){
+            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để nhập kho!");
+        }
+
         List<OrderLinks> orderLinks = orderLinksRepository.findByPurchasePurchaseId(purchaseId);
         if (orderLinks.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy OrderLinks cho đơn mua hàng này!");

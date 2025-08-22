@@ -46,6 +46,10 @@ public class PurchaseService {
             throw new IllegalArgumentException("Một hoặc nhiều mã không được tìm thấy!");
         }
 
+        if (!order.getStatus().equals(OrderStatus.CHO_MUA)){
+            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để mua hàng!");
+        }
+
         boolean allBelongToOrder = orderLinks.stream()
                 .allMatch(link -> link.getOrders().getOrderId().equals(order.getOrderId()));
         if (!allBelongToOrder) {

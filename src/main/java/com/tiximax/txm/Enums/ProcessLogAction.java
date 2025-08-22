@@ -2,10 +2,11 @@ package com.tiximax.txm.Enums;
 
 public enum ProcessLogAction {
     XAC_NHAN_DON,
-    TAO_THANH_TOAN,
+    TAO_THANH_TOAN_HANG,
     DA_THANH_TOAN,
     DA_MUA_HANG,
     DA_NHAP_KHO_NN,
+    TAO_THANH_TOAN_SHIP,
     DA_DONG_GOI,
     DA_NHAP_KHO_HN,
     DA_NHAP_KHO_SG,

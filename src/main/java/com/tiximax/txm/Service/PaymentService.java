@@ -1,9 +1,6 @@
 package com.tiximax.txm.Service;
 
-import com.tiximax.txm.Entity.OrderProcessLog;
-import com.tiximax.txm.Entity.Orders;
-import com.tiximax.txm.Entity.Payment;
-import com.tiximax.txm.Entity.Staff;
+import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.PaymentStatus;
 import com.tiximax.txm.Enums.PaymentType;
@@ -11,14 +8,17 @@ import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PaymentRepository;
 import com.tiximax.txm.Repository.ProcessLogRepository;
+import com.tiximax.txm.Repository.WarehouseRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -38,6 +38,12 @@ public class PaymentService {
     private OrdersService ordersService;
 
     @Autowired
+    private WarehouseService warehouseService;
+
+    @Autowired
+    private WarehouseRepository warehouseRepository;
+
+    @Autowired
     private ProcessLogRepository processLogRepository;
 
     public Payment createPayment(String orderCode) {
@@ -45,6 +51,10 @@ public class PaymentService {
 
         if (orders == null){
             throw new RuntimeException("Không tìm thấy đơn hàng này!");
+        }
+
+        if (!orders.getStatus().equals(OrderStatus.DA_XAC_NHAN)){
+            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để thanh toán!");
         }
 
         Payment payment = new Payment();
@@ -59,7 +69,9 @@ public class PaymentService {
         payment.setCustomer(orders.getCustomer());
         payment.setStaff((Staff) accountUtils.getAccountCurrent());
         payment.setOrders(orders);
-        ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN);
+        ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
+        orders.setStatus(OrderStatus.CHO_THANH_TOAN);
+        ordersRepository.save(orders);
         return paymentRepository.save(payment);
     }
 
@@ -134,6 +146,55 @@ public class PaymentService {
         } else {
             throw new RuntimeException("Không tìm thấy giao dịch này!");
         }
+    }
+
+    public Payment createShippingPayment(String orderCode) {
+        Orders orders = ordersRepository.findByOrderCode(orderCode);
+        if (orders == null) {
+            throw new RuntimeException("Không tìm thấy đơn hàng này!");
+        }
+
+        if (!orders.getStatus().equals(OrderStatus.CHO_THANH_TOAN_SHIP)){
+            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để thanh toán phí ship!");
+        }
+
+        Set<Purchases> purchases = orders.getPurchases();
+        for (Purchases purchase : purchases) {
+            if (!warehouseService.isPurchaseFullyReceived(purchase.getPurchaseId())) {
+                throw new RuntimeException("Đơn hàng chưa đủ hàng trong kho để tạo thanh toán shipping!");
+            }
+        }
+
+        List<Warehouse> warehouses = warehouseRepository.findByOrdersOrderCode(orderCode);
+        double totalKg = 0;
+        for (Warehouse warehouse : warehouses) {
+            totalKg += warehouse.getWeight();
+        }
+
+        BigDecimal unitShippingPrice = orders.getRoute().getUnitShippingPrice();
+        if (unitShippingPrice == null) {
+            throw new RuntimeException("Không tìm thấy giá shipping niêm yết cho tuyến đường này!");
+        }
+
+        BigDecimal shippingAmount = unitShippingPrice.multiply(BigDecimal.valueOf(totalKg));
+
+        Payment payment = new Payment();
+        payment.setPaymentCode(generatePaymentCode());
+        payment.setContent("Thanh toán shipping cho đơn hàng: " + orders.getOrderCode());
+        payment.setPaymentType(PaymentType.MA_QR);
+        payment.setAmount(shippingAmount);
+        payment.setCollectedAmount(shippingAmount);
+        payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+        payment.setQrCode("Mã QR Shipping");
+        payment.setActionAt(LocalDateTime.now());
+        payment.setCustomer(orders.getCustomer());
+        payment.setStaff((Staff) accountUtils.getAccountCurrent());
+        payment.setOrders(orders);
+
+        Payment savedPayment = paymentRepository.save(payment);
+        ordersService.addProcessLog(orders, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_SHIP);
+
+        return savedPayment;
     }
 
 }
