@@ -41,6 +41,10 @@ public class PurchaseService {
     public Purchases createPurchase(String orderCode, List<String> purchaseCode) {
         Orders order = ordersRepository.findByOrderCode(orderCode);
 
+        if (order == null) {
+            throw new IllegalArgumentException("Không tìm thấy đơn hàng!");
+        }
+
         List<OrderLinks> orderLinks = orderLinksRepository.findByTrackingCodeIn(purchaseCode);
         if (orderLinks.size() != purchaseCode.size()) {
             throw new IllegalArgumentException("Một hoặc nhiều mã không được tìm thấy!");
@@ -77,9 +81,19 @@ public class PurchaseService {
 
         purchase = purchasesRepository.save(purchase);
         orderLinksRepository.saveAll(orderLinks);
-        order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
-        ordersRepository.save(order);
         ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_MUA_HANG);
+
+        List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
+        boolean hasActiveOrderLink = allOrderLinks.stream()
+                .anyMatch(link -> link.getStatus() == OrderLinkStatus.HOAT_DONG);
+
+        if (!hasActiveOrderLink) {
+            order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            ordersRepository.save(order);
+        }
+//        order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+//        ordersRepository.save(order);
+//        ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_MUA_HANG);
         return purchase;
     }
 

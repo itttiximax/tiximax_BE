@@ -53,18 +53,18 @@ public class WarehouseService {
 
         List<OrderLinks> orderLinks = orderLinksRepository.findByPurchasePurchaseId(purchaseId);
         if (orderLinks.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy OrderLinks cho đơn mua hàng này!");
+            throw new IllegalArgumentException("Không tìm thấy mã sản phẩm cho đơn mua hàng này!");
         }
 
         List<WarehouseRequest.ProductDetail> productDetails = warehouseRequest.getProducts();
         if (productDetails.size() != orderLinks.size()) {
-            throw new IllegalArgumentException("Số lượng sản phẩm trong WarehouseRequest (" + productDetails.size() +
-                    ") không khớp với số lượng OrderLinks (" + orderLinks.size() + ")!");
+            throw new IllegalArgumentException("Số lượng sản phẩm trong yêu cầu kho (" + productDetails.size() +
+                    ") không khớp với số lượng sản phẩm thực (" + orderLinks.size() + ")!");
         }
 
         Object currentAccount = accountUtils.getAccountCurrent();
         if (!(currentAccount instanceof Staff)) {
-            throw new IllegalStateException("Chỉ Staff được phép tạo mục kho.");
+            throw new IllegalStateException("Chỉ nhân viên được phép tạo mục kho.");
         }
         Staff staff = (Staff) currentAccount;
 
@@ -74,12 +74,12 @@ public class WarehouseService {
             WarehouseRequest.ProductDetail productDetail = productDetails.get(i);
 
             if (!orderLink.getLinkId().equals(productDetail.getOrderLinkId())) {
-                throw new IllegalArgumentException("OrderLink ID " + productDetail.getOrderLinkId() +
-                        " không khớp với OrderLink tại vị trí " + i);
+                throw new IllegalArgumentException("Mã sản phẩm " + productDetail.getOrderLinkId() +
+                        " không khớp với sản phẩm tại vị trí " + i);
             }
 
             if (warehouseRepository.existsByPurchasePurchaseIdAndOrderLinkLinkId(purchaseId, orderLink.getLinkId())) {
-                throw new IllegalArgumentException("Mục kho đã tồn tại cho OrderLink với ID: " + orderLink.getLinkId());
+                throw new IllegalArgumentException("Mục kho đã tồn tại cho sản phẩm với mã: " + orderLink.getTrackingCode());
             }
 
             Double dim = (productDetail.getLength() * productDetail.getWidth() * productDetail.getHeight()) / 5000;
@@ -104,11 +104,21 @@ public class WarehouseService {
             location.setLocationId(locationId);
             warehouse.setLocation(location);
 
-            warehouses.add(warehouseRepository.save(warehouse));
+            warehouses.add(warehouse);
+            ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_NHAP_KHO_NN);
         }
-        order.setStatus(OrderStatus.CHO_DONG_GOI);
-        ordersRepository.save(order);
-        ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_NHAP_KHO_NN);
+
+        warehouses = warehouseRepository.saveAll(warehouses);
+
+        List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
+        boolean allItemsReceived = allOrderLinks.stream()
+                .allMatch(orderLink -> warehouseRepository.existsByOrderLinkLinkId(orderLink.getLinkId()));
+
+        if (allItemsReceived) {
+            order.setStatus(OrderStatus.CHO_DONG_GOI);
+            ordersRepository.save(order);
+        }
+
         return warehouses;
     }
 

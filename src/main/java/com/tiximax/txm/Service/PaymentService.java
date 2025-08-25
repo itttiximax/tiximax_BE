@@ -173,7 +173,7 @@ public class PaymentService {
 
         BigDecimal unitShippingPrice = orders.getRoute().getUnitShippingPrice();
         if (unitShippingPrice == null) {
-            throw new RuntimeException("Không tìm thấy giá shipping niêm yết cho tuyến đường này!");
+            throw new RuntimeException("Không tìm thấy giá ship niêm yết cho tuyến này!");
         }
 
         BigDecimal shippingAmount = unitShippingPrice.multiply(BigDecimal.valueOf(totalKg));

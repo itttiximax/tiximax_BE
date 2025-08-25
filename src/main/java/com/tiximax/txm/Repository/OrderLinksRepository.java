@@ -15,4 +15,6 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
     List<OrderLinks> findByTrackingCodeIn(List<String> trackingCodes);
 
     List<OrderLinks> findByPurchasePurchaseId(Long purchaseId);
+
+    List<OrderLinks> findByOrdersOrderId(Long orderId);
 }

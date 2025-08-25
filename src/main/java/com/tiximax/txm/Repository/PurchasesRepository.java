@@ -4,9 +4,12 @@ import com.tiximax.txm.Entity.Purchases;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Arrays;
+
 @Repository
 
 public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
 
     boolean existsByPurchaseCode(String purchaseCode);
+
 }
