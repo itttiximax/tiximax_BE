@@ -25,6 +25,8 @@ public class Route {
 
     private BigDecimal unitShippingPrice;
 
+    private BigDecimal unitPurchasingPrice;
+
     private String note;
 
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL)

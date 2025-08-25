@@ -39,8 +39,8 @@ public class Orders {
 
     private BigDecimal finalPriceOrder;
 
-    @Enumerated(EnumType.STRING)
-    private OrderDestination destination;
+//    @Enumerated(EnumType.STRING)
+//    private OrderDestination destination;
 
     @Column(nullable = false)
     private Boolean checkRequired;
@@ -89,6 +89,11 @@ public class Orders {
     @JoinColumn(name="route_id", nullable = false)
     @JsonIgnore
     Route route;
+
+    @ManyToOne
+    @JoinColumn(name="destination_id", nullable = false)
+    @JsonIgnore
+    Destination destination;
 
     @OneToOne(mappedBy = "orders", cascade = CascadeType.ALL)
     @JsonIgnore

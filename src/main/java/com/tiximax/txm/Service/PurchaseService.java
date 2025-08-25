@@ -91,9 +91,6 @@ public class PurchaseService {
             order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
             ordersRepository.save(order);
         }
-//        order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
-//        ordersRepository.save(order);
-//        ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_MUA_HANG);
         return purchase;
     }
 

@@ -97,7 +97,7 @@ public class SecurityConfig {
 
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
-        return new HttpSessionEventPublisher(); // Thêm để ghi nhận sự kiện session
+        return new HttpSessionEventPublisher();
     }
 
     @Bean

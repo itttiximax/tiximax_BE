@@ -38,6 +38,9 @@ public class OrdersService {
     @Autowired
     private ProcessLogRepository processLogRepository;
 
+    @Autowired
+    private DestinationRepository destinationRepository;
+
     public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
@@ -51,6 +54,7 @@ public class OrdersService {
         }
 
         Route route = routeRepository.findById(routeId).orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
+        Optional<Destination> destination = destinationRepository.findById(ordersRequest.getDestinationId());
 
         Orders order = new Orders();
         order.setCustomer(customer);
@@ -59,7 +63,7 @@ public class OrdersService {
         order.setStatus(OrderStatus.DA_XAC_NHAN);
         order.setCreatedAt(LocalDateTime.now());
         order.setExchangeRate(ordersRequest.getExchangeRate());
-        order.setDestination(ordersRequest.getDestination());
+        order.setDestination(destination.get());
         order.setCheckRequired(ordersRequest.getCheckRequired());
         order.setNote(ordersRequest.getNote());
         order.setRoute(route);
