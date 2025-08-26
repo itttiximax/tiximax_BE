@@ -10,6 +10,7 @@ import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.AuthenticationRepository;
 import com.tiximax.txm.Repository.CustomerRepository;
 import com.tiximax.txm.Repository.StaffRepository;
+import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -179,4 +181,19 @@ public class AuthenticationService implements UserDetailsService {
         } while (staffRepository.existsByStaffCode(customerCode));
         return customerCode;
     }
+
+//    public List<Account> updateAllAccountsPasswordToOne() {
+//
+//        List<Account> accounts = authenticationRepository.findAllWithConcreteTypes();
+//        if (accounts.isEmpty()) {
+//            throw new IllegalArgumentException("Không tìm thấy tài khoản nào trong hệ thống.");
+//        }
+//
+//        String encodedPassword = passwordEncoder.encode("1");
+//        for (Account account : accounts) {
+//            account.setPassword(encodedPassword);
+//        }
+//
+//        return authenticationRepository.saveAll(accounts);
+//    }
 }

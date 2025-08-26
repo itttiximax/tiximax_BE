@@ -15,4 +15,5 @@ public interface AuthenticationRepository extends JpaRepository<Account, Long> {
     Account findByUsername(String username);
 
     Customer findByCustomerCode(String customerCode);
+
 }

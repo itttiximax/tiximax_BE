@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -23,11 +25,12 @@ public class Packing {
     @Column(nullable = false)
     private String flightCode;
 
-    @Enumerated(EnumType.STRING)
-    private PackingDestination destination;
+//    @Enumerated(EnumType.STRING)
+//    private PackingDestination destination;
 
-    @Column(nullable = false)
-    private String trackingList;
+    @ElementCollection
+    @CollectionTable(name = "packing_list", joinColumns = @JoinColumn(name = "packing_id"))
+    private List<String> packingList = new ArrayList<>();
 
     @Column(nullable = false)
     private LocalDateTime packedDate;
@@ -45,9 +48,13 @@ public class Packing {
     @JsonIgnore
     Set<Domestic> domestics;
 
-    @OneToOne
-    @JoinColumn(name="order_id", nullable = false)
+    @OneToMany(mappedBy = "packing", cascade = CascadeType.ALL)
     @JsonIgnore
-    Orders orders;
+    Set<Orders> orders;
+
+    @ManyToOne
+    @JoinColumn(name="destination_id", nullable = false)
+    @JsonIgnore
+    Destination destination;
 
 }

@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @CrossOrigin
 @RequestMapping("/accounts")
@@ -63,5 +65,11 @@ public class AuthenticationController {
         emailDetail.setMsgBody("abc");
         emailService.sendMailTemplate(emailDetail);
     }
+
+//    @PutMapping("/update-all-passwords")
+//    public ResponseEntity<List<Account>> updateAllAccountsPasswordToOne() {
+//        List<Account> updatedAccounts = authenticationService.updateAllAccountsPasswordToOne();
+//        return ResponseEntity.ok(updatedAccounts);
+//    }
 
 }

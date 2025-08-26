@@ -25,4 +25,8 @@ public class Destination {
     @JsonIgnore
     Set<Orders> orders;
 
+    @OneToMany(mappedBy = "destination", cascade = CascadeType.ALL)
+    @JsonIgnore
+    Set<Packing> packings;
+
 }

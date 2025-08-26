@@ -1,6 +1,5 @@
 package com.tiximax.txm.Repository;
 
-import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Entity.Packing;
 import org.springframework.data.jpa.repository.JpaRepository;
 

@@ -39,6 +39,7 @@ public class Filter extends OncePerRequestFilter {
             "/accounts/login",
             "/accounts/register/staff",
             "/accounts/register/customer",
+            "/accounts/update-all-passwords",
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/swagger-resources/**"

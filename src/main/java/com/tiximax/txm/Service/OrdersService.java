@@ -56,6 +56,9 @@ public class OrdersService {
         Route route = routeRepository.findById(routeId).orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
         Optional<Destination> destination = destinationRepository.findById(ordersRequest.getDestinationId());
 
+        if (destination.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy điểm đến!");
+        }
         Orders order = new Orders();
         order.setCustomer(customer);
         order.setOrderCode(generateOrderCode(ordersRequest.getOrderType()));
