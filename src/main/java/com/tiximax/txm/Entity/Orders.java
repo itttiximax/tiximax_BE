@@ -96,10 +96,6 @@ public class Orders {
     @JsonIgnore
     Feedback feedback;
 
-//    @OneToOne(mappedBy = "orders", cascade = CascadeType.ALL)
-//    @JsonIgnore
-//    Packing packing;
-
     @ManyToOne
     @JoinColumn(name = "packing_id", nullable = true)
     @JsonIgnore

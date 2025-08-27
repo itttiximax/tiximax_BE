@@ -17,8 +17,6 @@ public class OrdersRequest {
 
     private OrderType orderType;
 
-//    private OrderDestination destination;
-
     private Long destinationId;
 
     private BigDecimal exchangeRate;

@@ -49,4 +49,18 @@ public class OrdersController {
         return ResponseEntity.ok(orderDestination);
     }
 
+    @GetMapping("/enum-order-type")
+    public ResponseEntity<List<String>> getOrderType() {
+        List<String> orderType = Arrays.stream(OrderType.values())
+                .map(Enum::name)
+                .toList();
+        return ResponseEntity.ok(orderType);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Orders>> getAllOrders() {
+        List<Orders> orders = ordersService.getAllOrders();
+        return ResponseEntity.ok(orders);
+    }
+
 }

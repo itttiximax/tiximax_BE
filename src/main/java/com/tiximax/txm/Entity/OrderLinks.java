@@ -36,6 +36,8 @@ public class OrderLinks {
 
     private BigDecimal purchaseFee;
 
+    private BigDecimal extraCharge;
+
     private BigDecimal finalPriceVnd;
 
     @Column(nullable = false)

@@ -87,7 +87,7 @@ public class OrdersService {
                 orderLink.setQuantity(linkRequest.getQuantity());
                 orderLink.setPriceWeb(linkRequest.getPriceWeb());
                 orderLink.setShipWeb(linkRequest.getShipWeb());
-                orderLink.setTotalWeb(linkRequest.getPriceWeb().add(linkRequest.getShipWeb()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP).add(linkRequest.getPurchaseFee()));
+                orderLink.setTotalWeb((linkRequest.getPriceWeb().add(linkRequest.getShipWeb())).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP).add(linkRequest.getPurchaseFee()));
                 orderLink.setPurchaseFee(linkRequest.getPurchaseFee());
                 orderLink.setProductName(linkRequest.getProductName());
 
@@ -100,6 +100,7 @@ public class OrdersService {
                 orderLink.setStatus(OrderLinkStatus.HOAT_DONG);
                 orderLink.setGroupTag(linkRequest.getGroupTag());
                 orderLink.setTrackingCode(generateOrderLinkCode());
+                orderLink.setExtraCharge(linkRequest.getExtraCharge());
                 orderLinksList.add(orderLink);
 
                 BigDecimal finalPrice = orderLink.getFinalPriceVnd();
@@ -147,5 +148,9 @@ public class OrdersService {
         orderProcessLog.setTimestamp(LocalDateTime.now());
         orderProcessLog.setRoleAtTime(((Staff) accountUtils.getAccountCurrent()).getRole());
         processLogRepository.save(orderProcessLog);
+    }
+
+    public List<Orders> getAllOrders() {
+        return ordersRepository.findAll();
     }
 }
