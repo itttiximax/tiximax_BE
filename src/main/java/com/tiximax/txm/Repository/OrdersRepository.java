@@ -4,6 +4,8 @@ import com.tiximax.txm.Entity.Orders;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 
 public interface OrdersRepository extends JpaRepository<Orders, Long> {
@@ -12,6 +14,5 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 
     boolean existsByOrderCode(String orderCode);
 
-    boolean existsByOrderLinksLinkId(Long orderLinkId);
-
+    List<Orders> findAllByOrderCodeIn(List<String> orderCodes);
 }

@@ -41,6 +41,9 @@ public class OrdersService {
     @Autowired
     private DestinationRepository destinationRepository;
 
+    @Autowired
+    private ProductTypeRepository productTypeRepository;
+
     public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
@@ -87,10 +90,13 @@ public class OrdersService {
                 orderLink.setTotalWeb(linkRequest.getPriceWeb().add(linkRequest.getShipWeb()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP).add(linkRequest.getPurchaseFee()));
                 orderLink.setPurchaseFee(linkRequest.getPurchaseFee());
                 orderLink.setProductName(linkRequest.getProductName());
-                orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()));
+
+                ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId()).orElseThrow(null);
+
+                orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP));
                 orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
-                orderLink.setWebsite(linkRequest.getWebsite());
-                orderLink.setProductType(linkRequest.getProductType());
+                orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
+                orderLink.setProductType(productType);
                 orderLink.setStatus(OrderLinkStatus.HOAT_DONG);
                 orderLink.setGroupTag(linkRequest.getGroupTag());
                 orderLink.setTrackingCode(generateOrderLinkCode());

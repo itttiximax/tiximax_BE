@@ -12,7 +12,7 @@ import java.util.List;
 
 public class PackingRequest {
 
-    private List<Long> orderIds;
+    private List<String> orderCodes;
 
     private String flightCode;
 

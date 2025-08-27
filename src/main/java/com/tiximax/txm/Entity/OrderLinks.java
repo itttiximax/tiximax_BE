@@ -1,9 +1,7 @@
 package com.tiximax.txm.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.tiximax.txm.Enums.OrderLinkProductType;
 import com.tiximax.txm.Enums.OrderLinkStatus;
-import com.tiximax.txm.Enums.OrderLinkWebsite;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,11 +43,7 @@ public class OrderLinks {
 
     private String purchaseImage;
 
-    @Enumerated(EnumType.STRING)
-    private OrderLinkWebsite website;
-
-    @Enumerated(EnumType.STRING)
-    private OrderLinkProductType productType;
+    private String website;
 
     @Enumerated(EnumType.STRING)
     private OrderLinkStatus status;
@@ -65,6 +59,11 @@ public class OrderLinks {
     @JoinColumn(name="purchase_id", nullable = true)
     @JsonIgnore
     Purchases purchase;
+
+    @ManyToOne
+    @JoinColumn(name="product_type_id", nullable = true)
+    @JsonIgnore
+    ProductType productType;
 
     @OneToMany(mappedBy = "orderLink", cascade = CascadeType.ALL)
     @JsonIgnore

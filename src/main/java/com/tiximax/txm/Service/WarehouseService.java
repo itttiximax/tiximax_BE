@@ -115,7 +115,7 @@ public class WarehouseService {
                 .allMatch(orderLink -> warehouseRepository.existsByOrderLinkLinkId(orderLink.getLinkId()));
 
         if (allItemsReceived) {
-            order.setStatus(OrderStatus.CHO_DONG_GOI);
+            order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
             ordersRepository.save(order);
         }
 

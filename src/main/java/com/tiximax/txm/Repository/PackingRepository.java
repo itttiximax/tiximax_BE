@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PackingRepository extends JpaRepository<Packing, Long> {
 
+    boolean existsByPackingCode(String packingCode);
+
 }

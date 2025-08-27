@@ -39,9 +39,6 @@ public class Orders {
 
     private BigDecimal finalPriceOrder;
 
-//    @Enumerated(EnumType.STRING)
-//    private OrderDestination destination;
-
     @Column(nullable = false)
     private Boolean checkRequired;
 

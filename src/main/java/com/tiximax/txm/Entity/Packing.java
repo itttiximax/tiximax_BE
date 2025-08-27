@@ -25,11 +25,10 @@ public class Packing {
     @Column(nullable = false)
     private String flightCode;
 
-//    @Enumerated(EnumType.STRING)
-//    private PackingDestination destination;
+    @Column(nullable = false)
+    private String packingCode;
 
-    @ElementCollection
-    @CollectionTable(name = "packing_list", joinColumns = @JoinColumn(name = "packing_id"))
+    @Column(nullable = false)
     private List<String> packingList = new ArrayList<>();
 
     @Column(nullable = false)

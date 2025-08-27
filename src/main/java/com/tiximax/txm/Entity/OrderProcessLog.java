@@ -37,7 +37,7 @@ public class OrderProcessLog {
     Staff staff;
 
     @ManyToOne
-    @JoinColumn(name="order_id", nullable = false)
+    @JoinColumn(name="order_id", nullable = true)
     @JsonIgnore
     Orders orders;
 }

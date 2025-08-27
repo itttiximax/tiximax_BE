@@ -24,19 +24,16 @@ public class OrderLinkRequest {
     private BigDecimal shipWeb;
 
     private String productName;
-//    private BigDecimal totalWeb;
 
     private BigDecimal purchaseFee;
 
-//    private BigDecimal finalPriceVnd;
+    private BigDecimal extraCharge;
 
     private String purchaseImage;
 
-    private OrderLinkWebsite website;
+    private String website;
 
-    private OrderLinkProductType productType;
-
-//    private OrderLinkStatus status;
+    private Long productTypeId;
 
     private String groupTag;
 
