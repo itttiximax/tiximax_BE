@@ -66,10 +66,10 @@ public class AuthenticationController {
         emailService.sendMailTemplate(emailDetail);
     }
 
-//    @PutMapping("/update-all-passwords")
-//    public ResponseEntity<List<Account>> updateAllAccountsPasswordToOne() {
-//        List<Account> updatedAccounts = authenticationService.updateAllAccountsPasswordToOne();
-//        return ResponseEntity.ok(updatedAccounts);
-//    }
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        authenticationService.logout();
+        return ResponseEntity.ok("Đăng xuất thành công!");
+    }
 
 }

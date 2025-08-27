@@ -20,6 +20,7 @@ import org.springframework.security.authentication.AuthenticationServiceExceptio
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -180,6 +181,10 @@ public class AuthenticationService implements UserDetailsService {
             customerCode = "NV-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
         } while (staffRepository.existsByStaffCode(customerCode));
         return customerCode;
+    }
+
+    public void logout() {
+        SecurityContextHolder.clearContext();
     }
 
 //    public List<Account> updateAllAccountsPasswordToOne() {
