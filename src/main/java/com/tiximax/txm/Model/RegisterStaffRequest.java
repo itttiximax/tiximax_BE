@@ -1,10 +1,13 @@
 package com.tiximax.txm.Model;
 
+import com.tiximax.txm.Entity.AccountRoute;
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.StaffDepartment;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Data
 @Getter
@@ -27,5 +30,7 @@ public class RegisterStaffRequest {
     private StaffDepartment department;
 
     private String location;
+
+    private List<Long> routeIds;
 
 }

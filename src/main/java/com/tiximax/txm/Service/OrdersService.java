@@ -1,15 +1,14 @@
 package com.tiximax.txm.Service;
 
 import com.tiximax.txm.Entity.*;
-import com.tiximax.txm.Enums.OrderLinkStatus;
-import com.tiximax.txm.Enums.OrderStatus;
-import com.tiximax.txm.Enums.OrderType;
-import com.tiximax.txm.Enums.ProcessLogAction;
+import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.OrderLinkRequest;
 import com.tiximax.txm.Model.OrdersRequest;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -153,4 +152,26 @@ public class OrdersService {
     public List<Orders> getAllOrders() {
         return ordersRepository.findAll();
     }
+
+    public Page<Orders> getOrdersPaging(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (currentAccount.getRole() == AccountRoles.ADMIN || currentAccount.getRole() == AccountRoles.MANAGER) {
+            return ordersRepository.findAll(pageable);
+        } else if (currentAccount.getRole() == AccountRoles.STAFF_SALE) {
+            return ordersRepository.findByStaffAccountId(currentAccount.getAccountId(), pageable);
+        } else if (currentAccount.getRole() == AccountRoles.LEAD_SALE) {
+//            Staff staff = (Staff) currentAccount;
+//            Set<Long> routeIds = staff.getRoutes().stream()
+//                    .map(Route::getRouteId)
+//                    .collect(Collectors.toSet());
+//            if (routeIds.isEmpty()) {
+//                return Page.empty(pageable);
+//            }
+//            return ordersRepository.findByRouteIdIn(routeIds, pageable);
+        } else {
+            throw new IllegalStateException("Vai trò không hợp lệ!");
+        }
+        return null;
+    }
+
 }

@@ -33,4 +33,8 @@ public class Route {
     @JsonIgnore
     Set<Orders> orders;
 
+    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL)
+    @JsonIgnore
+    Set<AccountRoute> accountRoutes;
+
 }

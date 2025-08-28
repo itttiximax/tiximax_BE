@@ -1,10 +1,13 @@
 package com.tiximax.txm.Model;
 
+import com.tiximax.txm.Entity.AccountRoute;
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.CustomerType;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Data
 @Getter
@@ -31,4 +34,7 @@ public class RegisterCustomerRequest {
     private String taxCode;
 
     private String source;
+
+    private List<Long> routeIds;
+
 }

@@ -1,5 +1,6 @@
 package com.tiximax.txm.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.AccountStatus;
@@ -13,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -47,6 +49,10 @@ public abstract class Account implements UserDetails {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<AccountRoute> accountRoutes;
 
     @Override
     public String getPassword() {

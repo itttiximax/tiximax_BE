@@ -1,16 +1,11 @@
 package com.tiximax.txm.Service;
 
 import com.tiximax.txm.Config.SecurityConfig;
-import com.tiximax.txm.Entity.Account;
-import com.tiximax.txm.Entity.Customer;
-import com.tiximax.txm.Entity.Staff;
+import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.AccountStatus;
 import com.tiximax.txm.Model.*;
-import com.tiximax.txm.Repository.AuthenticationRepository;
-import com.tiximax.txm.Repository.CustomerRepository;
-import com.tiximax.txm.Repository.StaffRepository;
-import com.tiximax.txm.Utils.AccountUtils;
+import com.tiximax.txm.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +53,12 @@ public class AuthenticationService implements UserDetailsService {
 
     @Autowired
     private StaffRepository staffRepository;
+
+    @Autowired
+    private AccountRouteRepository accountRouteRepository;
+
+    @Autowired
+    private RouteRepository routeRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -143,7 +144,21 @@ public class AuthenticationService implements UserDetailsService {
         staff.setStaffCode(generateStaffCode());
         staff.setDepartment(registerRequest.getDepartment());
         staff.setLocation(registerRequest.getLocation());
-        return authenticationRepository.save(staff);
+        staff = authenticationRepository.save(staff);
+
+        List<Long> routeIds = registerRequest.getRouteIds();
+        if (routeIds != null && !routeIds.isEmpty()) {
+            for (Long routeId : routeIds) {
+                Route route = routeRepository.findById(routeId)
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tuyến hàng này!"));
+                AccountRoute accountRoute = new AccountRoute();
+                accountRoute.setAccount(staff);
+                accountRoute.setRoute(route);
+                accountRouteRepository.save(accountRoute);
+            }
+        }
+
+        return staff;
     }
 
     public Customer registerCustomer(RegisterCustomerRequest registerRequest) {
@@ -164,7 +179,21 @@ public class AuthenticationService implements UserDetailsService {
         customer.setAddress(registerRequest.getAddress());
         customer.setTaxCode(registerRequest.getTaxCode());
         customer.setSource(registerRequest.getSource());
-        return authenticationRepository.save(customer);
+        customer = authenticationRepository.save(customer);
+
+        List<Long> routeIds = registerRequest.getRouteIds();
+        if (routeIds != null && !routeIds.isEmpty()) {
+            for (Long routeId : routeIds) {
+                Route route = routeRepository.findById(routeId)
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tuyến hàng này!"));
+                AccountRoute accountRoute = new AccountRoute();
+                accountRoute.setAccount(customer);
+                accountRoute.setRoute(route);
+                accountRouteRepository.save(accountRoute);
+            }
+        }
+
+        return customer;
     }
 
     public String generateCustomerCode() {
@@ -187,18 +216,4 @@ public class AuthenticationService implements UserDetailsService {
         SecurityContextHolder.clearContext();
     }
 
-//    public List<Account> updateAllAccountsPasswordToOne() {
-//
-//        List<Account> accounts = authenticationRepository.findAllWithConcreteTypes();
-//        if (accounts.isEmpty()) {
-//            throw new IllegalArgumentException("Không tìm thấy tài khoản nào trong hệ thống.");
-//        }
-//
-//        String encodedPassword = passwordEncoder.encode("1");
-//        for (Account account : accounts) {
-//            account.setPassword(encodedPassword);
-//        }
-//
-//        return authenticationRepository.saveAll(accounts);
-//    }
 }

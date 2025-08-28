@@ -8,6 +8,10 @@ import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,6 +65,14 @@ public class OrdersController {
     public ResponseEntity<List<Orders>> getAllOrders() {
         List<Orders> orders = ordersService.getAllOrders();
         return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/{page}/{size}/paging")
+    public ResponseEntity<Page<Orders>> getOrdersPaging(@PathVariable int page, int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Orders> ordersPage = ordersService.getOrdersPaging(pageable);
+        return ResponseEntity.ok(ordersPage);
     }
 
 }
