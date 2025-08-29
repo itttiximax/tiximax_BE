@@ -14,7 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,7 +34,7 @@ public class OrdersController {
     private OrdersService ordersService;
 
     @PostMapping("/{customerCode}/{routeId}")
-    public ResponseEntity<Orders> createdReview(@PathVariable String customerCode, @PathVariable long routeId, @RequestBody OrdersRequest ordersRequest) {
+    public ResponseEntity<Orders> createdReview(@PathVariable String customerCode, @PathVariable long routeId, @RequestBody OrdersRequest ordersRequest) throws IOException {
         Orders orders = ordersService.addOrder(customerCode, routeId, ordersRequest);
         return ResponseEntity.ok(orders);
     }

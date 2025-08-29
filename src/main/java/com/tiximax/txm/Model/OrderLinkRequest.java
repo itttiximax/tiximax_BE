@@ -6,6 +6,7 @@ import com.tiximax.txm.Enums.OrderLinkWebsite;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 
@@ -29,7 +30,9 @@ public class OrderLinkRequest {
 
     private BigDecimal extraCharge;
 
-    private String purchaseImage;
+//    private String purchaseImage;
+
+    private MultipartFile file;
 
     private String website;
 

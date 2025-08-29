@@ -54,6 +54,7 @@ public class SecurityConfig {
                                 "/accounts/register/staff",
                                 "/accounts/register/customer",
                                 "/accounts/update-all-passwords",
+                                "/images/upload-image",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
@@ -86,7 +87,7 @@ public class SecurityConfig {
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://tiximax1.vercel.app"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://tiximaxx.vercel.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

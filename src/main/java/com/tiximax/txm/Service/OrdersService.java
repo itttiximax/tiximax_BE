@@ -9,7 +9,10 @@ import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -43,7 +46,83 @@ public class OrdersService {
     @Autowired
     private ProductTypeRepository productTypeRepository;
 
-    public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) {
+    @Autowired
+    private ImageStorageService imageStorageService;
+
+//    public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) {
+//        if (customerCode == null){
+//            throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
+//        }
+//        if (routeId == null){
+//            throw new IllegalArgumentException("Bạn phải chọn tuyến hàng để tiếp tục!");
+//        }
+//        Customer customer = authenticationRepository.findByCustomerCode(customerCode);
+//        if (customer == null) {
+//            throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
+//        }
+//
+//        Route route = routeRepository.findById(routeId).orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
+//        Optional<Destination> destination = destinationRepository.findById(ordersRequest.getDestinationId());
+//
+//        if (destination.isEmpty()) {
+//            throw new IllegalArgumentException("Không tìm thấy điểm đến!");
+//        }
+//        Orders order = new Orders();
+//        order.setCustomer(customer);
+//        order.setOrderCode(generateOrderCode(ordersRequest.getOrderType()));
+//        order.setOrderType(ordersRequest.getOrderType());
+//        order.setStatus(OrderStatus.DA_XAC_NHAN);
+//        order.setCreatedAt(LocalDateTime.now());
+//        order.setExchangeRate(ordersRequest.getExchangeRate());
+//        order.setDestination(destination.get());
+//        order.setCheckRequired(ordersRequest.getCheckRequired());
+//        order.setNote(ordersRequest.getNote());
+//        order.setRoute(route);
+//        order.setStaff((Staff) accountUtils.getAccountCurrent());
+//        order = ordersRepository.save(order);
+//
+//        BigDecimal totalPriceVnd = BigDecimal.ZERO;
+//
+//        List<OrderLinks> orderLinksList = new ArrayList<>();
+//        if (ordersRequest.getOrderLinkRequests() != null) {
+//            for (OrderLinkRequest linkRequest : ordersRequest.getOrderLinkRequests()) {
+//                OrderLinks orderLink = new OrderLinks();
+//                orderLink.setOrders(order);
+//                orderLink.setProductLink(linkRequest.getProductLink());
+//                orderLink.setQuantity(linkRequest.getQuantity());
+//                orderLink.setPriceWeb(linkRequest.getPriceWeb());
+//                orderLink.setShipWeb(linkRequest.getShipWeb());
+//                orderLink.setTotalWeb((linkRequest.getPriceWeb().add(linkRequest.getShipWeb())).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP).add(linkRequest.getPurchaseFee()));
+//                orderLink.setPurchaseFee(linkRequest.getPurchaseFee());
+//                orderLink.setProductName(linkRequest.getProductName());
+//
+//                ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId()).orElseThrow(null);
+//
+//                orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP));
+//                orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
+//                orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
+//                orderLink.setProductType(productType);
+//                orderLink.setStatus(OrderLinkStatus.HOAT_DONG);
+//                orderLink.setGroupTag(linkRequest.getGroupTag());
+//                orderLink.setTrackingCode(generateOrderLinkCode());
+//                orderLink.setExtraCharge(linkRequest.getExtraCharge());
+//                orderLinksList.add(orderLink);
+//
+//                BigDecimal finalPrice = orderLink.getFinalPriceVnd();
+//                if (finalPrice != null) {
+//                    totalPriceVnd = totalPriceVnd.add(finalPrice);
+//                }
+//            }
+//            orderLinksRepository.saveAll(orderLinksList);
+//        }
+//        order.setOrderLinks(new HashSet<>(orderLinksList));
+//        order.setFinalPriceOrder(totalPriceVnd);
+//        order = ordersRepository.save(order);
+//        addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
+//        return order;
+//    }
+
+    public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) throws IOException {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
         }
@@ -93,12 +172,17 @@ public class OrdersService {
                 ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId()).orElseThrow(null);
 
                 orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP));
-                orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
+
                 orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
                 orderLink.setProductType(productType);
                 orderLink.setStatus(OrderLinkStatus.HOAT_DONG);
                 orderLink.setGroupTag(linkRequest.getGroupTag());
                 orderLink.setTrackingCode(generateOrderLinkCode());
+                if (linkRequest.getFile() != null){
+                    orderLink.setPurchaseImage(imageStorageService.uploadImageSupabase(linkRequest.getFile(), orderLink.getTrackingCode()));
+                } else {
+                    orderLink.setPurchaseImage(null);
+                }
                 orderLink.setExtraCharge(linkRequest.getExtraCharge());
                 orderLinksList.add(orderLink);
 
