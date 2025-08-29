@@ -1,10 +1,14 @@
 package com.tiximax.txm.API;
 
+import com.tiximax.txm.Entity.AccountRoute;
 import com.tiximax.txm.Entity.Route;
 import com.tiximax.txm.Model.RouteRequest;
+import com.tiximax.txm.Repository.AccountRouteRepository;
+import com.tiximax.txm.Service.AccountRouteService;
 import com.tiximax.txm.Service.RouteService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +22,9 @@ public class RouteController {
 
     @Autowired
     private RouteService routeService;
+
+    @Autowired
+    private AccountRouteService accountRouteService;
 
     @PostMapping
     public ResponseEntity<Route> createRoute(@RequestBody RouteRequest routeRequest) {
@@ -48,4 +55,5 @@ public class RouteController {
         routeService.deleteRoute(routeId);
         return ResponseEntity.noContent().build();
     }
+
 }

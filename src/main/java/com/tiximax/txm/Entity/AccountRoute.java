@@ -1,5 +1,6 @@
 package com.tiximax.txm.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,10 +18,12 @@ public class AccountRoute {
 
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
+    @JsonIgnore
     private Account account;
 
     @ManyToOne
     @JoinColumn(name = "route_id", nullable = false)
+    @JsonIgnore
     private Route route;
 
 }

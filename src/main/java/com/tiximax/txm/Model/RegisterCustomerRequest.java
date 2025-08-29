@@ -35,6 +35,4 @@ public class RegisterCustomerRequest {
 
     private String source;
 
-    private List<Long> routeIds;
-
 }

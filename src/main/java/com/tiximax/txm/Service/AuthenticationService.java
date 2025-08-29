@@ -181,18 +181,6 @@ public class AuthenticationService implements UserDetailsService {
         customer.setSource(registerRequest.getSource());
         customer = authenticationRepository.save(customer);
 
-        List<Long> routeIds = registerRequest.getRouteIds();
-        if (routeIds != null && !routeIds.isEmpty()) {
-            for (Long routeId : routeIds) {
-                Route route = routeRepository.findById(routeId)
-                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tuyến hàng này!"));
-                AccountRoute accountRoute = new AccountRoute();
-                accountRoute.setAccount(customer);
-                accountRoute.setRoute(route);
-                accountRouteRepository.save(accountRoute);
-            }
-        }
-
         return customer;
     }
 

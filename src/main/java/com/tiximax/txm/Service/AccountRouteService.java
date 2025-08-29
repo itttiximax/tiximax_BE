@@ -6,9 +6,9 @@ import com.tiximax.txm.Entity.Route;
 import com.tiximax.txm.Repository.AccountRouteRepository;
 import com.tiximax.txm.Repository.AuthenticationRepository;
 import com.tiximax.txm.Repository.RouteRepository;
+import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +25,9 @@ public class AccountRouteService {
 
     @Autowired
     private RouteRepository routeRepository;
+
+    @Autowired
+    private AccountUtils accountUtils;
 
     public AccountRoute createAccountRoute(Long accountId, Long routeId) {
         Account account = authenticationRepository.findById(accountId)
@@ -43,32 +46,26 @@ public class AccountRouteService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy AccountRoute với ID: " + accountRouteId));
     }
 
-    public Page<AccountRoute> getAllAccountRoutes(Pageable pageable) {
-        return accountRouteRepository.findAll(pageable);
-    }
+//    public Page<AccountRoute> getAllAccountRoutes(Pageable pageable) {
+//        return accountRouteRepository.findAll(pageable);
+//    }
 
-    public List<AccountRoute> getAllAccountRoutes() {
-        return accountRouteRepository.findAll();
-    }
+//    public List<AccountRoute> getAllAccountRoutes() {
+//        return accountRouteRepository.findAll();
+//    }
 
-    public AccountRoute updateAccountRoute(Long accountRouteId, Long accountId, Long routeId) {
-        AccountRoute accountRoute = accountRouteRepository.findById(accountRouteId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy AccountRoute với ID: " + accountRouteId));
-
-        Account account = authenticationRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với ID: " + accountId));
-        Route route = routeRepository.findById(routeId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tuyến hàng với ID: " + routeId));
-
-        accountRoute.setAccount(account);
-        accountRoute.setRoute(route);
-        return accountRouteRepository.save(accountRoute);
-    }
+//    public AccountRoute updateAccountRoute(Long accountRouteId, Long accountId, Long routeId) {
+//        return null;
+//    }
 
     public void deleteAccountRoute(Long accountRouteId) {
         if (!accountRouteRepository.existsById(accountRouteId)) {
             throw new IllegalArgumentException("Không tìm thấy AccountRoute với ID: " + accountRouteId);
         }
         accountRouteRepository.deleteById(accountRouteId);
+    }
+
+    public List<Route> getByStaffId() {
+        return accountRouteRepository.findRoutesByStaffId(accountUtils.getAccountCurrent().getAccountId());
     }
 }
