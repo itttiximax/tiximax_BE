@@ -3,6 +3,8 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Account;
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Staff;
+import com.tiximax.txm.Enums.CustomerType;
+import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.EmailDetail;
 import com.tiximax.txm.Model.LoginRequest;
 import com.tiximax.txm.Model.RegisterCustomerRequest;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -70,6 +73,14 @@ public class AuthenticationController {
     public ResponseEntity<String> logout() {
         authenticationService.logout();
         return ResponseEntity.ok("Đăng xuất thành công!");
+    }
+
+    @GetMapping("/enum-customer-type")
+    public ResponseEntity<List<String>> getCustomerType() {
+        List<String> customerType = Arrays.stream(CustomerType.values())
+                .map(Enum::name)
+                .toList();
+        return ResponseEntity.ok(customerType);
     }
 
 }
