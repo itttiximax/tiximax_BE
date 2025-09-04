@@ -55,6 +55,7 @@ public class SecurityConfig {
                                 "/accounts/register/customer",
                                 "/accounts/update-all-passwords",
                                 "/images/upload-image",
+                                "/orders/{customerCode}/{routeId}",
                                 "/accounts/login-google",
                                 "/accounts/callback",
                                 "/swagger-ui/**",

@@ -9,7 +9,6 @@ import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -182,11 +181,12 @@ public class OrdersService {
                 orderLink.setStatus(OrderLinkStatus.HOAT_DONG);
                 orderLink.setGroupTag(linkRequest.getGroupTag());
                 orderLink.setTrackingCode(generateOrderLinkCode());
-                if (linkRequest.getFile() != null){
-                    orderLink.setPurchaseImage(imageStorageService.uploadImageSupabase(linkRequest.getFile(), orderLink.getTrackingCode()));
-                } else {
-                    orderLink.setPurchaseImage(null);
-                }
+//                if (linkRequest.getFile() != null){
+//                    orderLink.setPurchaseImage(imageStorageService.uploadImageSupabase(linkRequest.getFile(), orderLink.getTrackingCode()));
+//                } else {
+//                    orderLink.setPurchaseImage(null);
+//                }
+                orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
                 orderLink.setExtraCharge(linkRequest.getExtraCharge());
                 orderLinksList.add(orderLink);
 
@@ -274,13 +274,11 @@ public class OrdersService {
             return List.of();
         }
 
-        // Lấy tất cả route_id của nhân viên
         List<Long> routeIds = accountRoutes.stream()
                 .map(AccountRoute::getRoute)
                 .map(Route::getRouteId)
                 .collect(Collectors.toList());
 
-        // Lấy các Orders có status CHO_MUA và thuộc tuyến của nhân viên
         return ordersRepository.findAll().stream()
                 .filter(order -> order.getStatus() == OrderStatus.CHO_MUA)
                 .filter(order -> routeIds.contains(order.getRoute().getRouteId()))

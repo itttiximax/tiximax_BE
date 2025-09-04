@@ -42,6 +42,7 @@ public class Filter extends OncePerRequestFilter {
             "/accounts/update-all-passwords",
             "/accounts/login-google",
             "/accounts/callback",
+            "/orders/{customerCode}/{routeId}",
             "/images/upload-image",
             "/swagger-ui/**",
             "/v3/api-docs/**",
