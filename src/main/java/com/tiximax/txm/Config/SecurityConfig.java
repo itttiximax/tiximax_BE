@@ -82,7 +82,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean .
+    @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://tiximaxweb.vercel.app"));
