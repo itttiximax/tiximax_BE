@@ -25,7 +25,7 @@ public class ImageController {
     public ResponseEntity<String> uploadImage(@RequestParam("image") MultipartFile file) {
         try {
             String imageUrl = imageStorageService.uploadImage(file);
-            return ResponseEntity.ok("Upload thành công: " + imageUrl);
+            return ResponseEntity.ok(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body("Lỗi upload: " + e.getMessage());
         }

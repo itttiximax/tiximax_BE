@@ -40,6 +40,8 @@ public class Filter extends OncePerRequestFilter {
             "/accounts/register/staff",
             "/accounts/register/customer",
             "/accounts/update-all-passwords",
+            "/accounts/login-google",
+            "/accounts/callback",
             "/images/upload-image",
             "/swagger-ui/**",
             "/v3/api-docs/**",
@@ -51,58 +53,95 @@ public class Filter extends OncePerRequestFilter {
         return AUTH_PERMISSION.stream().anyMatch(pattern -> pathMatcher.match(pattern, uri));
     }
 
+//    @Override
+//    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+//        String uri = request.getRequestURI();
+//        if (isPermitted(uri)) {
+//            String token = getToken(request);
+//            if (token != null) {
+//                Account account;
+//                try {
+//                    account = tokenService.extractAccount(token);
+//                } catch (ExpiredJwtException expiredJwtException) {
+//                    resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
+//                    return;
+//                } catch (MalformedJwtException malformedJwtException) {
+//                    resolver.resolveException(request, response, null, new AuthException("Invalid Token!"));
+//                    return;
+//                }
+//                UsernamePasswordAuthenticationToken
+//                        authenToken =
+//                        new UsernamePasswordAuthenticationToken(account, token, account.getAuthorities());
+//                authenToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+//                SecurityContextHolder.getContext().setAuthentication(authenToken);
+//            }
+//            filterChain.doFilter(request, response);
+//        } else {
+//            String token = getToken(request);
+//            if (token == null) {
+//                resolver.resolveException(request, response, null, new AuthException("Empty token!"));
+//                return;
+//            }
+//
+//            Account account;
+//            try {
+//                account = tokenService.extractAccount(token);
+//            } catch (ExpiredJwtException expiredJwtException) {
+//                resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
+//                return;
+//            } catch (MalformedJwtException malformedJwtException) {
+//                resolver.resolveException(request, response, null, new AuthException("Invalid Token!"));
+//                return;
+//            }
+//            UsernamePasswordAuthenticationToken
+//                    authenToken =
+//                    new UsernamePasswordAuthenticationToken(account, token, account.getAuthorities());
+//            authenToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+//            SecurityContextHolder.getContext().setAuthentication(authenToken);
+//            filterChain.doFilter(request, response);
+//        }
+//    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String uri = request.getRequestURI();
+        String authHeader = request.getHeader("Authorization");
+        logger.info("Request URI: {}, Method: {}, Authorization: {}" + uri +", " + request.getMethod() + "," + authHeader);
         if (isPermitted(uri)) {
-            String token = getToken(request);
-            if (token != null) {
-                Account account;
-                try {
-                    account = tokenService.extractAccount(token);
-                } catch (ExpiredJwtException expiredJwtException) {
-                    resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
-                    return;
-                } catch (MalformedJwtException malformedJwtException) {
-                    resolver.resolveException(request, response, null, new AuthException("Invalid Token!"));
-                    return;
-                }
-                UsernamePasswordAuthenticationToken
-                        authenToken =
-                        new UsernamePasswordAuthenticationToken(account, token, account.getAuthorities());
-                authenToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenToken);
-            }
+            logger.info("Permitted URI, skipping token check: {}" + uri);
             filterChain.doFilter(request, response);
-        } else {
-            String token = getToken(request);
-            if (token == null) {
-                resolver.resolveException(request, response, null, new AuthException("Empty token!"));
-                return;
-            }
-
-            Account account;
-            try {
-                account = tokenService.extractAccount(token);
-            } catch (ExpiredJwtException expiredJwtException) {
-                resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
-                return;
-            } catch (MalformedJwtException malformedJwtException) {
-                resolver.resolveException(request, response, null, new AuthException("Invalid Token!"));
-                return;
-            }
-            UsernamePasswordAuthenticationToken
-                    authenToken =
-                    new UsernamePasswordAuthenticationToken(account, token, account.getAuthorities());
-            authenToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authenToken);
-            filterChain.doFilter(request, response);
+            return;
         }
+
+        String token = getToken(request);
+        if (token == null) {
+            logger.warn("No token found for URI: {}, redirecting to login if applicable" + uri);
+            resolver.resolveException(request, response, null, new AuthException("Empty token!"));
+            return;
+        }
+
+        Account account;
+        try {
+            account = tokenService.extractAccount(token);
+        } catch (ExpiredJwtException expiredJwtException) {
+            logger.error("Expired token for URI: {}" + uri);
+            resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
+            return;
+        } catch (MalformedJwtException malformedJwtException) {
+            logger.error("Invalid token for URI: {}" + uri);
+            resolver.resolveException(request, response, null, new AuthException("Invalid Token!"));
+            return;
+        }
+        UsernamePasswordAuthenticationToken authenToken =
+                new UsernamePasswordAuthenticationToken(account, token, account.getAuthorities());
+        authenToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authenToken);
+        filterChain.doFilter(request, response);
     }
 
     public String getToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null) return null;
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
         return authHeader.substring(7);
     }
 }

@@ -77,4 +77,10 @@ public class OrdersController {
         return ResponseEntity.ok(ordersPage);
     }
 
+    @GetMapping("/list-for-purchase")
+    public ResponseEntity<List<Orders>> getOrdersForCurrentStaff() {
+        List<Orders> orders = ordersService.getOrdersForCurrentStaff();
+        return ResponseEntity.ok(orders);
+    }
+
 }

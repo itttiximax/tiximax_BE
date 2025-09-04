@@ -55,6 +55,8 @@ public class SecurityConfig {
                                 "/accounts/register/customer",
                                 "/accounts/update-all-passwords",
                                 "/images/upload-image",
+                                "/accounts/login-google",
+                                "/accounts/callback",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
@@ -68,26 +70,21 @@ public class SecurityConfig {
                         .maximumSessions(-1)
                         .sessionRegistry(sessionRegistry())
                 )
+                .oauth2Login(oauth2 -> oauth2
+                        .redirectionEndpoint(redirection -> redirection
+                                .baseUri("/accounts/callback")
+                        )
+                        .defaultSuccessUrl("/accounts/callback", true)
+                )
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    //    @Bean
-//    public CorsFilter corsFilter() {
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        CorsConfiguration config = new CorsConfiguration();
-//        config.setAllowedOrigins(List.of("http://localhost:5173", "https://trustreview.vercel.app")); // Cho phép frontend
-//        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-//        config.setAllowedHeaders(List.of("*"));
-//        config.setAllowCredentials(true);
-//        source.registerCorsConfiguration("/**", config);
-//        return new CorsFilter(source);
-//    }
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://tiximaxx.vercel.app"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:8080", "https://tiximaxx.vercel.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

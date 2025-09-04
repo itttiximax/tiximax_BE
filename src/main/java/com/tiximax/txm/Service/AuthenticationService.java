@@ -4,6 +4,7 @@ import com.tiximax.txm.Config.SecurityConfig;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.AccountStatus;
+import com.tiximax.txm.Enums.CustomerType;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -202,6 +204,26 @@ public class AuthenticationService implements UserDetailsService {
 
     public void logout() {
         SecurityContextHolder.clearContext();
+    }
+
+    public Account findOrCreateGoogleAccount(String email, String name) {
+        Account account = authenticationRepository.findByUsername(email);
+        if (account != null){
+            return account;
+        } else {
+            Customer customer = new Customer();
+                customer.setUsername(email);
+                customer.setName(name);
+                customer.setPassword("");
+                customer.setRole(AccountRoles.CUSTOMER);
+                customer.setStatus(AccountStatus.HOAT_DONG);
+                customer.setCreatedAt(LocalDateTime.now());
+                customer.setCustomerCode(generateCustomerCode());
+                customer.setType(CustomerType.KHACH_LE);
+                customer.setAddress("Default Address");
+                authenticationRepository.save(customer);
+                return customer;
+        }
     }
 
 }

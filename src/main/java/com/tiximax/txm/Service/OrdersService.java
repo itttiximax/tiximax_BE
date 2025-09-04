@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 
@@ -48,6 +49,9 @@ public class OrdersService {
 
     @Autowired
     private ImageStorageService imageStorageService;
+
+    @Autowired
+    private AccountRouteRepository accountRouteRepository;
 
 //    public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) {
 //        if (customerCode == null){
@@ -258,4 +262,28 @@ public class OrdersService {
         return null;
     }
 
+    public List<Orders> getOrdersForCurrentStaff() {
+
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff)) {
+            throw new IllegalStateException("Tài khoản hiện tại không phải là nhân viên!");
+        }
+
+        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+        if (accountRoutes.isEmpty()) {
+            return List.of(); // Trả về danh sách rỗng nếu không có tuyến
+        }
+
+        // Lấy tất cả route_id của nhân viên
+        List<Long> routeIds = accountRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toList());
+
+        // Lấy các Orders có status CHO_MUA và thuộc tuyến của nhân viên
+        return ordersRepository.findAll().stream()
+                .filter(order -> order.getStatus() == OrderStatus.CHO_MUA)
+                .filter(order -> routeIds.contains(order.getRoute().getRouteId()))
+                .collect(Collectors.toList());
+    }
 }

@@ -28,15 +28,10 @@ public class TokenService {
 
     public String generateToken(Account account) {
         String token =
-                // create object of JWT
                 Jwts.builder().
-                        //subject of token
                                 subject(account.getUsername()).
-                        // time Create Token
                                 issuedAt(new Date(System.currentTimeMillis()))
-                        // Time exprire of Token
                         .expiration(new Date(System.currentTimeMillis()+24*60*60*1000))
-                        //
                         .signWith(getSigninKey())
                         .compact();
         return token;

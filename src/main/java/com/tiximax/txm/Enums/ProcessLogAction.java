@@ -10,5 +10,7 @@ public enum ProcessLogAction {
     DA_DONG_GOI,
     DA_NHAP_KHO_HN,
     DA_NHAP_KHO_SG,
-    DA_GIAO
+    DA_GIAO,
+    DA_CHINH_SUA,
+    DA_XOA
 }

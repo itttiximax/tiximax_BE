@@ -30,8 +30,6 @@ public class OrderLinkRequest {
 
     private BigDecimal extraCharge;
 
-//    private String purchaseImage;
-
     private MultipartFile file;
 
     private String website;
