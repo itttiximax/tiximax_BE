@@ -26,6 +26,8 @@ public class Customer extends Account {
 
     private String source;
 
+    private Long staffId;
+
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     @JsonIgnore
     Set<Orders> orders;

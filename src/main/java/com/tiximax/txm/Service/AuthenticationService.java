@@ -7,6 +7,7 @@ import com.tiximax.txm.Enums.AccountStatus;
 import com.tiximax.txm.Enums.CustomerType;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
+import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,9 @@ public class AuthenticationService implements UserDetailsService {
 
     @Autowired
     private RouteRepository routeRepository;
+
+    @Autowired
+    private AccountUtils accountUtils;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -226,4 +230,7 @@ public class AuthenticationService implements UserDetailsService {
         }
     }
 
+    public List<Customer> searchCustomersByPhoneOrName(String keyword) {
+        return customerRepository.findByPhoneOrNameContainingAndStaffId(keyword, accountUtils.getAccountCurrent().getAccountId());
+    }
 }

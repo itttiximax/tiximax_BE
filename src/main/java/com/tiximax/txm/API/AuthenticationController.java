@@ -105,33 +105,6 @@ public class AuthenticationController {
         return ResponseEntity.ok().body("{\"redirect\": \"" + redirectUrl + "\"}");
     }
 
-//    @GetMapping("/callback")
-//    public Mono<ResponseEntity<?>> handleCallback(@AuthenticationPrincipal OAuth2User principal) {
-//        if (principal == null) {
-//            System.out.println("Principal is null, OAuth2 flow may not be triggered correctly.");
-//            return Mono.just(ResponseEntity.status(401).body("{\"error\":\"OAuth2 authentication failed, principal is null\"}"));
-//        }
-//
-//        String email = principal.getAttribute("email");
-//        String name = principal.getAttribute("name");
-//
-//        Account account = authenticationService.findOrCreateGoogleAccount(email, name);
-//
-//        String jwt = tokenService.generateToken(account);
-//
-//        WebClient webClient = WebClient.builder()
-//                .baseUrl(supabaseUrl)
-//                .defaultHeader("apikey", supabaseAnonKey)
-//                .build();
-//
-//        return webClient.get()
-//                .uri("/auth/v1/user")
-//                .header("Authorization", "Bearer " + principal.getAttribute("access_token"))
-//                .retrieve()
-//                .bodyToMono(String.class)
-//                .map(userInfo -> ResponseEntity.ok("User logged in: " + name + " (" + email + "), JWT: " + jwt));
-//    }
-
     @GetMapping("/callback")
     public Mono<ResponseEntity<?>> handleCallback(@AuthenticationPrincipal OAuth2User principal, HttpServletRequest request) {
 
@@ -168,6 +141,12 @@ public class AuthenticationController {
                 .map(userInfo -> {
                     return ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}");
                 });
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Customer>> searchCustomers(@RequestParam(required = false) String keyword) {
+        List<Customer> customers = authenticationService.searchCustomersByPhoneOrName(keyword);
+        return ResponseEntity.ok(customers);
     }
 
 }
