@@ -271,7 +271,7 @@ public class OrdersService {
 
         List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
         if (accountRoutes.isEmpty()) {
-            return List.of(); // Trả về danh sách rỗng nếu không có tuyến
+            return List.of();
         }
 
         // Lấy tất cả route_id của nhân viên
