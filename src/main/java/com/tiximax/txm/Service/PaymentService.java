@@ -10,7 +10,6 @@ import com.tiximax.txm.Repository.PaymentRepository;
 import com.tiximax.txm.Repository.ProcessLogRepository;
 import com.tiximax.txm.Repository.WarehouseRepository;
 import com.tiximax.txm.Utils.AccountUtils;
-import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -203,4 +202,7 @@ public class PaymentService {
         return savedPayment;
     }
 
+    public Optional<Payment> getPaymentsById(Long paymentId) {
+        return paymentRepository.findById(paymentId);
+    }
 }

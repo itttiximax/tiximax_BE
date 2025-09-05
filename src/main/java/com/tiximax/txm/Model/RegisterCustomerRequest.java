@@ -27,11 +27,11 @@ public class RegisterCustomerRequest {
 
     private AccountRoles role;
 
-    private CustomerType type;
+//    private CustomerType type;
 
     private String address;
 
-    private String taxCode;
+//    private String taxCode;
 
     private String source;
 

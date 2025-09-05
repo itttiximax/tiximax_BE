@@ -121,9 +121,7 @@ public class AuthenticationService implements UserDetailsService {
                 customerReponse.setRole(account.getRole());
                 customerReponse.setStatus(account.getStatus());
                 customerReponse.setCustomerCode(((Customer) account).getCustomerCode());
-                customerReponse.setType(((Customer) account).getType());
                 customerReponse.setAddress(((Customer) account).getAddress());
-                customerReponse.setTaxCode(((Customer) account).getTaxCode());
                 customerReponse.setSource(((Customer) account).getSource());
                 customerReponse.setToken(token);
                 return customerReponse;
@@ -190,9 +188,7 @@ public class AuthenticationService implements UserDetailsService {
         customer.setStatus(AccountStatus.HOAT_DONG);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setCustomerCode(generateCustomerCode());
-        customer.setType(registerRequest.getType());
         customer.setAddress(registerRequest.getAddress());
-        customer.setTaxCode(registerRequest.getTaxCode());
         customer.setSource(registerRequest.getSource());
         customer = authenticationRepository.save(customer);
 
@@ -232,7 +228,6 @@ public class AuthenticationService implements UserDetailsService {
                 customer.setStatus(AccountStatus.HOAT_DONG);
                 customer.setCreatedAt(LocalDateTime.now());
                 customer.setCustomerCode(generateCustomerCode());
-                customer.setType(CustomerType.KHACH_LE);
                 customer.setAddress("Default Address");
                 authenticationRepository.save(customer);
                 return customer;
@@ -266,9 +261,7 @@ public class AuthenticationService implements UserDetailsService {
         customer.setStatus(AccountStatus.HOAT_DONG);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setCustomerCode(generateCustomerCode());
-        customer.setType(registerRequest.getType());
         customer.setAddress(registerRequest.getAddress());
-        customer.setTaxCode(registerRequest.getTaxCode());
         customer.setSource(registerRequest.getSource());
         customer.setStaffId(accountUtils.getAccountCurrent().getAccountId());
         customer = authenticationRepository.save(customer);

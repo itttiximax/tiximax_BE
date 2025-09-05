@@ -74,4 +74,10 @@ public class PaymentController {
         return ResponseEntity.ok(confirmedPayment);
     }
 
+    @GetMapping("/{paymentId}")
+    public ResponseEntity<Optional<Payment>> getPaymentsByOrderId(@PathVariable Long paymentId) {
+        Optional<Payment> payment = paymentService.getPaymentsById(paymentId);
+        return ResponseEntity.ok(payment);
+    }
+
 }
