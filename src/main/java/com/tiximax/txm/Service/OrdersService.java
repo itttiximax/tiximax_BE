@@ -243,11 +243,11 @@ public class OrdersService {
 
     public Page<Orders> getOrdersPaging(Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
-        if (currentAccount.getRole() == AccountRoles.ADMIN || currentAccount.getRole() == AccountRoles.MANAGER) {
+        if (currentAccount.getRole().equals(AccountRoles.ADMIN) || currentAccount.getRole().equals(AccountRoles.MANAGER)) {
             return ordersRepository.findAll(pageable);
-        } else if (currentAccount.getRole() == AccountRoles.STAFF_SALE) {
+        } else if (currentAccount.getRole().equals(AccountRoles.STAFF_SALE)) {
             return ordersRepository.findByStaffAccountId(currentAccount.getAccountId(), pageable);
-        } else if (currentAccount.getRole() == AccountRoles.LEAD_SALE) {
+        } else if (currentAccount.getRole().equals(AccountRoles.LEAD_SALE)) {
 ////            Staff staff = (Staff) currentAccount;
 //            Set<Long> routeIds = staff.getRoutes().stream()
 //                    .map(Route::getRouteId)
@@ -280,7 +280,7 @@ public class OrdersService {
                 .collect(Collectors.toList());
 
         return ordersRepository.findAll().stream()
-                .filter(order -> order.getStatus() == OrderStatus.CHO_MUA)
+                .filter(order -> order.getStatus().equals(OrderStatus.CHO_MUA))
                 .filter(order -> routeIds.contains(order.getRoute().getRouteId()))
                 .collect(Collectors.toList());
     }

@@ -171,6 +171,15 @@ public class AuthenticationService implements UserDetailsService {
         if (authenticationRepository.findByUsername(registerRequest.getUsername()) != null){
             throw new BadCredentialsException("Tên đăng nhập bị trùng, vui lòng chọn một tên khác!");
         }
+
+        if (authenticationRepository.findByPhone(registerRequest.getPhone()) != null){
+            throw new BadCredentialsException("Số điện thoại bị trùng, vui lòng chọn một số khác!");
+        }
+
+        if (authenticationRepository.findByEmail(registerRequest.getEmail()) != null){
+            throw new BadCredentialsException("Email bị trùng, vui lòng chọn một email khác!");
+        }
+
         Customer customer = new Customer();
         customer.setUsername(registerRequest.getUsername());
         customer.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
@@ -232,5 +241,38 @@ public class AuthenticationService implements UserDetailsService {
 
     public List<Customer> searchCustomersByPhoneOrName(String keyword) {
         return customerRepository.findByPhoneOrNameContainingAndStaffId(keyword, accountUtils.getAccountCurrent().getAccountId());
+    }
+
+    public Customer registerCustomerByStaff(RegisterCustomerRequest registerRequest) {
+        if (authenticationRepository.findByUsername(registerRequest.getUsername()) != null){
+            throw new BadCredentialsException("Tên đăng nhập bị trùng, vui lòng chọn một tên khác!");
+        }
+
+        if (authenticationRepository.findByPhone(registerRequest.getPhone()) != null){
+            throw new BadCredentialsException("Số điện thoại bị trùng, vui lòng chọn một số khác!");
+        }
+
+        if (authenticationRepository.findByEmail(registerRequest.getEmail()) != null){
+            throw new BadCredentialsException("Email bị trùng, vui lòng chọn một email khác!");
+        }
+
+        Customer customer = new Customer();
+        customer.setUsername(registerRequest.getPhone());
+        customer.setPassword(passwordEncoder.encode("tiximaxcamon"));
+        customer.setEmail(registerRequest.getEmail());
+        customer.setPhone(registerRequest.getPhone());
+        customer.setName(registerRequest.getName());
+        customer.setRole(AccountRoles.CUSTOMER);
+        customer.setStatus(AccountStatus.HOAT_DONG);
+        customer.setCreatedAt(LocalDateTime.now());
+        customer.setCustomerCode(generateCustomerCode());
+        customer.setType(registerRequest.getType());
+        customer.setAddress(registerRequest.getAddress());
+        customer.setTaxCode(registerRequest.getTaxCode());
+        customer.setSource(registerRequest.getSource());
+        customer.setStaffId(accountUtils.getAccountCurrent().getAccountId());
+        customer = authenticationRepository.save(customer);
+
+        return customer;
     }
 }

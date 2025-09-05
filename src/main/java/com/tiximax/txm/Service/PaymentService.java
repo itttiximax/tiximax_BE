@@ -25,6 +25,10 @@ import java.util.UUID;
 
 public class PaymentService {
 
+    private final String bankName = "sacombank";
+    private final String bankNumber = "070119787309";
+    private final String bankOwner = "TRAN TAN PHAT";
+
     @Autowired
     private PaymentRepository paymentRepository;
 
@@ -64,7 +68,8 @@ public class PaymentService {
         payment.setAmount(orders.getFinalPriceOrder());
         payment.setCollectedAmount(orders.getFinalPriceOrder());
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-        payment.setQrCode("Mã QR");
+        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber+ "-print.png?amount=" + payment.getCollectedAmount() + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+        payment.setQrCode(qrCodeUrl);
         payment.setActionAt(LocalDateTime.now());
         payment.setCustomer(orders.getCustomer());
         payment.setStaff((Staff) accountUtils.getAccountCurrent());
@@ -185,7 +190,8 @@ public class PaymentService {
         payment.setAmount(shippingAmount);
         payment.setCollectedAmount(shippingAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-        payment.setQrCode("Mã QR Shipping");
+        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber+ "-print.png?amount=" + shippingAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+        payment.setQrCode(qrCodeUrl);
         payment.setActionAt(LocalDateTime.now());
         payment.setCustomer(orders.getCustomer());
         payment.setStaff((Staff) accountUtils.getAccountCurrent());

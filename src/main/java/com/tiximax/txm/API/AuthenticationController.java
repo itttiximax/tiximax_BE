@@ -4,7 +4,6 @@ import com.tiximax.txm.Entity.Account;
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Enums.CustomerType;
-import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.EmailDetail;
 import com.tiximax.txm.Model.LoginRequest;
 import com.tiximax.txm.Model.RegisterCustomerRequest;
@@ -70,6 +69,12 @@ public class AuthenticationController {
         return ResponseEntity.ok(customer);
     }
 
+    @PostMapping("/register/customer/by-staff")
+    public ResponseEntity<Customer> registerCustomerByStaff(@RequestBody RegisterCustomerRequest registerRequest) {
+        Customer customer = authenticationService.registerCustomerByStaff(registerRequest);
+        return ResponseEntity.ok(customer);
+    }
+
     @GetMapping("/accountCurrent")
     public ResponseEntity<?> current() {
         Account account = accountUtils.getAccountCurrent();
@@ -106,43 +111,47 @@ public class AuthenticationController {
     }
 
     @GetMapping("/callback")
-    public Mono<ResponseEntity<?>> handleCallback(@AuthenticationPrincipal OAuth2User principal, HttpServletRequest request) {
-
+    public Mono<ResponseEntity<String>> handleCallback(@AuthenticationPrincipal OAuth2User principal, HttpServletRequest request) {
         if (principal == null) {
-            return Mono.just(ResponseEntity.status(401).body("{\"error\":\"OAuth2 authentication failed, principal is null\"}"));
+            return Mono.just(ResponseEntity.status(401).body("{\"error\": \"OAuth2 authentication failed, principal is null\"}"));
         }
 
         String email = principal.getAttribute("email");
         String name = principal.getAttribute("name");
 
         if (email == null || name == null) {
-            return Mono.just(ResponseEntity.status(400).body("{\"error\":\"Missing user info from OAuth2\"}"));
+            return Mono.just(ResponseEntity.status(400).body("{\"error\": \"Missing user info from OAuth2 (email or name is null)\"}"));
         }
 
         Account account = authenticationService.findOrCreateGoogleAccount(email, name);
-        String jwt = tokenService.generateToken(account);
+        if (account == null) {
+            return Mono.just(ResponseEntity.status(500).body("{\"error\": \"Failed to create or find account\"}"));
+        }
 
-        // Gọi Supabase để verify (tùy chọn, có thể bỏ nếu không cần)
-        WebClient webClient = WebClient.builder()
-                .baseUrl(supabaseUrl)
-                .defaultHeader("apikey", supabaseAnonKey)
-                .build();
+        String jwt = tokenService.generateToken(account);
 
         String accessToken = principal.getAttribute("access_token");
         if (accessToken == null) {
             return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}"));
         }
 
+        WebClient webClient = WebClient.builder()
+                .baseUrl(supabaseUrl)
+                .defaultHeader("apikey", supabaseAnonKey)
+                .defaultHeader("Authorization", "Bearer " + accessToken)
+                .build();
+
         return webClient.get()
                 .uri("/auth/v1/user")
-                .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
                 .bodyToMono(String.class)
                 .map(userInfo -> {
-                    return ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}");
+                    return ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + "\"}");
+                })
+                .onErrorResume(e -> {
+                    return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + "\"}"));
                 });
     }
-
     @GetMapping("/search")
     public ResponseEntity<List<Customer>> searchCustomers(@RequestParam(required = false) String keyword) {
         List<Customer> customers = authenticationService.searchCustomersByPhoneOrName(keyword);

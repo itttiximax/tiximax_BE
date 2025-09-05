@@ -16,4 +16,7 @@ public interface AuthenticationRepository extends JpaRepository<Account, Long> {
 
     Customer findByCustomerCode(String customerCode);
 
+    Account findByPhone(String phone);
+
+    Account findByEmail(String email);
 }

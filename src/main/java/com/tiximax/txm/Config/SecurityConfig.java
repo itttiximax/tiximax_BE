@@ -76,6 +76,7 @@ public class SecurityConfig {
                                 .baseUri("/accounts/callback")
                         )
                         .defaultSuccessUrl("/accounts/callback", true)
+                        .failureUrl("/login?error")
                 )
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
