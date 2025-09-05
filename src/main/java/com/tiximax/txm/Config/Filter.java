@@ -57,9 +57,10 @@ public class Filter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String uri = request.getRequestURI();
 
         // Bỏ qua kiểm tra token cho các endpoint được phép, bao gồm /accounts/callback
+        String uri = request.getRequestURI();
+        System.out.println("URI: " + uri + " - Token from header: " + request.getHeader("Authorization")); // Log để check
         if (isPermitted(uri) || uri.contains("/accounts/callback")) {
             filterChain.doFilter(request, response);
             return;

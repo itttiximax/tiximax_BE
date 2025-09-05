@@ -111,47 +111,28 @@ public class AuthenticationController {
     }
 
     @GetMapping("/callback")
-    public Mono<ResponseEntity<String>> handleCallback(@AuthenticationPrincipal OAuth2User principal, HttpServletRequest request) {
+    public Mono<ResponseEntity<?>> handleCallback(@AuthenticationPrincipal OAuth2User principal, HttpServletRequest request) {
+        System.out.println("Callback called with principal: " + principal); // Log debug
         if (principal == null) {
-            return Mono.just(ResponseEntity.status(401).body("{\"error\": \"OAuth2 authentication failed, principal is null\"}"));
+            String accessToken = request.getParameter("access_token"); // Thử lấy từ query nếu có
+            if (accessToken != null) {
+                // Xử lý token từ Supabase nếu cần, nhưng ưu tiên OAuth2
+            }
+            return Mono.just(ResponseEntity.status(401).body("{\"error\": \"Principal null - Empty token\"}"));
         }
-
         String email = principal.getAttribute("email");
         String name = principal.getAttribute("name");
-
         if (email == null || name == null) {
-            return Mono.just(ResponseEntity.status(400).body("{\"error\": \"Missing user info from OAuth2 (email or name is null)\"}"));
+            return Mono.just(ResponseEntity.status(400).body("{\"error\": \"Missing info\"}"));
         }
-
         Account account = authenticationService.findOrCreateGoogleAccount(email, name);
         if (account == null) {
-            return Mono.just(ResponseEntity.status(500).body("{\"error\": \"Failed to create or find account\"}"));
+            return Mono.just(ResponseEntity.status(500).body("{\"error\": \"Save DB failed\"}"));
         }
-
         String jwt = tokenService.generateToken(account);
-
-        String accessToken = principal.getAttribute("access_token");
-        if (accessToken == null) {
-            return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}"));
-        }
-
-        WebClient webClient = WebClient.builder()
-                .baseUrl(supabaseUrl)
-                .defaultHeader("apikey", supabaseAnonKey)
-                .defaultHeader("Authorization", "Bearer " + accessToken)
-                .build();
-
-        return webClient.get()
-                .uri("/auth/v1/user")
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(userInfo -> {
-                    return ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + "\"}");
-                })
-                .onErrorResume(e -> {
-                    return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + "\"}"));
-                });
+        return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}"));
     }
+
     @GetMapping("/search")
     public ResponseEntity<List<Customer>> searchCustomers(@RequestParam(required = false) String keyword) {
         List<Customer> customers = authenticationService.searchCustomersByPhoneOrName(keyword);
