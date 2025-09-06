@@ -3,7 +3,6 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Account;
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Staff;
-import com.tiximax.txm.Enums.CustomerType;
 import com.tiximax.txm.Model.EmailDetail;
 import com.tiximax.txm.Model.LoginRequest;
 import com.tiximax.txm.Model.RegisterCustomerRequest;
@@ -96,47 +95,47 @@ public class AuthenticationController {
         return ResponseEntity.ok("Đăng xuất thành công!");
     }
 
-    @GetMapping("/enum-customer-type")
-    public ResponseEntity<List<String>> getCustomerType() {
-        List<String> customerType = Arrays.stream(CustomerType.values())
-                .map(Enum::name)
-                .toList();
-        return ResponseEntity.ok(customerType);
-    }
+//    @GetMapping("/enum-customer-type")
+//    public ResponseEntity<List<String>> getCustomerType() {
+//        List<String> customerType = Arrays.stream(CustomerType.values())
+//                .map(Enum::name)
+//                .toList();
+//        return ResponseEntity.ok(customerType);
+//    }
 
-    @GetMapping("/login-google")
-    public ResponseEntity<?> initiateGoogleLogin() {
-        String redirectUrl = supabaseUrl + "/auth/v1/authorize?provider=google&redirect_to=http://localhost:8080/accounts/callback";
-        return ResponseEntity.ok().body("{\"redirect\": \"" + redirectUrl + "\"}");
-    }
+//    @GetMapping("/login-google")
+//    public ResponseEntity<?> initiateGoogleLogin() {
+//        String redirectUrl = supabaseUrl + "/auth/v1/authorize?provider=google&redirect_to=http://localhost:8080/accounts/callback";
+//        return ResponseEntity.ok().body("{\"redirect\": \"" + redirectUrl + "\"}");
+//    }
 
-    @GetMapping("/callback")
-    public Mono<ResponseEntity<?>> handleCallback(@AuthenticationPrincipal OAuth2User principal, HttpServletRequest request) {
-        System.out.println("Callback called with principal: " + principal); // Log debug
-        if (principal == null) {
-            String accessToken = request.getParameter("access_token"); // Thử lấy từ query nếu có
-            if (accessToken != null) {
-                // Xử lý token từ Supabase nếu cần, nhưng ưu tiên OAuth2
-            }
-            return Mono.just(ResponseEntity.status(401).body("{\"error\": \"Principal null - Empty token\"}"));
-        }
-        String email = principal.getAttribute("email");
-        String name = principal.getAttribute("name");
-        if (email == null || name == null) {
-            return Mono.just(ResponseEntity.status(400).body("{\"error\": \"Missing info\"}"));
-        }
-        Account account = authenticationService.findOrCreateGoogleAccount(email, name);
-        if (account == null) {
-            return Mono.just(ResponseEntity.status(500).body("{\"error\": \"Save DB failed\"}"));
-        }
-        String jwt = tokenService.generateToken(account);
-        return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}"));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<Customer>> searchCustomers(@RequestParam(required = false) String keyword) {
-        List<Customer> customers = authenticationService.searchCustomersByPhoneOrName(keyword);
-        return ResponseEntity.ok(customers);
-    }
+//    @GetMapping("/callback")
+//    public Mono<ResponseEntity<?>> handleCallback(@AuthenticationPrincipal OAuth2User principal, HttpServletRequest request) {
+//        System.out.println("Callback called with principal: " + principal); // Log debug
+//        if (principal == null) {
+//            String accessToken = request.getParameter("access_token"); // Thử lấy từ query nếu có
+//            if (accessToken != null) {
+//                // Xử lý token từ Supabase nếu cần, nhưng ưu tiên OAuth2
+//            }
+//            return Mono.just(ResponseEntity.status(401).body("{\"error\": \"Principal null - Empty token\"}"));
+//        }
+//        String email = principal.getAttribute("email");
+//        String name = principal.getAttribute("name");
+//        if (email == null || name == null) {
+//            return Mono.just(ResponseEntity.status(400).body("{\"error\": \"Missing info\"}"));
+//        }
+//        Account account = authenticationService.findOrCreateGoogleAccount(email, name);
+//        if (account == null) {
+//            return Mono.just(ResponseEntity.status(500).body("{\"error\": \"Save DB failed\"}"));
+//        }
+//        String jwt = tokenService.generateToken(account);
+//        return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}"));
+//    }
+//
+//    @GetMapping("/search")
+//    public ResponseEntity<List<Customer>> searchCustomers(@RequestParam(required = false) String keyword) {
+//        List<Customer> customers = authenticationService.searchCustomersByPhoneOrName(keyword);
+//        return ResponseEntity.ok(customers);
+//    }
 
 }

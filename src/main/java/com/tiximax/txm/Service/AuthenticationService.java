@@ -4,7 +4,6 @@ import com.tiximax.txm.Config.SecurityConfig;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.AccountStatus;
-import com.tiximax.txm.Enums.CustomerType;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
@@ -18,7 +17,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -195,7 +193,6 @@ public class AuthenticationService implements UserDetailsService {
         return customer;
     }
 
-
     public String generateCustomerCode() {
         String customerCode;
         do {
@@ -216,26 +213,26 @@ public class AuthenticationService implements UserDetailsService {
         SecurityContextHolder.clearContext();
     }
 
-    public Account findOrCreateGoogleAccount(String email, String name) {
-        Account account = authenticationRepository.findByUsername(email);
-        if (account != null) {
-            System.out.println("Account found: " + email);
-            return account;
-        } else {
-            Customer customer = new Customer();
-            customer.setUsername(email);
-            customer.setName(name);
-            customer.setPassword(""); // Hoặc mã hóa nếu cần
-            customer.setRole(AccountRoles.CUSTOMER);
-            customer.setStatus(AccountStatus.HOAT_DONG);
-            customer.setCreatedAt(LocalDateTime.now());
-            customer.setCustomerCode(generateCustomerCode());
-            customer.setAddress("Default Address");
-            authenticationRepository.save(customer);
-            System.out.println("New customer saved: " + email); // Log để check DB
-            return customer;
-        }
-    }
+//    public Account findOrCreateGoogleAccount(String email, String name) {
+//        Account account = authenticationRepository.findByUsername(email);
+//        if (account != null) {
+//            System.out.println("Account found: " + email);
+//            return account;
+//        } else {
+//            Customer customer = new Customer();
+//            customer.setUsername(email);
+//            customer.setName(name);
+//            customer.setPassword(""); // Hoặc mã hóa nếu cần
+//            customer.setRole(AccountRoles.CUSTOMER);
+//            customer.setStatus(AccountStatus.HOAT_DONG);
+//            customer.setCreatedAt(LocalDateTime.now());
+//            customer.setCustomerCode(generateCustomerCode());
+//            customer.setAddress("Default Address");
+//            authenticationRepository.save(customer);
+//            System.out.println("New customer saved: " + email); // Log để check DB
+//            return customer;
+//        }
+//    }
 
     public List<Customer> searchCustomersByPhoneOrName(String keyword) {
         return customerRepository.findByPhoneOrNameContainingAndStaffId(keyword, accountUtils.getAccountCurrent().getAccountId());

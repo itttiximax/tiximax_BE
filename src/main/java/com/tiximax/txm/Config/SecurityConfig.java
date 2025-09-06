@@ -71,13 +71,13 @@ public class SecurityConfig {
                         .maximumSessions(-1)
                         .sessionRegistry(sessionRegistry())
                 )
-                .oauth2Login(oauth2 -> oauth2
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/accounts/callback")
-                        )
-                        .defaultSuccessUrl("/accounts/callback", true)
-                        .failureUrl("/login?error")
-                )
+//                .oauth2Login(oauth2 -> oauth2
+//                        .redirectionEndpoint(redirection -> redirection
+//                                .baseUri("/accounts/callback")
+//                        )
+//                        .defaultSuccessUrl("/accounts/callback", true)
+//                        .failureUrl("/login?error")
+//                )
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -86,7 +86,7 @@ public class SecurityConfig {
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://tiximaxweb.vercel.app", "https://tiximax-three.vercel.app"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://tiximax-three.vercel.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

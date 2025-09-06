@@ -1,7 +1,6 @@
 package com.tiximax.txm.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.tiximax.txm.Enums.CustomerType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
