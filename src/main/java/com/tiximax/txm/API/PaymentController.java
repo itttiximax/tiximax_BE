@@ -80,4 +80,11 @@ public class PaymentController {
         return ResponseEntity.ok(payment);
     }
 
+    @GetMapping("/{orderId}/pending")
+    public ResponseEntity<Payment> getPendingPaymentByOrderId(@PathVariable Long orderId) {
+        Optional<Payment> payment = paymentService.getPendingPaymentByOrderId(orderId);
+        return payment.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 }

@@ -2,6 +2,7 @@ package com.tiximax.txm.Service;
 
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
+import com.tiximax.txm.Model.OrderDetail;
 import com.tiximax.txm.Model.OrderLinkRequest;
 import com.tiximax.txm.Model.OrdersRequest;
 import com.tiximax.txm.Repository.*;
@@ -213,6 +214,12 @@ public class OrdersService {
             throw new IllegalArgumentException("Trạng thái không hợp lệ!");
         }
         return ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+    }
+
+    public OrderDetail getOrderDetail(Long orderId) {
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+        return new OrderDetail(order);
     }
 
 }

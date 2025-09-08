@@ -4,6 +4,7 @@ import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
+import com.tiximax.txm.Model.OrderDetail;
 import com.tiximax.txm.Model.OrdersRequest;
 import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
@@ -88,6 +89,12 @@ public class OrdersController {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Orders> ordersPage = ordersService.getOrdersForPayment(pageable, status);
         return ResponseEntity.ok(ordersPage);
+    }
+
+    @GetMapping("/detail/{orderId}")
+    public ResponseEntity<OrderDetail> getOrderDetail(@PathVariable Long orderId) {
+        OrderDetail orderDetail = ordersService.getOrderDetail(orderId);
+        return ResponseEntity.ok(orderDetail);
     }
 
 }

@@ -184,7 +184,7 @@ public class PaymentService {
 
         Payment payment = new Payment();
         payment.setPaymentCode(generatePaymentCode());
-        payment.setContent("Thanh toán shipping cho đơn hàng: " + orders.getOrderCode());
+        payment.setContent(orders.getOrderCode());
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(shippingAmount);
         payment.setCollectedAmount(shippingAmount);
@@ -204,5 +204,12 @@ public class PaymentService {
 
     public Optional<Payment> getPaymentsById(Long paymentId) {
         return paymentRepository.findById(paymentId);
+    }
+
+    public Optional<Payment> getPendingPaymentByOrderId(Long orderId) {
+        if (!ordersRepository.existsById(orderId)) {
+            throw new RuntimeException("Không tìm thấy đơn hàng này!");
+        }
+        return paymentRepository.findFirstByOrdersOrderIdAndStatus(orderId, PaymentStatus.CHO_THANH_TOAN);
     }
 }

@@ -46,58 +46,58 @@ public class Orders {
 
     @ManyToOne
     @JoinColumn(name="customer_id", nullable = false)
-    @JsonIgnore
+//    @JsonIgnore
     Customer customer;
 
     @ManyToOne
     @JoinColumn(name="staff_id", nullable = false)
-    @JsonIgnore
+//    @JsonIgnore
     Staff staff;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
+//    @JsonIgnore
     Set<Warehouse> warehouses;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
+//    @JsonIgnore
     Set<Payment> payments;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
+//    @JsonIgnore
     Set<Purchases> purchases;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
+//    @JsonIgnore
     Set<Domestic> domestics;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
+//    @JsonIgnore
     Set<OrderProcessLog> orderProcessLogs;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
+//    @JsonIgnore
     Set<OrderLinks> orderLinks;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
+//    @JsonIgnore
     Set<ShipmentTracking> shipmentTrackings;
 
     @ManyToOne
     @JoinColumn(name="route_id", nullable = false)
-    @JsonIgnore
+//    @JsonIgnore
     Route route;
 
     @ManyToOne
     @JoinColumn(name="destination_id", nullable = false)
-    @JsonIgnore
+//    @JsonIgnore
     Destination destination;
 
     @OneToOne(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
+//    @JsonIgnore
     Feedback feedback;
 
     @ManyToOne
     @JoinColumn(name = "packing_id", nullable = true)
-    @JsonIgnore
+//    @JsonIgnore
     Packing packing;
 }
