@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -163,25 +162,25 @@ public class OrdersService {
         return ordersRepository.findAll();
     }
 
-    public Page<Orders> getOrdersPaging(Pageable pageable) {
+    public Page<Orders> getOrdersPaging(Pageable pageable, OrderStatus status) {
         Account currentAccount = accountUtils.getAccountCurrent();
         if (currentAccount.getRole().equals(AccountRoles.ADMIN) || currentAccount.getRole().equals(AccountRoles.MANAGER)) {
-            return ordersRepository.findAll(pageable);
+            return ordersRepository.findByStatus(status, pageable);
         } else if (currentAccount.getRole().equals(AccountRoles.STAFF_SALE)) {
-            return ordersRepository.findByStaffAccountId(currentAccount.getAccountId(), pageable);
+            return ordersRepository.findByStaffAccountIdAndStatus(currentAccount.getAccountId(), status, pageable);
         } else if (currentAccount.getRole().equals(AccountRoles.LEAD_SALE)) {
-////            Staff staff = (Staff) currentAccount;
-//            Set<Long> routeIds = staff.getRoutes().stream()
-//                    .map(Route::getRouteId)
-//                    .collect(Collectors.toSet());
-//            if (routeIds.isEmpty()) {
-//                return Page.empty(pageable);
-//            }
-//            return ordersRepository.findByRouteIdIn(routeIds, pageable);
+            List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+            Set<Long> routeIds = accountRoutes.stream()
+                    .map(AccountRoute::getRoute)
+                    .map(Route::getRouteId)
+                    .collect(Collectors.toSet());
+            if (routeIds.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            return ordersRepository.findByRouteRouteIdInAndStatus(routeIds, status, pageable);
         } else {
             throw new IllegalStateException("Vai trò không hợp lệ!");
         }
-        return null;
     }
 
     public List<Orders> getOrdersForCurrentStaff() {
@@ -206,4 +205,14 @@ public class OrdersService {
                 .filter(order -> routeIds.contains(order.getRoute().getRouteId()))
                 .collect(Collectors.toList());
     }
+
+    public Page<Orders> getOrdersForPayment(Pageable pageable, OrderStatus status) {
+        Long staffId = accountUtils.getAccountCurrent().getAccountId();
+        List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_XAC_NHAN, OrderStatus.CHO_THANH_TOAN_SHIP);
+        if (status == null || !validStatuses.contains(status)) {
+            throw new IllegalArgumentException("Trạng thái không hợp lệ!");
+        }
+        return ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+    }
+
 }

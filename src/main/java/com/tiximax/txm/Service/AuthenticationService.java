@@ -253,7 +253,7 @@ public class AuthenticationService implements UserDetailsService {
 
         Customer customer = new Customer();
         customer.setUsername(registerRequest.getPhone());
-        customer.setPassword(passwordEncoder.encode("tiximaxcamon"));
+        customer.setPassword(passwordEncoder.encode("123456"));
         customer.setEmail(registerRequest.getEmail());
         customer.setPhone(registerRequest.getPhone());
         customer.setName(registerRequest.getName());

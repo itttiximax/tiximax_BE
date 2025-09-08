@@ -2,6 +2,7 @@ package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Enums.OrderDestination;
+import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.OrdersRequest;
 import com.tiximax.txm.Service.OrdersService;
@@ -14,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -68,11 +68,11 @@ public class OrdersController {
         return ResponseEntity.ok(orders);
     }
 
-    @GetMapping("/{page}/{size}/paging")
-    public ResponseEntity<Page<Orders>> getOrdersPaging(@PathVariable int page, int size) {
+    @GetMapping("/{page}/{size}/{status}/paging")
+    public ResponseEntity<Page<Orders>> getOrdersPaging(@PathVariable int page, int size, @PathVariable(required = false) OrderStatus status) {
         Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Orders> ordersPage = ordersService.getOrdersPaging(pageable);
+        Page<Orders> ordersPage = ordersService.getOrdersPaging(pageable, status);
         return ResponseEntity.ok(ordersPage);
     }
 
@@ -80,6 +80,14 @@ public class OrdersController {
     public ResponseEntity<List<Orders>> getOrdersForCurrentStaff() {
         List<Orders> orders = ordersService.getOrdersForCurrentStaff();
         return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/for-payment/{page}/{size}/{status}")
+    public ResponseEntity<Page<Orders>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Orders> ordersPage = ordersService.getOrdersForPayment(pageable, status);
+        return ResponseEntity.ok(ordersPage);
     }
 
 }
