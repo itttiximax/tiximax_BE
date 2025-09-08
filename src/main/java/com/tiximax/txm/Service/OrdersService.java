@@ -208,7 +208,7 @@ public class OrdersService {
 
     public Page<Orders> getOrdersForPayment(Pageable pageable, OrderStatus status) {
         Long staffId = accountUtils.getAccountCurrent().getAccountId();
-        List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_XAC_NHAN, OrderStatus.CHO_THANH_TOAN_SHIP);
+        List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_XAC_NHAN, OrderStatus.CHO_THANH_TOAN_SHIP, OrderStatus.CHO_THANH_TOAN, OrderStatus.CHO_NHAP_KHO_VN);
         if (status == null || !validStatuses.contains(status)) {
             throw new IllegalArgumentException("Trạng thái không hợp lệ!");
         }
