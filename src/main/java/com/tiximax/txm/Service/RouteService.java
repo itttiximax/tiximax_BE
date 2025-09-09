@@ -25,7 +25,9 @@ public class RouteService {
         Route route = new Route();
         route.setName(routeRequest.getName());
         route.setShipTime(routeRequest.getShipTime());
-        route.setUnitShippingPrice(routeRequest.getUnitShippingPrice());
+        route.setUnitBuyingPrice(routeRequest.getUnitBuyingPrice());
+        route.setUnitDepositPrice(routeRequest.getUnitDepositPrice());
+        route.setExchangeRate(routeRequest.getExchangeRate());
         route.setNote(routeRequest.getNote());
 
         return routeRepository.save(route);
@@ -57,8 +59,14 @@ public class RouteService {
         if (!routeRequest.getShipTime().isEmpty()) {
             route.setShipTime(routeRequest.getShipTime());
         }
-        if (routeRequest.getUnitShippingPrice() != null) {
-            route.setUnitShippingPrice(routeRequest.getUnitShippingPrice());
+        if (routeRequest.getUnitDepositPrice() != null) {
+            route.setUnitDepositPrice(routeRequest.getUnitDepositPrice());
+        }
+        if (routeRequest.getUnitBuyingPrice() != null) {
+            route.setUnitBuyingPrice(routeRequest.getUnitBuyingPrice());
+        }
+        if (routeRequest.getExchangeRate() != null) {
+            route.setExchangeRate(routeRequest.getExchangeRate());
         }
         if (!routeRequest.getNote().isEmpty()) {
             route.setNote(routeRequest.getNote());

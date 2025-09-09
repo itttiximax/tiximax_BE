@@ -23,9 +23,11 @@ public class Route {
 
     private String shipTime;
 
-    private BigDecimal unitShippingPrice;
+    private BigDecimal unitDepositPrice;
 
-    private BigDecimal unitPurchasingPrice;
+    private BigDecimal unitBuyingPrice;
+
+    private BigDecimal exchangeRate;
 
     private String note;
 

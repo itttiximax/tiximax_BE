@@ -175,7 +175,7 @@ public class PaymentService {
             totalKg += warehouse.getWeight();
         }
 
-        BigDecimal unitShippingPrice = orders.getRoute().getUnitShippingPrice();
+        BigDecimal unitShippingPrice = orders.getRoute().getUnitBuyingPrice();
         if (unitShippingPrice == null) {
             throw new RuntimeException("Không tìm thấy giá ship niêm yết cho tuyến này!");
         }

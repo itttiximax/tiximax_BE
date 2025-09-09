@@ -16,7 +16,11 @@ public class RouteRequest {
 
     private String shipTime;
 
-    private BigDecimal unitShippingPrice;
+    private BigDecimal unitBuyingPrice;
+
+    private BigDecimal unitDepositPrice;
+
+    private BigDecimal exchangeRate;
 
     private String note;
 
