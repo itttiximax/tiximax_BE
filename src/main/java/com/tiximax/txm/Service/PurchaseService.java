@@ -7,11 +7,15 @@ import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
+import com.tiximax.txm.Model.OrderDetail;
+import com.tiximax.txm.Model.PurchaseDetail;
 import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PurchasesRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -101,4 +105,47 @@ public class PurchaseService {
         } while (purchasesRepository.existsByPurchaseCode(purchaseCode));
         return purchaseCode;
     }
+
+    public Page<Purchases> getAllPurchases(Pageable pageable) {
+        return purchasesRepository.findAll(pageable);
+    }
+
+    public PurchaseDetail getPurchaseById(Long purchaseId) {
+        Purchases purchases = purchasesRepository.findById(purchaseId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+        return new PurchaseDetail(purchases);
+    }
+
+//    public Purchases updatePurchase(Long id, Purchases purchaseDetails) {
+//        Purchases purchase = purchasesRepository.findById(id)
+//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua với ID: " + id));
+//
+//        // Cập nhật các trường cần thiết
+//        if (purchaseDetails.getPurchaseCode() != null) {
+//            purchase.setPurchaseCode(purchaseDetails.getPurchaseCode());
+//        }
+//        if (purchaseDetails.getPurchaseTime() != null) {
+//            purchase.setPurchaseTime(purchaseDetails.getPurchaseTime());
+//        }
+//        if (purchaseDetails.getNote() != null) {
+//            purchase.setNote(purchaseDetails.getNote());
+//        }
+//        if (purchaseDetails.getPurchaseImage() != null) {
+//            purchase.setPurchaseImage(purchaseDetails.getPurchaseImage());
+//        }
+//
+//        return purchasesRepository.save(purchase);
+//    }
+
+    public void deletePurchase(Long id) {
+        Purchases purchase = purchasesRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua này!"));
+
+        if (!purchase.getOrderLinks().isEmpty()) {
+
+        }
+
+        purchasesRepository.delete(purchase);
+    }
+
 }
