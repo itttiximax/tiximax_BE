@@ -122,11 +122,11 @@ public class OrdersService {
                     totalPriceVnd = totalPriceVnd.add(finalPrice);
                 }
             }
-            orderLinksRepository.saveAll(orderLinksList);
         }
         order.setOrderLinks(new HashSet<>(orderLinksList));
         order.setFinalPriceOrder(totalPriceVnd);
         order = ordersRepository.save(order);
+        orderLinksRepository.saveAll(orderLinksList);
         addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
         messagingTemplate.convertAndSend("/topic/orders", order);
         return order;
