@@ -89,12 +89,13 @@ public class PurchaseService {
 
         List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
         boolean hasActiveOrderLink = allOrderLinks.stream()
-                .anyMatch(link -> link.getStatus() == OrderLinkStatus.HOAT_DONG);
+                .anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_MUA);
 
         if (!hasActiveOrderLink) {
             order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
             ordersRepository.save(order);
         }
+
         return purchase;
     }
 

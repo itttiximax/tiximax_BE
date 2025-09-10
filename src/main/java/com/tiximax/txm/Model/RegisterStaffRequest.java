@@ -27,7 +27,7 @@ public class RegisterStaffRequest {
 
     private AccountRoles role;
 
-    private StaffDepartment department;
+    private String department;
 
     private String location;
 
