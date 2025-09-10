@@ -117,27 +117,6 @@ public class PurchaseService {
         return new PurchaseDetail(purchases);
     }
 
-//    public Purchases updatePurchase(Long id, Purchases purchaseDetails) {
-//        Purchases purchase = purchasesRepository.findById(id)
-//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua với ID: " + id));
-//
-//        // Cập nhật các trường cần thiết
-//        if (purchaseDetails.getPurchaseCode() != null) {
-//            purchase.setPurchaseCode(purchaseDetails.getPurchaseCode());
-//        }
-//        if (purchaseDetails.getPurchaseTime() != null) {
-//            purchase.setPurchaseTime(purchaseDetails.getPurchaseTime());
-//        }
-//        if (purchaseDetails.getNote() != null) {
-//            purchase.setNote(purchaseDetails.getNote());
-//        }
-//        if (purchaseDetails.getPurchaseImage() != null) {
-//            purchase.setPurchaseImage(purchaseDetails.getPurchaseImage());
-//        }
-//
-//        return purchasesRepository.save(purchase);
-//    }
-
     public void deletePurchase(Long id) {
         Purchases purchase = purchasesRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua này!"));

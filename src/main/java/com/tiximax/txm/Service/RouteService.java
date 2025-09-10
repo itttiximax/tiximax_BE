@@ -1,15 +1,24 @@
 package com.tiximax.txm.Service;
 
 import com.tiximax.txm.Entity.Route;
+import com.tiximax.txm.Model.ExchangeRateList;
 import com.tiximax.txm.Model.RouteRequest;
 import com.tiximax.txm.Repository.RouteRepository;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 public class RouteService {
+
+    private final String VCB_API = "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx";
 
     @Autowired
     private RouteRepository routeRepository;
@@ -82,5 +91,44 @@ public class RouteService {
             throw new IllegalStateException("Không thể xóa tuyến đường vì đã có đơn hàng liên kết!");
         }
         routeRepository.delete(route);
+    }
+
+    public ExchangeRateList getExchangeRate() throws Exception {
+        RestTemplate restTemplate = new RestTemplate();
+        String xmlResponse = restTemplate.getForObject(VCB_API, String.class);
+
+        JAXBContext jaxbContext = JAXBContext.newInstance(ExchangeRateList.class);
+        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+
+        return (ExchangeRateList) unmarshaller.unmarshal(new StringReader(xmlResponse));
+    }
+
+    @Scheduled(cron = "0 0 7 * * ?", zone = "Asia/Ho_Chi_Minh")
+    public void updateExchangeRate() throws Exception {
+        ExchangeRateList exchangeRateList = getExchangeRate();
+        List<ExchangeRateList.Exrate> exrates = exchangeRateList.getExrates();
+
+        List<Route> routes = routeRepository.findAll();
+
+        for (Route route : routes) {
+            String routeName = route.getName();
+            if (routeName != null) {
+                for (ExchangeRateList.Exrate exrate : exrates) {
+                    if (routeName.equals(exrate.getCurrencyCode())) {
+                        String sellValue = exrate.getSell().replaceAll(",", "");
+                        BigDecimal baseRate = new BigDecimal(sellValue);
+                        BigDecimal newRate;
+                        if ("USD".equals(routeName)) {
+                            newRate = baseRate.add(BigDecimal.valueOf(1000.00));
+                        } else {
+                            newRate = baseRate;
+                        }
+                        route.setExchangeRate(newRate);
+                        routeRepository.save(route);
+                        break;
+                    }
+                }
+            }
+        }
     }
 }

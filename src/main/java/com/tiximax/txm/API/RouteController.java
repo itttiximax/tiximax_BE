@@ -2,6 +2,7 @@ package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.AccountRoute;
 import com.tiximax.txm.Entity.Route;
+import com.tiximax.txm.Model.ExchangeRateList;
 import com.tiximax.txm.Model.RouteRequest;
 import com.tiximax.txm.Repository.AccountRouteRepository;
 import com.tiximax.txm.Service.AccountRouteService;
@@ -9,10 +10,14 @@ import com.tiximax.txm.Service.RouteService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -54,6 +59,38 @@ public class RouteController {
     public ResponseEntity<Void> deleteRoute(@PathVariable Long routeId) {
         routeService.deleteRoute(routeId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/exchange-rates")
+    public ResponseEntity<?> getExchangeRates() {
+        try {
+            ExchangeRateList rates = routeService.getExchangeRate();
+            return ResponseEntity.ok(rates);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to fetch exchange rates");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("timestamp", LocalDateTime.now());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorResponse);
+        }
+    }
+
+    @PutMapping("/update-exchange-rates")
+    public ResponseEntity<?> updateExchangeRates() {
+        try {
+            routeService.updateExchangeRate();
+            return ResponseEntity.ok().body("Exchange rates updated successfully");
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to update exchange rates");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("timestamp", LocalDateTime.now());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorResponse);
+        }
     }
 
 }
