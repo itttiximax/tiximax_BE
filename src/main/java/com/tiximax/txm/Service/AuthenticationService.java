@@ -146,7 +146,6 @@ public class AuthenticationService implements UserDetailsService {
         staff.setStaffCode(generateStaffCode());
         staff.setDepartment(registerRequest.getDepartment());
         staff.setLocation(registerRequest.getLocation());
-        staff = authenticationRepository.save(staff);
 
         List<Long> routeIds = registerRequest.getRouteIds();
         if (routeIds != null && !routeIds.isEmpty()) {
@@ -159,7 +158,7 @@ public class AuthenticationService implements UserDetailsService {
                 accountRouteRepository.save(accountRoute);
             }
         }
-
+        staff = authenticationRepository.save(staff);
         return staff;
     }
 

@@ -3,6 +3,8 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Account;
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Staff;
+import com.tiximax.txm.Enums.AccountRoles;
+import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.EmailDetail;
 import com.tiximax.txm.Model.LoginRequest;
 import com.tiximax.txm.Model.RegisterCustomerRequest;
@@ -136,6 +138,14 @@ public class AuthenticationController {
     public ResponseEntity<List<Customer>> searchCustomers(@RequestParam(required = false) String keyword) {
         List<Customer> customers = authenticationService.searchCustomersByPhoneOrName(keyword);
         return ResponseEntity.ok(customers);
+    }
+
+    @GetMapping("/enum-account-role")
+    public ResponseEntity<List<String>> getAccountrole() {
+        List<String> accountRole = Arrays.stream(AccountRoles.values())
+                .map(Enum::name)
+                .toList();
+        return ResponseEntity.ok(accountRole);
     }
 
 }
