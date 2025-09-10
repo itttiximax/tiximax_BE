@@ -155,10 +155,10 @@ public class AuthenticationService implements UserDetailsService {
                 AccountRoute accountRoute = new AccountRoute();
                 accountRoute.setAccount(staff);
                 accountRoute.setRoute(route);
+                staff = authenticationRepository.save(staff);
                 accountRouteRepository.save(accountRoute);
             }
         }
-        staff = authenticationRepository.save(staff);
         return staff;
     }
 

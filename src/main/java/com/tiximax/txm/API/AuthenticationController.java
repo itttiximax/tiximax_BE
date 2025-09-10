@@ -133,7 +133,7 @@ public class AuthenticationController {
 //        String jwt = tokenService.generateToken(account);
 //        return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}"));
 //    }
-//
+
     @GetMapping("/search")
     public ResponseEntity<List<Customer>> searchCustomers(@RequestParam(required = false) String keyword) {
         List<Customer> customers = authenticationService.searchCustomersByPhoneOrName(keyword);

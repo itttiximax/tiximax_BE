@@ -248,4 +248,10 @@ public class OrdersService {
         Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusWithLinks(routeIds, OrderStatus.CHO_MUA, pageable);
         return ordersPage.map(OrderWithLinks::new);
     }
+
+    public OrderLinks getOrderLinkById(Long orderLinkId) {
+        OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
+        return orderLink;
+    }
 }

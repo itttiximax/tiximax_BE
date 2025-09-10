@@ -1,5 +1,6 @@
 package com.tiximax.txm.API;
 
+import com.tiximax.txm.Entity.OrderLinks;
 import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
@@ -106,4 +107,9 @@ public class OrdersController {
         return ResponseEntity.ok(ordersPage);
     }
 
+    @GetMapping("/orderLink/{orderLinkId}")
+    public ResponseEntity<OrderLinks> getOrderLinkById(@PathVariable Long orderLinkId) {
+        OrderLinks orderLink = ordersService.getOrderLinkById(orderLinkId);
+        return ResponseEntity.ok(orderLink);
+    }
 }
