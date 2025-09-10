@@ -5,6 +5,7 @@ import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.OrderDetail;
+import com.tiximax.txm.Model.OrderWithLinks;
 import com.tiximax.txm.Model.OrdersRequest;
 import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
@@ -95,6 +96,14 @@ public class OrdersController {
     public ResponseEntity<OrderDetail> getOrderDetail(@PathVariable Long orderId) {
         OrderDetail orderDetail = ordersService.getOrderDetail(orderId);
         return ResponseEntity.ok(orderDetail);
+    }
+
+    @GetMapping("/with-links/{page}/{size}")
+    public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable);
+        return ResponseEntity.ok(ordersPage);
     }
 
 }

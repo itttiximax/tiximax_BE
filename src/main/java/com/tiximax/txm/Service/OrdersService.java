@@ -4,12 +4,14 @@ import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.OrderDetail;
 import com.tiximax.txm.Model.OrderLinkRequest;
+import com.tiximax.txm.Model.OrderWithLinks;
 import com.tiximax.txm.Model.OrdersRequest;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -51,6 +53,9 @@ public class OrdersService {
 
     @Autowired
     private AccountRouteRepository accountRouteRepository;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) throws IOException {
         if (customerCode == null){
@@ -123,6 +128,7 @@ public class OrdersService {
         order.setFinalPriceOrder(totalPriceVnd);
         order = ordersRepository.save(order);
         addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
+        messagingTemplate.convertAndSend("/topic/orders", order);
         return order;
     }
 
@@ -222,4 +228,24 @@ public class OrdersService {
         return new OrderDetail(order);
     }
 
+    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
+            throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
+        }
+
+        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+        Set<Long> routeIds = accountRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusWithLinks(routeIds, OrderStatus.CHO_MUA, pageable);
+        return ordersPage.map(OrderWithLinks::new);
+    }
 }

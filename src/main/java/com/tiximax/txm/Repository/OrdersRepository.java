@@ -39,4 +39,7 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
     @Query("SELECT o FROM Orders o WHERE o.staff.accountId = :staffId AND o.status = :status")
     Page<Orders> findByStaffAccountIdAndStatusForPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
 
+    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.orderLinks WHERE o.route.routeId IN :routeIds AND o.status = :status")
+    Page<Orders> findByRouteRouteIdInAndStatusWithLinks(@Param("routeIds") Set<Long> routeIds, @Param("status") OrderStatus status, Pageable pageable);
+
 }

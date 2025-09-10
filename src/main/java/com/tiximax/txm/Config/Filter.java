@@ -44,6 +44,7 @@ public class Filter extends OncePerRequestFilter {
             "/accounts/callback",
             "/orders/{customerCode}/{routeId}",
             "/images/upload-image",
+            "/websocket/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/swagger-resources/**"

@@ -58,6 +58,7 @@ public class SecurityConfig {
                                 "/orders/{customerCode}/{routeId}",
                                 "/accounts/login-google",
                                 "/accounts/callback",
+                                "/websocket/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
