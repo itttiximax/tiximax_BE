@@ -50,8 +50,8 @@ public class PurchaseService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng!");
         }
 
-        List<OrderLinks> orderLinks = orderLinksRepository.findByTrackingCodeIn(purchaseRequest.getPurchaseCode());
-        if (orderLinks.size() != purchaseRequest.getPurchaseCode().size()) {
+        List<OrderLinks> orderLinks = orderLinksRepository.findByTrackingCodeIn(purchaseRequest.getTrackingCode());
+        if (orderLinks.size() != purchaseRequest.getTrackingCode().size()) {
             throw new IllegalArgumentException("Một hoặc nhiều mã không được tìm thấy!");
         }
 

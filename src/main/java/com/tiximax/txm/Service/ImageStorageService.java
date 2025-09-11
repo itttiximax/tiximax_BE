@@ -71,4 +71,32 @@ public class ImageStorageService {
             throw new IOException("Upload ảnh thất bại: " + response.getStatusCode() + " - " + response.getBody());
         }
     }
+
+    public boolean deleteImage(String filePath) throws IOException {
+        if (filePath == null || filePath.isEmpty()) {
+            return true;
+        }
+
+        String fileName = filePath.contains(bucketName)
+                ? filePath.substring(filePath.indexOf(bucketName) + bucketName.length() + 1)
+                : filePath;
+        String deleteUrl = supabaseUrl + "/storage/v1/object/" + bucketName + "/" + fileName;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + supabaseKey);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        ResponseEntity<String> response = restTemplate.exchange(
+                deleteUrl,
+                org.springframework.http.HttpMethod.DELETE,
+                entity,
+                String.class
+        );
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            return true;
+        } else {
+            throw new IOException("Xóa ảnh thất bại: " + response.getStatusCode() + " - " + response.getBody());
+        }
+    }
 }

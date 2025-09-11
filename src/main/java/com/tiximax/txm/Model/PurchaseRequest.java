@@ -19,6 +19,6 @@ public class PurchaseRequest {
 
     private String note;
 
-    private List<String> purchaseCode;
+    private List<String> trackingCode;
 
 }

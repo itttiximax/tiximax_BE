@@ -4,7 +4,6 @@ import com.tiximax.txm.Entity.Account;
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Enums.AccountRoles;
-import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.EmailDetail;
 import com.tiximax.txm.Model.LoginRequest;
 import com.tiximax.txm.Model.RegisterCustomerRequest;
@@ -14,16 +13,10 @@ import com.tiximax.txm.Service.EmailService;
 import com.tiximax.txm.Service.TokenService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-
 import java.util.Arrays;
 import java.util.List;
 
