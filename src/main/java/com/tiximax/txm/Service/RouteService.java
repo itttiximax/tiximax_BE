@@ -13,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -119,9 +120,9 @@ public class RouteService {
                         BigDecimal baseRate = new BigDecimal(sellValue);
                         BigDecimal newRate;
                         if ("USD".equals(routeName)) {
-                            newRate = baseRate.add(BigDecimal.valueOf(1000.00));
+                            newRate = baseRate.add(BigDecimal.valueOf(1000.00)).setScale(2, RoundingMode.HALF_UP);
                         } else {
-                            newRate = baseRate;
+                            newRate = baseRate.setScale(2, RoundingMode.HALF_UP);
                         }
                         route.setExchangeRate(newRate);
                         routeRepository.save(route);
