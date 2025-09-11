@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Getter
@@ -17,5 +18,7 @@ public class PurchaseRequest {
     private String image;
 
     private String note;
+
+    private List<String> purchaseCode;
 
 }

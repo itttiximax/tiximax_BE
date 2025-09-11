@@ -2,6 +2,7 @@ package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Purchases;
 import com.tiximax.txm.Model.PurchaseDetail;
+import com.tiximax.txm.Model.PurchaseRequest;
 import com.tiximax.txm.Service.PurchaseService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +25,15 @@ public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
 
+//    @PostMapping("/same-shop")
+//    public ResponseEntity<Purchases> addPurchase(@RequestParam String orderCode, @RequestBody List<String> purchaseCode) {
+//        Purchases purchase = purchaseService.createPurchase(orderCode, purchaseCode);
+//        return ResponseEntity.ok(purchase);
+//    }
+
     @PostMapping("/same-shop")
-    public ResponseEntity<Purchases> addPurchase(@RequestParam String orderCode, @RequestBody List<String> purchaseCode) {
-        Purchases purchase = purchaseService.createPurchase(orderCode, purchaseCode);
+    public ResponseEntity<Purchases> addPurchase(@RequestParam String orderCode, @RequestBody PurchaseRequest purchaseRequest) {
+        Purchases purchase = purchaseService.createPurchase(orderCode, purchaseRequest);
         return ResponseEntity.ok(purchase);
     }
 

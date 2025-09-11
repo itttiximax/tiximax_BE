@@ -9,6 +9,7 @@ import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Model.OrderDetail;
 import com.tiximax.txm.Model.PurchaseDetail;
+import com.tiximax.txm.Model.PurchaseRequest;
 import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PurchasesRepository;
@@ -42,15 +43,15 @@ public class PurchaseService {
     @Autowired
     private AccountUtils accountUtils;
 
-    public Purchases createPurchase(String orderCode, List<String> purchaseCode) {
+    public Purchases createPurchase(String orderCode, PurchaseRequest purchaseRequest) {
         Orders order = ordersRepository.findByOrderCode(orderCode);
 
         if (order == null) {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng!");
         }
 
-        List<OrderLinks> orderLinks = orderLinksRepository.findByTrackingCodeIn(purchaseCode);
-        if (orderLinks.size() != purchaseCode.size()) {
+        List<OrderLinks> orderLinks = orderLinksRepository.findByTrackingCodeIn(purchaseRequest.getPurchaseCode());
+        if (orderLinks.size() != purchaseRequest.getPurchaseCode().size()) {
             throw new IllegalArgumentException("Một hoặc nhiều mã không được tìm thấy!");
         }
 
@@ -75,7 +76,8 @@ public class PurchaseService {
         purchase.setPurchaseTime(LocalDateTime.now());
         purchase.setStaff((Staff) accountUtils.getAccountCurrent());
         purchase.setOrders(order);
-        purchase.setNote("Mua hàng cho các OrderLinks thuộc đơn hàng " + orderCode);
+        purchase.setNote(purchaseRequest.getNote());
+        purchase.setPurchaseImage(purchaseRequest.getImage());
 
         for (OrderLinks orderLink : orderLinks) {
             orderLink.setPurchase(purchase);
@@ -95,7 +97,6 @@ public class PurchaseService {
             order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
             ordersRepository.save(order);
         }
-
         return purchase;
     }
 

@@ -87,8 +87,6 @@ public class OrdersService {
         order.setNote(ordersRequest.getNote());
         order.setRoute(route);
         order.setStaff((Staff) accountUtils.getAccountCurrent());
-//        order = ordersRepository.save(order);
-
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
 
         List<OrderLinks> orderLinksList = new ArrayList<>();
