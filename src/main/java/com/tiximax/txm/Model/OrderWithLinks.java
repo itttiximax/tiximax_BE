@@ -22,7 +22,6 @@ public class OrderWithLinks {
     private BigDecimal exchangeRate;
     private BigDecimal finalPriceOrder;
     private Boolean checkRequired;
-    private String note;
     private Set<OrderLinks> orderLinks;
 
     public OrderWithLinks(Orders order) {

@@ -30,11 +30,9 @@ public class EmailService {
 
             String text = templateEngine.process("emailtemplate", context);
 
-            // Creating a simple mail message
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
 
-            // Setting up necessary details
             mimeMessageHelper.setFrom("global.trans@tiximax.net");
             mimeMessageHelper.setTo(emailDetail.getRecipient());
             mimeMessageHelper.setText(text, true);
@@ -45,6 +43,7 @@ public class EmailService {
             messagingException.printStackTrace();
         }
     }
+
     public void sendMailNotification(EmailDetail emailDetail, String template){
         try{
             Context context = new Context();

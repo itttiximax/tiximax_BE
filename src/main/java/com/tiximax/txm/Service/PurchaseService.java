@@ -90,10 +90,10 @@ public class PurchaseService {
         ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_MUA_HANG);
 
         List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
-        boolean hasActiveOrderLink = allOrderLinks.stream()
-                .anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_MUA);
+        boolean allOrderLinksArePurchased = allOrderLinks.stream()
+                .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_MUA);
 
-        if (!hasActiveOrderLink) {
+        if (allOrderLinksArePurchased && !allOrderLinks.isEmpty()) {
             order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
             ordersRepository.save(order);
         }
