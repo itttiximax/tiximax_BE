@@ -36,6 +36,8 @@ public class OrderLinkRequest {
 
     private Long productTypeId;
 
+    private String note;
+
     private String groupTag;
 
 }

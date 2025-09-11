@@ -25,13 +25,7 @@ public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
 
-//    @PostMapping("/same-shop")
-//    public ResponseEntity<Purchases> addPurchase(@RequestParam String orderCode, @RequestBody List<String> purchaseCode) {
-//        Purchases purchase = purchaseService.createPurchase(orderCode, purchaseCode);
-//        return ResponseEntity.ok(purchase);
-//    }
-
-    @PostMapping("/same-shop")
+    @PostMapping("/add")
     public ResponseEntity<Purchases> addPurchase(@RequestParam String orderCode, @RequestBody PurchaseRequest purchaseRequest) {
         Purchases purchase = purchaseService.createPurchase(orderCode, purchaseRequest);
         return ResponseEntity.ok(purchase);

@@ -23,8 +23,6 @@ public class OrdersRequest {
 
     private Boolean checkRequired;
 
-    private String note;
-
     private List<OrderLinkRequest> orderLinkRequests;
 
 }

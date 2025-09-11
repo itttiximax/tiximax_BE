@@ -48,7 +48,6 @@ public class OrderDetail {
         this.exchangeRate = order.getExchangeRate();
         this.finalPriceOrder = order.getFinalPriceOrder();
         this.checkRequired = order.getCheckRequired();
-        this.note = order.getNote();
         this.customer = order.getCustomer();
         this.staff = order.getStaff();
         this.warehouses = order.getWarehouses();

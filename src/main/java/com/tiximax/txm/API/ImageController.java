@@ -31,4 +31,14 @@ public class ImageController {
         }
     }
 
+    @DeleteMapping("/delete-image")
+    public ResponseEntity<String> testDeleteImage(@RequestParam("filePath") String filePath) {
+        try {
+            boolean isDeleted = imageStorageService.deleteImage(filePath);
+            return ResponseEntity.ok("Xóa ảnh " + (isDeleted ? "thành công!" : "thất bại!"));
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body("Lỗi xóa: " + e.getMessage());
+        }
+    }
+
 }

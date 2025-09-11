@@ -42,8 +42,6 @@ public class Orders {
     @Column(nullable = false)
     private Boolean checkRequired;
 
-    private String note;
-
     @ManyToOne
     @JoinColumn(name="customer_id", nullable = false)
     @JsonIgnore

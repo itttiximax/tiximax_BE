@@ -84,7 +84,6 @@ public class OrdersService {
         order.setExchangeRate(ordersRequest.getExchangeRate());
         order.setDestination(destination.get());
         order.setCheckRequired(ordersRequest.getCheckRequired());
-        order.setNote(ordersRequest.getNote());
         order.setRoute(route);
         order.setStaff((Staff) accountUtils.getAccountCurrent());
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
@@ -109,6 +108,7 @@ public class OrdersService {
                 orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
                 orderLink.setProductType(productType);
                 orderLink.setStatus(OrderLinkStatus.HOAT_DONG);
+                orderLink.setNote(linkRequest.getNote());
                 orderLink.setGroupTag(linkRequest.getGroupTag());
                 orderLink.setTrackingCode(generateOrderLinkCode());
                 orderLink.setPurchaseImage(linkRequest.getPurchaseImage());

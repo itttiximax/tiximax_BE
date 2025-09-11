@@ -34,7 +34,6 @@ public class OrderWithLinks {
         this.exchangeRate = order.getExchangeRate();
         this.finalPriceOrder = order.getFinalPriceOrder();
         this.checkRequired = order.getCheckRequired();
-        this.note = order.getNote();
         this.orderLinks = order.getOrderLinks();
     }
 }

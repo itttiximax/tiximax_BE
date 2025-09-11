@@ -51,6 +51,8 @@ public class OrderLinks {
     @Enumerated(EnumType.STRING)
     private OrderLinkStatus status;
 
+    private String note;
+
     private String groupTag;
 
     @ManyToOne
