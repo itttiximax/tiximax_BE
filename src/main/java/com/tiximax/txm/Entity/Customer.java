@@ -16,12 +16,7 @@ public class Customer extends Account {
     @Column(unique = true, nullable = false)
     private String customerCode;
 
-//    @Enumerated(EnumType.STRING)
-//    private CustomerType type;
-
     private String address;
-
-//    private String taxCode;
 
     private String source;
 

@@ -2,7 +2,6 @@ package com.tiximax.txm.Model;
 
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.AccountStatus;
-import com.tiximax.txm.Enums.StaffDepartment;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +18,6 @@ public class UpdateAccountRequest {
     private AccountStatus status;
     private String address;
     private String source;
-    private StaffDepartment department;
+    private String department;
     private String location;
 }

@@ -7,7 +7,6 @@ import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
-import com.tiximax.txm.Model.OrderDetail;
 import com.tiximax.txm.Model.PurchaseDetail;
 import com.tiximax.txm.Model.PurchaseRequest;
 import com.tiximax.txm.Repository.OrderLinksRepository;
@@ -18,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
