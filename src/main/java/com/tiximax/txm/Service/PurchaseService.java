@@ -82,6 +82,7 @@ public class PurchaseService {
         for (OrderLinks orderLink : orderLinks) {
             orderLink.setPurchase(purchase);
             orderLink.setStatus(OrderLinkStatus.DA_MUA);
+            orderLink.setShipmentCode(purchaseRequest.getShipmentCode());
         }
         purchase.setOrderLinks(Set.copyOf(orderLinks));
 

@@ -48,6 +48,8 @@ public class OrderLinks {
 
     private String website;
 
+    private String shipmentCode;
+
     @Enumerated(EnumType.STRING)
     private OrderLinkStatus status;
 
