@@ -9,7 +9,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -22,7 +23,7 @@ public class OrderWithLinks {
     private BigDecimal exchangeRate;
     private BigDecimal finalPriceOrder;
     private Boolean checkRequired;
-    private Set<OrderLinks> orderLinks;
+    private List<OrderLinks> orderLinks;
 
     public OrderWithLinks(Orders order) {
         this.orderId = order.getOrderId();
@@ -33,6 +34,10 @@ public class OrderWithLinks {
         this.exchangeRate = order.getExchangeRate();
         this.finalPriceOrder = order.getFinalPriceOrder();
         this.checkRequired = order.getCheckRequired();
-        this.orderLinks = order.getOrderLinks();
+        this.orderLinks = new ArrayList<>(order.getOrderLinks());
+    }
+
+    public void setOrderLinks(List<OrderLinks> orderLinks) {
+        this.orderLinks = orderLinks != null ? new ArrayList<>(orderLinks) : null;
     }
 }

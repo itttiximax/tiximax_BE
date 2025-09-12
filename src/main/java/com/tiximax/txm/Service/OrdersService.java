@@ -244,7 +244,26 @@ public class OrdersService {
         }
 
         Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusWithLinks(routeIds, OrderStatus.CHO_MUA, pageable);
-        return ordersPage.map(OrderWithLinks::new);
+
+        return ordersPage.map(orders -> {
+            OrderWithLinks orderWithLinks = new OrderWithLinks(orders);
+
+            List<OrderLinks> sortedLinks = new ArrayList<>(orders.getOrderLinks());
+            sortedLinks.sort(Comparator.comparing(
+                    (OrderLinks link) -> {
+                        if (link.getStatus() == OrderLinkStatus.HOAT_DONG) return 0;
+                        if (link.getStatus() == OrderLinkStatus.DA_MUA) return 1;
+                        return 2;
+                    }
+            ).thenComparing(
+                    OrderLinks::getGroupTag,
+                    Comparator.nullsLast(Comparator.naturalOrder())
+            ));
+
+            orderWithLinks.setOrderLinks(sortedLinks);
+
+            return orderWithLinks;
+        });
     }
 
     public OrderLinks getOrderLinkById(Long orderLinkId) {
@@ -252,4 +271,5 @@ public class OrdersService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
         return orderLink;
     }
+
 }
