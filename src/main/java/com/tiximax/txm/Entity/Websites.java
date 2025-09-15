@@ -13,7 +13,8 @@ public class Websites {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "website_id")
-    private Long website;
+    private Long websiteId;
 
     private String websiteName;
+
 }

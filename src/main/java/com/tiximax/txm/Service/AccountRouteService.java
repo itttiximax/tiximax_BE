@@ -8,8 +8,6 @@ import com.tiximax.txm.Repository.AuthenticationRepository;
 import com.tiximax.txm.Repository.RouteRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,18 +44,6 @@ public class AccountRouteService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy AccountRoute với ID: " + accountRouteId));
     }
 
-//    public Page<AccountRoute> getAllAccountRoutes(Pageable pageable) {
-//        return accountRouteRepository.findAll(pageable);
-//    }
-
-//    public List<AccountRoute> getAllAccountRoutes() {
-//        return accountRouteRepository.findAll();
-//    }
-
-//    public AccountRoute updateAccountRoute(Long accountRouteId, Long accountId, Long routeId) {
-//        return null;
-//    }
-
     public void deleteAccountRoute(Long accountRouteId) {
         if (!accountRouteRepository.existsById(accountRouteId)) {
             throw new IllegalArgumentException("Không tìm thấy AccountRoute với ID: " + accountRouteId);
@@ -68,4 +54,5 @@ public class AccountRouteService {
     public List<Route> getByStaffId() {
         return accountRouteRepository.findRoutesByStaffId(accountUtils.getAccountCurrent().getAccountId());
     }
+
 }

@@ -45,4 +45,5 @@ public class DestinationService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy điểm đến này!"));
         destinationRepository.delete(destination);
     }
+
 }

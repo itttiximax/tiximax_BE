@@ -120,4 +120,5 @@ public class OrdersController {
         Map<String, Long> statistics = ordersService.getOrderStatusStatistics();
         return ResponseEntity.ok(statistics);
     }
+
 }

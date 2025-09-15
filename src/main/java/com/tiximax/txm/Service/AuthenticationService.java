@@ -211,27 +211,6 @@ public class AuthenticationService implements UserDetailsService {
         SecurityContextHolder.clearContext();
     }
 
-//    public Account findOrCreateGoogleAccount(String email, String name) {
-//        Account account = authenticationRepository.findByUsername(email);
-//        if (account != null) {
-//            System.out.println("Account found: " + email);
-//            return account;
-//        } else {
-//            Customer customer = new Customer();
-//            customer.setUsername(email);
-//            customer.setName(name);
-//            customer.setPassword(""); // Hoặc mã hóa nếu cần
-//            customer.setRole(AccountRoles.CUSTOMER);
-//            customer.setStatus(AccountStatus.HOAT_DONG);
-//            customer.setCreatedAt(LocalDateTime.now());
-//            customer.setCustomerCode(generateCustomerCode());
-//            customer.setAddress("Default Address");
-//            authenticationRepository.save(customer);
-//            System.out.println("New customer saved: " + email); // Log để check DB
-//            return customer;
-//        }
-//    }
-
     public List<Customer> searchCustomersByPhoneOrName(String keyword) {
         return customerRepository.findByPhoneOrNameContainingAndStaffId(keyword, accountUtils.getAccountCurrent().getAccountId());
     }
