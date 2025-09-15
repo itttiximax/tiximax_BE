@@ -20,14 +20,12 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
-    // Create a new Payment
     @PostMapping("{orderCode}")
     public ResponseEntity<Payment> createPayment(@PathVariable String orderCode) {
         Payment createdPayment = paymentService.createPayment(orderCode);
         return ResponseEntity.ok(createdPayment);
     }
 
-    // Get all Payments by orderId
     @GetMapping("/order/{orderCode}")
     public ResponseEntity<List<Payment>> getPaymentsByOrderId(@PathVariable String orderCode) {
         List<Payment> payments = paymentService.getPaymentsByOrderCode(orderCode);
@@ -40,7 +38,7 @@ public class PaymentController {
         return ResponseEntity.ok(createdShippingPayment);
     }
 
-    @GetMapping("/{paymentCode}")
+    @GetMapping("code/{paymentCode}")
     public ResponseEntity<Payment> getPaymentById(@PathVariable String paymentCode) {
         Optional<Payment> payment = paymentService.getPaymentByCode(paymentCode);
         return payment.map(ResponseEntity::ok)
@@ -53,7 +51,7 @@ public class PaymentController {
         return ResponseEntity.ok(confirmedPayment);
     }
 
-    @GetMapping("/{paymentId}")
+    @GetMapping("id/{paymentId}")
     public ResponseEntity<Optional<Payment>> getPaymentsByOrderId(@PathVariable Long paymentId) {
         Optional<Payment> payment = paymentService.getPaymentsById(paymentId);
         return ResponseEntity.ok(payment);

@@ -95,35 +95,6 @@ public class PaymentService {
         return paymentRepository.findByPaymentCode(paymentCode);
     }
 
-    public Payment updatePayment(String paymentCode, Payment updatedPayment) {
-        Optional<Payment> existingPayment = paymentRepository.findByPaymentCode(paymentCode);
-        if (existingPayment.isPresent()) {
-            Payment payment = existingPayment.get();
-            payment.setPaymentCode(updatedPayment.getPaymentCode());
-            payment.setContent(updatedPayment.getContent());
-            payment.setPaymentType(updatedPayment.getPaymentType());
-            payment.setAmount(updatedPayment.getAmount());
-            payment.setCollectedAmount(updatedPayment.getCollectedAmount());
-            payment.setStatus(updatedPayment.getStatus());
-            payment.setQrCode(updatedPayment.getQrCode());
-            payment.setActionAt(updatedPayment.getActionAt());
-            payment.setCustomer(updatedPayment.getCustomer());
-            payment.setStaff(updatedPayment.getStaff());
-            payment.setOrders(updatedPayment.getOrders());
-            return paymentRepository.save(payment);
-        } else {
-            throw new RuntimeException("Không tìm thấy giao dịch này!");
-        }
-    }
-
-    public void deletePayment(String paymentCode) {
-        if (paymentRepository.existsByPaymentCode(paymentCode)) {
-            paymentRepository.deleteByPaymentCode(paymentCode);
-        } else {
-            throw new RuntimeException("Không tìm thấy giao dịch này!");
-        }
-    }
-
     public String generatePaymentCode() {
         String paymentCode;
         do {
