@@ -2,10 +2,7 @@ package com.tiximax.txm.Service;
 
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
-import com.tiximax.txm.Model.OrderDetail;
-import com.tiximax.txm.Model.OrderLinkRequest;
-import com.tiximax.txm.Model.OrderWithLinks;
-import com.tiximax.txm.Model.OrdersRequest;
+import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -211,13 +208,21 @@ public class OrdersService {
                 .collect(Collectors.toList());
     }
 
-    public Page<Orders> getOrdersForPayment(Pageable pageable, OrderStatus status) {
+    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status) {
         Long staffId = accountUtils.getAccountCurrent().getAccountId();
         List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_XAC_NHAN, OrderStatus.CHO_THANH_TOAN_SHIP, OrderStatus.CHO_THANH_TOAN, OrderStatus.CHO_NHAP_KHO_VN);
         if (status == null || !validStatuses.contains(status)) {
             throw new IllegalArgumentException("Trạng thái không hợp lệ!");
         }
-        return ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+        System.out.println("Debug - getOrdersForPayment: Staff ID = " + staffId + ", Status = " + status + ", Total Elements = " + ordersPage.getTotalElements());
+        return ordersPage.map(order -> {
+            OrderPayment orderPayment = new OrderPayment(order);
+            if (!(status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.CHO_THANH_TOAN_SHIP)) {
+                orderPayment.setPaymentCode(null);
+            }
+            return orderPayment;
+        });
     }
 
     public OrderDetail getOrderDetail(Long orderId) {
@@ -270,6 +275,29 @@ public class OrdersService {
         OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
         return orderLink;
+    }
+
+    public Map<String, Long> getOrderStatusStatistics() {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff)) {
+            throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập thống kê này!");
+        }
+        Long staffId = currentAccount.getAccountId();
+
+        List<OrderStatus> statusesToCount = Arrays.asList(
+                OrderStatus.DA_XAC_NHAN,
+                OrderStatus.CHO_THANH_TOAN,
+                OrderStatus.CHO_MUA,
+                OrderStatus.CHO_THANH_TOAN_SHIP
+        );
+
+        Map<String, Long> statistics = new HashMap<>();
+        for (OrderStatus status : statusesToCount) {
+            long count = ordersRepository.countByStaffAccountIdAndStatus(staffId, status);
+            statistics.put(status.name(), count);
+        }
+
+        return statistics;
     }
 
 }

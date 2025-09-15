@@ -1,19 +1,15 @@
 package com.tiximax.txm.API;
 
-import com.tiximax.txm.Entity.AccountRoute;
 import com.tiximax.txm.Entity.Route;
 import com.tiximax.txm.Model.ExchangeRateList;
 import com.tiximax.txm.Model.RouteRequest;
-import com.tiximax.txm.Repository.AccountRouteRepository;
 import com.tiximax.txm.Service.AccountRouteService;
 import com.tiximax.txm.Service.RouteService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +19,7 @@ import java.util.Map;
 @CrossOrigin
 @RequestMapping("/routes")
 @SecurityRequirement(name = "bearerAuth")
+
 public class RouteController {
 
     @Autowired

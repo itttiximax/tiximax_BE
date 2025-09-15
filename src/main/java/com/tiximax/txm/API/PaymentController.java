@@ -47,27 +47,6 @@ public class PaymentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Update an existing Payment
-//    @PutMapping("/{paymentCode}")
-//    public ResponseEntity<Payment> updatePayment(@PathVariable String paymentCode, @RequestBody Payment payment) {
-//        try {
-//            Payment updatedPayment = paymentService.updatePayment(paymentCode, payment);
-//            return ResponseEntity.ok(updatedPayment);
-//        } catch (RuntimeException e) {
-//            return ResponseEntity.notFound().build();
-//        }
-//    }
-
-//    @DeleteMapping("/{paymentCode}")
-//    public ResponseEntity<Void> deletePayment(@PathVariable String paymentCode) {
-//        try {
-//            paymentService.deletePayment(paymentCode);
-//            return ResponseEntity.noContent().build();
-//        } catch (RuntimeException e) {
-//            return ResponseEntity.notFound().build();
-//        }
-//    }
-
     @PutMapping("/confirm/{paymentCode}")
     public ResponseEntity<Payment> confirmPayment(@PathVariable String paymentCode) {
         Payment confirmedPayment = paymentService.confirmedPayment(paymentCode);

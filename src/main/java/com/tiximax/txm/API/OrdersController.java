@@ -6,6 +6,7 @@ import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.OrderDetail;
+import com.tiximax.txm.Model.OrderPayment;
 import com.tiximax.txm.Model.OrderWithLinks;
 import com.tiximax.txm.Model.OrdersRequest;
 import com.tiximax.txm.Service.OrdersService;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -86,10 +88,10 @@ public class OrdersController {
     }
 
     @GetMapping("/for-payment/{page}/{size}/{status}")
-    public ResponseEntity<Page<Orders>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
+    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
         Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Orders> ordersPage = ordersService.getOrdersForPayment(pageable, status);
+        Page<OrderPayment> ordersPage = ordersService.getOrdersForPayment(pageable, status);
         return ResponseEntity.ok(ordersPage);
     }
 
@@ -111,5 +113,11 @@ public class OrdersController {
     public ResponseEntity<OrderLinks> getOrderLinkById(@PathVariable Long orderLinkId) {
         OrderLinks orderLink = ordersService.getOrderLinkById(orderLinkId);
         return ResponseEntity.ok(orderLink);
+    }
+
+    @GetMapping("/statistics/for-payment")
+    public ResponseEntity<Map<String, Long>> getOrderStatusStatistics() {
+        Map<String, Long> statistics = ordersService.getOrderStatusStatistics();
+        return ResponseEntity.ok(statistics);
     }
 }
