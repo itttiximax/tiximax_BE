@@ -48,4 +48,12 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
     @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.mergedPayment WHERE o.orderCode IN :codes")
     List<Orders> findByOrderCodeInWithMergedPayment(@Param("codes") List<String> codes);
 
+    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.payments LEFT JOIN FETCH o.mergedPayment " +
+            "WHERE o.staff.accountId = :staffId AND o.status = :status")
+    Page<Orders> findByStaffAccountIdAndStatusForPaymentWithMergedPayment(
+            @Param("staffId") Long staffId,
+            @Param("status") OrderStatus status,
+            Pageable pageable
+    );
+
 }
