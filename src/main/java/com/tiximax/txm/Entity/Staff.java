@@ -48,4 +48,9 @@ public class Staff extends Account {
     @JsonIgnore
     Set<Payment> payments;
 
+    @ManyToOne
+    @JoinColumn(name = "warehouse_location_id", nullable = true)
+    @JsonIgnore
+    WarehouseLocation warehouseLocation;
+
 }

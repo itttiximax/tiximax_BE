@@ -24,9 +24,16 @@ public class WarehouseController {
     @Autowired
     private AccountUtils accountUtils;
 
-    @PostMapping("/{purchaseId}/{locationId}")
-    public ResponseEntity<List<Warehouse>> createWarehouseEntry(@PathVariable Long purchaseId, @PathVariable Long locationId, @RequestBody WarehouseRequest warehouseRequest) {
-        List<Warehouse> warehouses = warehouseService.createWarehouseEntry(purchaseId, locationId, warehouseRequest);
+//    @PostMapping("/{purchaseId}/{locationId}")
+//    public ResponseEntity<List<Warehouse>> createWarehouseEntry(@PathVariable Long purchaseId, @PathVariable Long locationId, @RequestBody WarehouseRequest warehouseRequest) {
+//        List<Warehouse> warehouses = warehouseService.createWarehouseEntry(purchaseId, locationId, warehouseRequest);
+//        return ResponseEntity.ok(warehouses);
+//    }
+
+    @PostMapping("/{shipmentCode}")
+    public ResponseEntity<List<Warehouse>> createWarehouseEntry(@PathVariable String shipmentCode, @RequestBody WarehouseRequest warehouseRequest) {
+
+        List<Warehouse> warehouses = warehouseService.createWarehouseEntry(shipmentCode, warehouseRequest);
         return ResponseEntity.ok(warehouses);
     }
 

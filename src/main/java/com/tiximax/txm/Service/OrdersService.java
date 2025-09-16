@@ -287,7 +287,7 @@ public class OrdersService {
         List<OrderStatus> statusesToCount = Arrays.asList(
                 OrderStatus.DA_XAC_NHAN,
                 OrderStatus.CHO_THANH_TOAN,
-                OrderStatus.CHO_MUA,
+                OrderStatus.CHO_NHAP_KHO_VN,
                 OrderStatus.CHO_THANH_TOAN_SHIP
         );
 

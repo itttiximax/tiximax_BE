@@ -39,4 +39,7 @@ public class WarehouseLocation {
     @JsonIgnore
     Set<Domestic> domestics;
 
+    @OneToMany(mappedBy = "warehouseLocation", cascade = CascadeType.ALL)
+    Set<Staff> staff;
+
 }
