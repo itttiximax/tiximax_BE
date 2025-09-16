@@ -98,4 +98,9 @@ public class Orders {
     @JoinColumn(name = "packing_id", nullable = true)
     @JsonIgnore
     Packing packing;
+
+    @ManyToOne
+    @JoinColumn(name = "merged_payment_id", nullable = true)
+    @JsonIgnore
+    MergedPayment mergedPayment;
 }
