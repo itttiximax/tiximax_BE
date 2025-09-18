@@ -40,4 +40,8 @@ public class WebsiteService {
         return websiteRepository.findByWebsiteNameContaining(keyword);
     }
 
+    public List<Websites> getAllWebsites() {
+        return websiteRepository.findAll();
+    }
+
 }

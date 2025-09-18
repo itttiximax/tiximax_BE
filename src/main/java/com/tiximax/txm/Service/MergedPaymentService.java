@@ -75,7 +75,8 @@ public class MergedPaymentService {
         mergedPayment.setContent(mergedPayment.getPaymentCode());
         mergedPayment.setCustomer(orders.get(0).getCustomer());
         mergedPayment.setStaff((Staff) accountUtils.getAccountCurrent());
-        mergedPayment.setOrders(new HashSet<>(orders));
+
+        mergedPaymentRepository.save(mergedPayment);
 
         orders.forEach(order -> {
             order.setMergedPayment(mergedPayment);
@@ -83,8 +84,10 @@ public class MergedPaymentService {
             ordersService.addProcessLog(order, mergedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
         });
 
-        mergedPaymentRepository.save(mergedPayment);
         ordersRepository.saveAll(orders);
+
+        mergedPayment.setOrders(new HashSet<>(orders));
+        mergedPaymentRepository.save(mergedPayment);
 
         return mergedPayment;
     }

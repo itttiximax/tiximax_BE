@@ -58,4 +58,10 @@ public class WebsiteController {
         return ResponseEntity.ok(websites);
     }
 
+    @GetMapping
+    public ResponseEntity<List<Websites>> getAllWebsites() {
+        List<Websites> websites = websiteService.getAllWebsites();
+        return ResponseEntity.ok(websites);
+    }
+
 }

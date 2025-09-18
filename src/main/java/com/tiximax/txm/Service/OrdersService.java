@@ -77,6 +77,7 @@ public class OrdersService {
         order.setOrderCode(generateOrderCode(ordersRequest.getOrderType()));
         order.setOrderType(ordersRequest.getOrderType());
         order.setStatus(OrderStatus.DA_XAC_NHAN);
+        order.setMergedPayment(null);
         order.setCreatedAt(LocalDateTime.now());
         order.setExchangeRate(ordersRequest.getExchangeRate());
         order.setDestination(destination.get());
@@ -330,6 +331,10 @@ public class OrdersService {
         }
 
         List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_XAC_NHAN);
+
+        if (orders.size() < 2){
+            throw new IllegalStateException("Khách hàng này không đủ đơn để gộp thanh toán!");
+        }
 
         return orders.stream()
                 .map(order -> {
