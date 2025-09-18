@@ -40,11 +40,11 @@ public class PaymentService {
     @Autowired
     private OrdersService ordersService;
 
-    @Autowired
-    private WarehouseService warehouseService;
+//    @Autowired
+//    private WarehouseService warehouseService;
 
-    @Autowired
-    private WarehouseRepository warehouseRepository;
+//    @Autowired
+//    private WarehouseRepository warehouseRepository;
 
     @Autowired
     private ProcessLogRepository processLogRepository;
@@ -123,55 +123,55 @@ public class PaymentService {
         }
     }
 
-    public Payment createShippingPayment(String orderCode) {
-        Orders orders = ordersRepository.findByOrderCode(orderCode);
-        if (orders == null) {
-            throw new RuntimeException("Không tìm thấy đơn hàng này!");
-        }
-
-        if (!orders.getStatus().equals(OrderStatus.CHO_THANH_TOAN_SHIP)){
-            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để thanh toán phí ship!");
-        }
-
-        Set<Purchases> purchases = orders.getPurchases();
-        for (Purchases purchase : purchases) {
-            if (!warehouseService.isPurchaseFullyReceived(purchase.getPurchaseId())) {
-                throw new RuntimeException("Đơn hàng chưa đủ hàng trong kho để tạo thanh toán shipping!");
-            }
-        }
-
-        List<Warehouse> warehouses = warehouseRepository.findByOrdersOrderCode(orderCode);
-        double totalKg = 0;
-        for (Warehouse warehouse : warehouses) {
-            totalKg += warehouse.getWeight();
-        }
-
-        BigDecimal unitShippingPrice = orders.getRoute().getUnitBuyingPrice();
-        if (unitShippingPrice == null) {
-            throw new RuntimeException("Không tìm thấy giá ship niêm yết cho tuyến này!");
-        }
-
-        BigDecimal shippingAmount = unitShippingPrice.multiply(BigDecimal.valueOf(totalKg));
-
-        Payment payment = new Payment();
-        payment.setPaymentCode(generatePaymentCode());
-        payment.setContent(orders.getOrderCode());
-        payment.setPaymentType(PaymentType.MA_QR);
-        payment.setAmount(shippingAmount);
-        payment.setCollectedAmount(shippingAmount);
-        payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber+ "-print.png?amount=" + shippingAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
-        payment.setQrCode(qrCodeUrl);
-        payment.setActionAt(LocalDateTime.now());
-        payment.setCustomer(orders.getCustomer());
-        payment.setStaff((Staff) accountUtils.getAccountCurrent());
-        payment.setOrders(orders);
-
-        Payment savedPayment = paymentRepository.save(payment);
-        ordersService.addProcessLog(orders, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_SHIP);
-
-        return savedPayment;
-    }
+//    public Payment createShippingPayment(String orderCode) {
+//        Orders orders = ordersRepository.findByOrderCode(orderCode);
+//        if (orders == null) {
+//            throw new RuntimeException("Không tìm thấy đơn hàng này!");
+//        }
+//
+//        if (!orders.getStatus().equals(OrderStatus.CHO_THANH_TOAN_SHIP)){
+//            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để thanh toán phí ship!");
+//        }
+//
+//        Set<Purchases> purchases = orders.getPurchases();
+//        for (Purchases purchase : purchases) {
+//            if (!warehouseService.isPurchaseFullyReceived(purchase.getPurchaseId())) {
+//                throw new RuntimeException("Đơn hàng chưa đủ hàng trong kho để tạo thanh toán shipping!");
+//            }
+//        }
+//
+//        List<Warehouse> warehouses = warehouseRepository.findByOrdersOrderCode(orderCode);
+//        double totalKg = 0;
+//        for (Warehouse warehouse : warehouses) {
+//            totalKg += warehouse.getWeight();
+//        }
+//
+//        BigDecimal unitShippingPrice = orders.getRoute().getUnitBuyingPrice();
+//        if (unitShippingPrice == null) {
+//            throw new RuntimeException("Không tìm thấy giá ship niêm yết cho tuyến này!");
+//        }
+//
+//        BigDecimal shippingAmount = unitShippingPrice.multiply(BigDecimal.valueOf(totalKg));
+//
+//        Payment payment = new Payment();
+//        payment.setPaymentCode(generatePaymentCode());
+//        payment.setContent(orders.getOrderCode());
+//        payment.setPaymentType(PaymentType.MA_QR);
+//        payment.setAmount(shippingAmount);
+//        payment.setCollectedAmount(shippingAmount);
+//        payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+//        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber+ "-print.png?amount=" + shippingAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+//        payment.setQrCode(qrCodeUrl);
+//        payment.setActionAt(LocalDateTime.now());
+//        payment.setCustomer(orders.getCustomer());
+//        payment.setStaff((Staff) accountUtils.getAccountCurrent());
+//        payment.setOrders(orders);
+//
+//        Payment savedPayment = paymentRepository.save(payment);
+//        ordersService.addProcessLog(orders, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_SHIP);
+//
+//        return savedPayment;
+//    }
 
     public Optional<Payment> getPaymentsById(Long paymentId) {
         return paymentRepository.findById(paymentId);

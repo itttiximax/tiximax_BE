@@ -25,4 +25,12 @@ public class MergedPaymentController {
         return ResponseEntity.ok(mergedPayment);
     }
 
+    @PutMapping("/confirm/{paymentCode}")
+    public ResponseEntity<MergedPayment> confirmMergedPayment(@PathVariable String paymentCode) {
+        MergedPayment mergedPayment = mergedPaymentService.confirmMergedPayment(paymentCode);
+        return ResponseEntity.ok(mergedPayment);
+    }
+
+
+
 }

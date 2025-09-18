@@ -121,4 +121,10 @@ public class OrdersController {
         return ResponseEntity.ok(statistics);
     }
 
+    @GetMapping("/orders/by-customer/{customerCode}")
+    public ResponseEntity<List<OrderPayment>> getOrdersByCustomer(@PathVariable String customerCode) {
+        List<OrderPayment> orders = ordersService.getOrdersByCustomerCode(customerCode);
+        return ResponseEntity.ok(orders);
+    }
+
 }

@@ -89,6 +89,28 @@ public class MergedPaymentService {
         return mergedPayment;
     }
 
+    public MergedPayment confirmMergedPayment(String paymentCode) {
+        MergedPayment mergedPayment = mergedPaymentRepository.findByPaymentCodeWithOrders(paymentCode)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch gộp này!"));
+
+        if (!mergedPayment.getStatus().equals(PaymentStatus.CHO_THANH_TOAN)) {
+            throw new RuntimeException("Trạng thái giao dịch gộp không phù hợp!");
+        }
+
+        mergedPayment.setStatus(PaymentStatus.DA_THANH_TOAN);
+        mergedPayment.setActionAt(LocalDateTime.now());
+
+        mergedPayment.getOrders().forEach(order -> {
+            order.setStatus(OrderStatus.CHO_MUA);
+            ordersService.addProcessLog(order, paymentCode, ProcessLogAction.DA_THANH_TOAN);
+        });
+
+        mergedPaymentRepository.save(mergedPayment);
+        ordersRepository.saveAll(mergedPayment.getOrders());
+
+        return mergedPayment;
+    }
+
     public String generatePaymentCode() {
         String paymentCode;
         do {
@@ -97,4 +119,4 @@ public class MergedPaymentService {
         return paymentCode;
     }
 
-}
+    }

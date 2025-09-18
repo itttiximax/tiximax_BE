@@ -209,17 +209,21 @@ public class OrdersService {
     }
 
     public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status) {
+
         Long staffId = accountUtils.getAccountCurrent().getAccountId();
+
         List<OrderStatus> validStatuses = Arrays.asList(
                 OrderStatus.DA_XAC_NHAN,
                 OrderStatus.CHO_THANH_TOAN_SHIP,
                 OrderStatus.CHO_THANH_TOAN,
                 OrderStatus.CHO_NHAP_KHO_VN);
+
         if (status == null || !validStatuses.contains(status)) {
             throw new IllegalArgumentException("Trạng thái không hợp lệ!");
         }
-//        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+
         Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPaymentWithMergedPayment(staffId, status, pageable);
+
         return ordersPage.map(order -> {
             OrderPayment orderPayment = new OrderPayment(order);
             if (status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.CHO_THANH_TOAN_SHIP) {
@@ -238,13 +242,6 @@ public class OrdersService {
             }
             return orderPayment;
         });
-        //        return ordersPage.map(order -> {
-//            OrderPayment orderPayment = new OrderPayment(order);
-//            if (!(status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.CHO_THANH_TOAN_SHIP)) {
-//                orderPayment.setPaymentCode(null);
-//            }
-//            return orderPayment;
-//        });
     }
 
     public OrderDetail getOrderDetail(Long orderId) {
@@ -320,6 +317,26 @@ public class OrdersService {
         }
 
         return statistics;
+    }
+
+    public List<OrderPayment> getOrdersByCustomerCode(String customerCode) {
+        Customer customer = authenticationRepository.findByCustomerCode(customerCode);
+        if (customer == null) {
+            throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
+        }
+
+        if (!customer.getStaffId().equals(accountUtils.getAccountCurrent().getAccountId())) {
+            throw new IllegalStateException("Bạn không có quyền truy cập đơn hàng của khách hàng này!");
+        }
+
+        List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_XAC_NHAN);
+
+        return orders.stream()
+                .map(order -> {
+                    OrderPayment orderPayment = new OrderPayment(order);
+                    return orderPayment;
+                })
+                .collect(Collectors.toList());
     }
 
 }

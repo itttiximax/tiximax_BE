@@ -15,8 +15,6 @@ public class WarehouseRequest {
     @Setter
     public static class ProductDetail {
 
-        private Long orderLinkId;
-
         private Double length;
 
         private Double width;

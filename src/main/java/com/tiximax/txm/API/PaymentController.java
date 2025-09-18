@@ -32,11 +32,11 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
-    @PostMapping("/shipping/{orderCode}")
-    public ResponseEntity<Payment> createShippingPayment(@PathVariable String orderCode) {
-        Payment createdShippingPayment = paymentService.createShippingPayment(orderCode);
-        return ResponseEntity.ok(createdShippingPayment);
-    }
+//    @PostMapping("/shipping/{orderCode}")
+//    public ResponseEntity<Payment> createShippingPayment(@PathVariable String orderCode) {
+//        Payment createdShippingPayment = paymentService.createShippingPayment(orderCode);
+//        return ResponseEntity.ok(createdShippingPayment);
+//    }
 
     @GetMapping("code/{paymentCode}")
     public ResponseEntity<Payment> getPaymentById(@PathVariable String paymentCode) {

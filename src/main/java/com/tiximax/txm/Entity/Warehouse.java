@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -67,9 +68,8 @@ public class Warehouse {
     @JsonIgnore
     Purchases purchase;
 
-    @ManyToOne
-    @JoinColumn(name="order_link_id", nullable = false)
+    @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL)
     @JsonIgnore
-    OrderLinks orderLink;
+    private Set<OrderLinks> orderLinks;
 
 }

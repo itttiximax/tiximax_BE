@@ -72,7 +72,8 @@ public class OrderLinks {
     @JsonIgnore
     ProductType productType;
 
-    @OneToMany(mappedBy = "orderLink", cascade = CascadeType.ALL)
+    @ManyToOne
+    @JoinColumn(name="warehouse_id", nullable = true)
     @JsonIgnore
-    Set<Warehouse> warehouses;
+    Warehouse warehouse;
 }

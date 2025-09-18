@@ -13,13 +13,4 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
     boolean existsByTrackingCode(String trackingCode);
 
-    Optional<Warehouse> findByTrackingCode(String trackingCode);
-
-    List<Warehouse> findByOrdersOrderCode(String orderCode);
-
-    List<Warehouse> findByPurchasePurchaseId(Long purchaseId);
-
-    boolean existsByPurchasePurchaseIdAndOrderLinkLinkId(Long purchaseId, Long orderLinkId);
-
-    boolean existsByOrderLinkLinkId(Long orderLinkId);
 }

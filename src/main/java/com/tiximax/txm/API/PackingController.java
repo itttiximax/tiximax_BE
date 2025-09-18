@@ -17,33 +17,33 @@ import java.util.List;
 
 public class PackingController {
 
-    @Autowired
-    private PackingService packingService;
-
-    @PostMapping
-    public ResponseEntity<Packing> createPacking(@RequestBody PackingRequest request) {
-        Packing packing = packingService.createPacking(request);
-        return ResponseEntity.ok(packing);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Packing> getPackingById(@PathVariable Long id) {
-        Packing packing = packingService.getPackingById(id);
-        return ResponseEntity.ok(packing);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Packing>> getAllPackings() {
-        List<Packing> packings = packingService.getAllPackings();
-        return ResponseEntity.ok(packings);
-    }
-
-    @PutMapping("/{id}/packing-list")
-    public ResponseEntity<Packing> updatePackingList(
-            @PathVariable Long id,
-            @RequestBody List<String> packingList) {
-        Packing packing = packingService.updatePackingList(id, packingList);
-        return ResponseEntity.ok(packing);
-    }
+//    @Autowired
+//    private PackingService packingService;
+//
+//    @PostMapping
+//    public ResponseEntity<Packing> createPacking(@RequestBody PackingRequest request) {
+//        Packing packing = packingService.createPacking(request);
+//        return ResponseEntity.ok(packing);
+//    }
+//
+//    @GetMapping("/{id}")
+//    public ResponseEntity<Packing> getPackingById(@PathVariable Long id) {
+//        Packing packing = packingService.getPackingById(id);
+//        return ResponseEntity.ok(packing);
+//    }
+//
+//    @GetMapping
+//    public ResponseEntity<List<Packing>> getAllPackings() {
+//        List<Packing> packings = packingService.getAllPackings();
+//        return ResponseEntity.ok(packings);
+//    }
+//
+//    @PutMapping("/{id}/packing-list")
+//    public ResponseEntity<Packing> updatePackingList(
+//            @PathVariable Long id,
+//            @RequestBody List<String> packingList) {
+//        Packing packing = packingService.updatePackingList(id, packingList);
+//        return ResponseEntity.ok(packing);
+//    }
 
 }

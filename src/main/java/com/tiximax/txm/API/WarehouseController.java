@@ -24,27 +24,12 @@ public class WarehouseController {
     @Autowired
     private AccountUtils accountUtils;
 
-//    @PostMapping("/{purchaseId}/{locationId}")
-//    public ResponseEntity<List<Warehouse>> createWarehouseEntry(@PathVariable Long purchaseId, @PathVariable Long locationId, @RequestBody WarehouseRequest warehouseRequest) {
-//        List<Warehouse> warehouses = warehouseService.createWarehouseEntry(purchaseId, locationId, warehouseRequest);
-//        return ResponseEntity.ok(warehouses);
-//    }
-
-    @PostMapping("/{shipmentCode}")
-    public ResponseEntity<List<Warehouse>> createWarehouseEntry(@PathVariable String shipmentCode, @RequestBody WarehouseRequest warehouseRequest) {
-
-        List<Warehouse> warehouses = warehouseService.createWarehouseEntry(shipmentCode, warehouseRequest);
-        return ResponseEntity.ok(warehouses);
-    }
-
-    @GetMapping("/orderlink/{orderLinkId}/in-warehouse")
-    public ResponseEntity<Boolean> isOrderLinkInWarehouse(@PathVariable Long orderLinkId) {
-        return ResponseEntity.ok(warehouseService.isOrderLinkInWarehouse(orderLinkId));
-    }
-
-    @GetMapping("/purchase/{purchaseId}/fully-received")
-    public ResponseEntity<Boolean> isPurchaseFullyReceived(@PathVariable Long purchaseId) {
-        return ResponseEntity.ok(warehouseService.isPurchaseFullyReceived(purchaseId));
+    @PostMapping("/shipment/{shipmentCode}")
+    public ResponseEntity<Warehouse> createWarehouseEntryByShipmentCode(
+            @PathVariable String shipmentCode,
+            @RequestBody WarehouseRequest warehouseRequest) {
+        Warehouse warehouse = warehouseService.createWarehouseEntryByShipmentCode(shipmentCode, warehouseRequest);
+        return ResponseEntity.ok(warehouse);
     }
 
 }
