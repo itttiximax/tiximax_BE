@@ -197,7 +197,8 @@ public class WarehouseService {
                         w.getOrders().getOrderCode(),
                         w.getWeight(),
                         w.getNetWeight(),
-                        w.getDim()
+                        w.getDim(),
+                        w.getCreatedAt()
                 ))
                 .collect(Collectors.toList());
         return new PageImpl<>(summaries, pageable, warehousePage.getTotalElements());
