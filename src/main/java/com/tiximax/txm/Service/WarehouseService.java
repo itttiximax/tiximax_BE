@@ -6,19 +6,22 @@ import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Enums.WarehouseStatus;
 import com.tiximax.txm.Model.WarehouseRequest;
+import com.tiximax.txm.Model.WarehouseSummary;
 import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PurchasesRepository;
 import com.tiximax.txm.Repository.WarehouseRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class WarehouseService {
@@ -184,4 +187,29 @@ public class WarehouseService {
 
         return warehouse;
     }
+
+    public Page<WarehouseSummary> getWarehousesForPacking(Pageable pageable) {
+        Page<Warehouse> warehousePage = warehouseRepository.findByStatus(WarehouseStatus.DA_NHAP_KHO, pageable);
+        List<WarehouseSummary> summaries = warehousePage.getContent().stream()
+                .map(w -> new WarehouseSummary(
+                        w.getWarehouseId(),
+                        w.getTrackingCode(),
+                        w.getOrders().getOrderCode(),
+                        w.getWeight(),
+                        w.getNetWeight(),
+                        w.getDim()
+                ))
+                .collect(Collectors.toList());
+        return new PageImpl<>(summaries, pageable, warehousePage.getTotalElements());
+    }
+
+    public Map<String, Double> calculateWarehouseTotals() {
+        List<Warehouse> warehouses = warehouseRepository.findAllByStatus(WarehouseStatus.DA_NHAP_KHO);
+        Map<String, Double> totals = new HashMap<>();
+        totals.put("totalWeight", warehouses.stream().mapToDouble(Warehouse::getWeight).sum());
+        totals.put("totalNetWeight", warehouses.stream().mapToDouble(Warehouse::getNetWeight).sum());
+        totals.put("totalDim", warehouses.stream().mapToDouble(Warehouse::getDim).sum());
+        return totals;
+    }
+
 }
