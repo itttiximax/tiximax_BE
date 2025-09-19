@@ -31,6 +31,8 @@ public class Warehouse {
 
     private Double dim;
 
+    private String image;
+
     @Column(nullable = false)
     private Double weight;
 

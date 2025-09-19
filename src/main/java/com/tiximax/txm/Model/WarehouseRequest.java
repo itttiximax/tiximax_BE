@@ -7,13 +7,8 @@ import java.util.List;
 
 @Getter
 @Setter
+
 public class WarehouseRequest {
-
-    private List<ProductDetail> products;
-
-    @Getter
-    @Setter
-    public static class ProductDetail {
 
         private Double length;
 
@@ -25,5 +20,6 @@ public class WarehouseRequest {
 
         private Double netWeight;
 
-    }
+        private String image;
+
 }
