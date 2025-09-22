@@ -1,8 +1,6 @@
 package com.tiximax.txm.API;
 
-//import com.tiximax.txm.Entity.MergedPayment;
 import com.tiximax.txm.Entity.Payment;
-//import com.tiximax.txm.Service.MergedPaymentService;
 import com.tiximax.txm.Service.PaymentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +20,6 @@ public class PaymentController {
 
     @Autowired
     private PaymentService paymentService;
-
-//    @Autowired
-//    private MergedPaymentService mergedPaymentService;
 
     @PostMapping("{orderCode}")
     public ResponseEntity<Payment> createPayment(@PathVariable String orderCode) {
@@ -56,25 +51,6 @@ public class PaymentController {
         return payment.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
-//    @PutMapping("/confirm/{paymentCode}")
-//    public ResponseEntity<Payment> confirmPayment(@PathVariable String paymentCode) {
-//        Payment confirmedPayment = paymentService.confirmedPayment(paymentCode);
-//        return ResponseEntity.ok(confirmedPayment);
-//    }
-
-//    @PutMapping("/confirm/{paymentCode}")
-//    public ResponseEntity<?> confirmPayment(@PathVariable String paymentCode) {
-//        if (paymentCode.startsWith("GD-")) {
-//            Payment confirmedPayment = paymentService.confirmedPayment(paymentCode);
-//            return ResponseEntity.ok(confirmedPayment);
-//        } else if (paymentCode.startsWith("MG-")) {
-//            MergedPayment confirmedMergedPayment = mergedPaymentService.confirmMergedPayment(paymentCode);
-//            return ResponseEntity.ok(confirmedMergedPayment);
-//        } else {
-//            throw new IllegalArgumentException("Mã payment không hợp lệ! Phải bắt đầu bằng MG hoặc GD!");
-//        }
-//    }
 
     @GetMapping("id/{paymentId}")
     public ResponseEntity<Optional<Payment>> getPaymentsByOrderId(@PathVariable Long paymentId) {

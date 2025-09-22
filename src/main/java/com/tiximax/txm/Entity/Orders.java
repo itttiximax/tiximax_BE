@@ -97,8 +97,4 @@ public class Orders {
     @JsonIgnore
     Packing packing;
 
-//    @ManyToOne
-//    @JoinColumn(name = "merged_payment_id", nullable = true)
-//    @JsonIgnore
-//    MergedPayment mergedPayment;
 }

@@ -35,9 +35,7 @@ public class OrderPayment {
         this.exchangeRate = order.getExchangeRate();
         this.finalPriceOrder = order.getFinalPriceOrder();
         this.customer = order.getCustomer();
-        this.paymentCode = order.getPayments().stream()
-                .map(Payment::getPaymentCode)
-                .findFirst()
-                .orElse(null);
+        this.paymentCode = null;
     }
+
 }

@@ -37,12 +37,6 @@ public class PaymentService {
     @Autowired
     private OrdersService ordersService;
 
-//    @Autowired
-//    private WarehouseService warehouseService;
-
-//    @Autowired
-//    private WarehouseRepository warehouseRepository;
-
     @Autowired
     private ProcessLogRepository processLogRepository;
 
@@ -100,26 +94,6 @@ public class PaymentService {
         } while (paymentRepository.existsByPaymentCode(paymentCode));
         return paymentCode;
     }
-
-//    public Payment confirmedPayment(String paymentCode) {
-//        Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
-//        if (paymentOptional.isPresent()) {
-//            Payment payment = paymentOptional.get();
-//            if (paymentOptional.get().getStatus().equals(PaymentStatus.CHO_THANH_TOAN)){
-//                payment.setStatus(PaymentStatus.DA_THANH_TOAN);
-//                payment.setActionAt(LocalDateTime.now());
-//                Orders orders = payment.getOrders();
-//                orders.setStatus(OrderStatus.CHO_MUA);
-//                ordersRepository.save(orders);
-//                ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
-//                return paymentRepository.save(payment);
-//            } else {
-//                throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
-//            }
-//        } else {
-//            throw new RuntimeException("Không tìm thấy giao dịch này!");
-//        }
-//    }
 
     public Payment confirmedPayment(String paymentCode) {
         Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
@@ -227,7 +201,7 @@ public class PaymentService {
         payment.setContent(orderCodes + " ");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
-        payment.setCollectedAmount(BigDecimal.ZERO);
+        payment.setCollectedAmount(totalAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
         String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
         payment.setQrCode(qrCodeUrl);

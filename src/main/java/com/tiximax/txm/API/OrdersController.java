@@ -87,13 +87,13 @@ public class OrdersController {
         return ResponseEntity.ok(orders);
     }
 
-//    @GetMapping("/for-payment/{page}/{size}/{status}")
-//    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
-//        Sort sort = Sort.by("createdAt").descending();
-//        Pageable pageable = PageRequest.of(page, size, sort);
-//        Page<OrderPayment> ordersPage = ordersService.getOrdersForPayment(pageable, status);
-//        return ResponseEntity.ok(ordersPage);
-//    }
+    @GetMapping("/for-payment/{page}/{size}/{status}")
+    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<OrderPayment> ordersPage = ordersService.getOrdersForPayment(pageable, status);
+        return ResponseEntity.ok(ordersPage);
+    }
 
     @GetMapping("/detail/{orderId}")
     public ResponseEntity<OrderDetail> getOrderDetail(@PathVariable Long orderId) {
