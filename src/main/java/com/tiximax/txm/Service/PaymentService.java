@@ -15,10 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 
@@ -73,6 +70,7 @@ public class PaymentService {
         payment.setCustomer(orders.getCustomer());
         payment.setStaff((Staff) accountUtils.getAccountCurrent());
         payment.setOrders(orders);
+        payment.setIsMergedPayment(false);
         ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
         orders.setStatus(OrderStatus.CHO_THANH_TOAN);
         ordersRepository.save(orders);
@@ -103,24 +101,52 @@ public class PaymentService {
         return paymentCode;
     }
 
+//    public Payment confirmedPayment(String paymentCode) {
+//        Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
+//        if (paymentOptional.isPresent()) {
+//            Payment payment = paymentOptional.get();
+//            if (paymentOptional.get().getStatus().equals(PaymentStatus.CHO_THANH_TOAN)){
+//                payment.setStatus(PaymentStatus.DA_THANH_TOAN);
+//                payment.setActionAt(LocalDateTime.now());
+//                Orders orders = payment.getOrders();
+//                orders.setStatus(OrderStatus.CHO_MUA);
+//                ordersRepository.save(orders);
+//                ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+//                return paymentRepository.save(payment);
+//            } else {
+//                throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
+//            }
+//        } else {
+//            throw new RuntimeException("Không tìm thấy giao dịch này!");
+//        }
+//    }
+
     public Payment confirmedPayment(String paymentCode) {
         Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
-        if (paymentOptional.isPresent()) {
-            Payment payment = paymentOptional.get();
-            if (paymentOptional.get().getStatus().equals(PaymentStatus.CHO_THANH_TOAN)){
-                payment.setStatus(PaymentStatus.DA_THANH_TOAN);
-                payment.setActionAt(LocalDateTime.now());
-                Orders orders = payment.getOrders();
-                orders.setStatus(OrderStatus.CHO_MUA);
-                ordersRepository.save(orders);
-                ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
-                return paymentRepository.save(payment);
-            } else {
-                throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
-            }
-        } else {
+        if (paymentOptional.isEmpty()) {
             throw new RuntimeException("Không tìm thấy giao dịch này!");
         }
+        Payment payment = paymentOptional.get();
+        if (!payment.getStatus().equals(PaymentStatus.CHO_THANH_TOAN)) {
+            throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
+        }
+        payment.setStatus(PaymentStatus.DA_THANH_TOAN);
+        payment.setCollectedAmount(payment.getAmount());
+        payment.setActionAt(LocalDateTime.now());
+        if (payment.getIsMergedPayment()) {
+            Set<Orders> orders = payment.getRelatedOrders();
+            for (Orders order : orders) {
+                order.setStatus(OrderStatus.CHO_MUA);
+                ordersRepository.save(order);
+                ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+            }
+        } else {
+            Orders order = payment.getOrders();
+            order.setStatus(OrderStatus.CHO_MUA);
+            ordersRepository.save(order);
+            ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+        }
+        return paymentRepository.save(payment);
     }
 
 //    public Payment createShippingPayment(String orderCode) {
@@ -182,5 +208,51 @@ public class PaymentService {
             throw new RuntimeException("Không tìm thấy đơn hàng này!");
         }
         return paymentRepository.findFirstByOrdersOrderIdAndStatus(orderId, PaymentStatus.CHO_THANH_TOAN);
+    }
+
+    public Payment createMergedPayment(Set<String> orderCodes) {
+        List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
+        if (ordersList.size() != orderCodes.size()) {
+            throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
+        }
+        if (ordersList.stream().anyMatch(o -> !o.getStatus().equals(OrderStatus.DA_XAC_NHAN))) {
+            throw new RuntimeException("Một hoặc một số đơn hàng chưa đủ điều kiện để thanh toán!");
+        }
+        BigDecimal totalAmount = ordersList.stream()
+                .map(Orders::getFinalPriceOrder)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Payment payment = new Payment();
+        payment.setPaymentCode(generateMergedPaymentCode());
+        payment.setContent(orderCodes + " ");
+        payment.setPaymentType(PaymentType.MA_QR);
+        payment.setAmount(totalAmount);
+        payment.setCollectedAmount(BigDecimal.ZERO);
+        payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+        payment.setQrCode(qrCodeUrl);
+        payment.setActionAt(LocalDateTime.now());
+        payment.setCustomer(ordersList.get(0).getCustomer());
+        payment.setStaff((Staff) accountUtils.getAccountCurrent());
+        payment.setIsMergedPayment(true);
+        payment.setRelatedOrders(new HashSet<>(ordersList));
+        payment.setOrders(null);
+        Payment savedPayment = paymentRepository.save(payment);
+
+        for (Orders order : ordersList) {
+            ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
+            order.setStatus(OrderStatus.CHO_THANH_TOAN);
+            ordersRepository.save(order);
+        }
+
+        return savedPayment;
+    }
+
+    public String generateMergedPaymentCode() {
+        String paymentCode;
+        do {
+            paymentCode = "MG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
+        } while (paymentRepository.existsByPaymentCode(paymentCode));
+        return paymentCode;
     }
 }

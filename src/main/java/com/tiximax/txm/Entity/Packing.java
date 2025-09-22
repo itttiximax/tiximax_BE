@@ -22,7 +22,7 @@ public class Packing {
     @Column(name = "packing_id")
     private Long packingId;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String flightCode;
 
     @Column(nullable = false)

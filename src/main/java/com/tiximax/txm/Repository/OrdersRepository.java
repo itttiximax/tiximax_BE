@@ -45,11 +45,11 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 
     long countByStaffAccountIdAndStatus(Long staffId, OrderStatus status);
 
-    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.mergedPayment WHERE o.orderCode IN :codes")
-    List<Orders> findByOrderCodeInWithMergedPayment(@Param("codes") List<String> codes);
+//    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.mergedPayment WHERE o.orderCode IN :codes")
+//    List<Orders> findByOrderCodeInWithMergedPayment(@Param("codes") List<String> codes);
 
-    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.payments LEFT JOIN FETCH o.mergedPayment WHERE o.staff.accountId = :staffId AND o.status = :status")
-    Page<Orders> findByStaffAccountIdAndStatusForPaymentWithMergedPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
+//    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.payments LEFT JOIN FETCH o.mergedPayment WHERE o.staff.accountId = :staffId AND o.status = :status")
+//    Page<Orders> findByStaffAccountIdAndStatusForPaymentWithMergedPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
 
     @Query("SELECT o FROM Orders o WHERE o.customer.customerCode = :customerCode AND o.status = :status")
     List<Orders> findByCustomerCodeAndStatus(@Param("customerCode") String customerCode, @Param("status") OrderStatus status);

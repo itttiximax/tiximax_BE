@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -44,6 +45,9 @@ public class Payment {
     @Column(nullable = false)
     private LocalDateTime actionAt;
 
+    @Column(nullable = false)
+    private Boolean isMergedPayment;
+
     @ManyToOne
     @JoinColumn(name="customer_id", nullable = false)
     @JsonIgnore
@@ -55,8 +59,17 @@ public class Payment {
     Staff staff;
 
     @ManyToOne
-    @JoinColumn(name="order_id", nullable = false)
+    @JoinColumn(name="order_id", nullable = true)
     @JsonIgnore
     Orders orders;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "payment_orders",
+            joinColumns = @JoinColumn(name = "payment_id"),
+            inverseJoinColumns = @JoinColumn(name = "order_id")
+    )
+    @JsonIgnore
+    private Set<Orders> relatedOrders;
 
 }

@@ -1,13 +1,11 @@
 package com.tiximax.txm.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -99,8 +97,8 @@ public class Orders {
     @JsonIgnore
     Packing packing;
 
-    @ManyToOne
-    @JoinColumn(name = "merged_payment_id", nullable = true)
-    @JsonIgnore
-    MergedPayment mergedPayment;
+//    @ManyToOne
+//    @JoinColumn(name = "merged_payment_id", nullable = true)
+//    @JsonIgnore
+//    MergedPayment mergedPayment;
 }
