@@ -14,6 +14,7 @@ import java.util.List;
 
 @Getter
 @Setter
+
 public class OrderWithLinks {
     private Long orderId;
     private String orderCode;

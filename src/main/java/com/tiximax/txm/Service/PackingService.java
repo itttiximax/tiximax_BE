@@ -7,6 +7,7 @@ import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Entity.Warehouse;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
+import com.tiximax.txm.Model.PackingEligibleOrder;
 import com.tiximax.txm.Model.PackingRequest;
 import com.tiximax.txm.Repository.DestinationRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
@@ -14,14 +15,13 @@ import com.tiximax.txm.Repository.PackingRepository;
 import com.tiximax.txm.Repository.WarehouseRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,6 +44,25 @@ public class PackingService {
 
     @Autowired
     private AccountUtils accountUtils;
+
+    public Page<PackingEligibleOrder> getEligibleOrdersForPacking(Pageable pageable) {
+        Page<Orders> ordersPage = ordersRepository.findByStatusWithWarehousesAndLinks(OrderStatus.CHO_DONG_GOI, pageable);
+
+        return ordersPage.map(order -> {
+            Map<String, Integer> trackingToCount = new HashMap<>();
+            Set<Warehouse> warehouses = order.getWarehouses();
+            for (Warehouse warehouse : warehouses) {
+                String trackingCode = warehouse.getTrackingCode();
+                int productCount = warehouse.getOrderLinks().size();
+                trackingToCount.put(trackingCode, productCount);
+            }
+
+            PackingEligibleOrder eligibleOrder = new PackingEligibleOrder();
+            eligibleOrder.setOrderCode(order.getOrderCode());
+            eligibleOrder.setTrackingCodeToProductCount(trackingToCount);
+            return eligibleOrder;
+        });
+    }
 
 //    @Transactional
 //    public Packing createPacking(PackingRequest request) {

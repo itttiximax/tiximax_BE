@@ -1,17 +1,19 @@
 package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Packing;
+import com.tiximax.txm.Model.PackingEligibleOrder;
 import com.tiximax.txm.Model.PackingRequest;
 import com.tiximax.txm.Model.WarehouseSummary;
 import com.tiximax.txm.Service.PackingService;
 import com.tiximax.txm.Service.WarehouseService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -19,5 +21,16 @@ import java.util.Map;
 @SecurityRequirement(name = "bearerAuth")
 
 public class PackingController {
+
+    @Autowired
+    private PackingService packingService;
+
+    @GetMapping("/eligible-orders/{page}/{size}")
+    public ResponseEntity<Page<PackingEligibleOrder>> getEligibleOrdersForPacking(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<PackingEligibleOrder> eligibleOrdersPage = packingService.getEligibleOrdersForPacking(pageable);
+        return ResponseEntity.ok(eligibleOrdersPage);
+    }
 
 }

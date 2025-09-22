@@ -23,8 +23,6 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 
     List<Orders> findAllByOrderCodeIn(List<String> orderCodes);
 
-    Page<Orders> findByStaffAccountId(Long staffId, Pageable pageable);
-
     @Query("SELECT o FROM Orders o WHERE :status IS NULL OR o.status = :status")
     Page<Orders> findByStatus(@Param("status") OrderStatus status, Pageable pageable);
 
@@ -33,9 +31,6 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 
     @Query("SELECT o FROM Orders o WHERE o.route.routeId IN :routeIds AND (:status IS NULL OR o.status = :status)")
     Page<Orders> findByRouteRouteIdInAndStatus(@Param("routeIds") Set<Long> routeIds, @Param("status") OrderStatus status, Pageable pageable);
-
-    @Query("SELECT o FROM Orders o WHERE o.status IN :statuses")
-    Page<Orders> findByStatusIn(@Param("statuses") List<OrderStatus> statuses, Pageable pageable);
 
     @Query("SELECT DISTINCT o FROM Orders o " +
             "LEFT JOIN FETCH o.payments p " +
@@ -48,12 +43,9 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 
     long countByStaffAccountIdAndStatus(Long staffId, OrderStatus status);
 
-//    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.mergedPayment WHERE o.orderCode IN :codes")
-//    List<Orders> findByOrderCodeInWithMergedPayment(@Param("codes") List<String> codes);
-
-//    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.payments LEFT JOIN FETCH o.mergedPayment WHERE o.staff.accountId = :staffId AND o.status = :status")
-//    Page<Orders> findByStaffAccountIdAndStatusForPaymentWithMergedPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
-
     @Query("SELECT o FROM Orders o WHERE o.customer.customerCode = :customerCode AND o.status = :status")
     List<Orders> findByCustomerCodeAndStatus(@Param("customerCode") String customerCode, @Param("status") OrderStatus status);
+
+    @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.warehouses w LEFT JOIN FETCH w.orderLinks WHERE o.status = :status")
+    Page<Orders> findByStatusWithWarehousesAndLinks(@Param("status") OrderStatus status, Pageable pageable);
 }
