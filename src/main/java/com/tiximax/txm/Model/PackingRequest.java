@@ -12,10 +12,8 @@ import java.util.List;
 
 public class PackingRequest {
 
-    private List<String> orderCodes;
-
-    private String flightCode;
-
     private Long destinationId;
+
+    private List<String> shipmentCodes;
 
 }

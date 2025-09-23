@@ -3,9 +3,7 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Packing;
 import com.tiximax.txm.Model.PackingEligibleOrder;
 import com.tiximax.txm.Model.PackingRequest;
-import com.tiximax.txm.Model.WarehouseSummary;
 import com.tiximax.txm.Service.PackingService;
-import com.tiximax.txm.Service.WarehouseService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,6 +29,12 @@ public class PackingController {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<PackingEligibleOrder> eligibleOrdersPage = packingService.getEligibleOrdersForPacking(pageable);
         return ResponseEntity.ok(eligibleOrdersPage);
+    }
+
+    @PostMapping
+    public ResponseEntity<Packing> createPacking(@RequestBody PackingRequest request) {
+        Packing packing = packingService.createPacking(request);
+        return ResponseEntity.ok(packing);
     }
 
 }

@@ -22,4 +22,8 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     Page<Warehouse> findByStatus(@Param("status") WarehouseStatus status, Pageable pageable);
 
     List<Warehouse> findAllByStatus(WarehouseStatus warehouseStatus);
+
+    @Query("SELECT w FROM Warehouse w WHERE w.trackingCode IN :trackingCodes")
+    List<Warehouse> findByTrackingCodeIn(@Param("trackingCodes") List<String> trackingCodes);
+
 }
