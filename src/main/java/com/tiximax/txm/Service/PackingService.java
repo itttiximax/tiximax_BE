@@ -145,16 +145,16 @@ public class PackingService {
             warehouseRepository.save(warehouse);
         }
 
-        for (Orders order : orders) {
-            order.setStatus(OrderStatus.CHO_NHAP_KHO_VN);
-            order.setPacking(packing);
-            ordersRepository.save(order);
-        }
+//        for (Orders order : orders) {
+//            order.setStatus(OrderStatus.CHO_CHUYEN_BAY);
+//            order.setPacking(packing);
+//            ordersRepository.save(order);
+//        }
         for (Orders order : orders) {
             boolean allPacked = order.getOrderLinks().stream()
                     .allMatch(orderLink -> orderLink.getStatus().equals(OrderLinkStatus.DA_DONG_GOI));
             if (allPacked) {
-                order.setStatus(OrderStatus.CHO_NHAP_KHO_VN);
+                order.setStatus(OrderStatus.CHO_CHUYEN_BAY);
                 order.setPacking(packing);
                 ordersRepository.save(order);
             }

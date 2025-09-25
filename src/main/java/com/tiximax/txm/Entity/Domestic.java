@@ -1,9 +1,7 @@
 package com.tiximax.txm.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.tiximax.txm.Enums.DomesticFrom;
-import com.tiximax.txm.Enums.DomesticTo;
-import com.tiximax.txm.Enums.DomesticType;
+import com.tiximax.txm.Enums.DomesticStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,21 +19,26 @@ public class Domestic {
     @Column(name = "domestic_id")
     private Long domesticId;
 
-    @Enumerated(EnumType.STRING)
-    private DomesticFrom fromLocation;
+    @ManyToOne
+    @JoinColumn(name = "from_location_id", nullable = false)
+    @JsonIgnore
+    private WarehouseLocation fromLocation;
+
+    @ManyToOne
+    @JoinColumn(name = "to_location_id", nullable = true)
+    @JsonIgnore
+    private WarehouseLocation toLocation;
 
     @Enumerated(EnumType.STRING)
-    private DomesticTo toLocation;
-
-    @Enumerated(EnumType.STRING)
-    private DomesticType type;
-
-    private String deliveryAddress;
+    private DomesticStatus type;
 
     private String note;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
+
+    @Column(nullable = false)
+    private String packingCode;
 
     @ManyToOne
     @JoinColumn(name="staff_id", nullable = false)

@@ -9,8 +9,7 @@ public enum OrderStatus {
     CHO_DONG_GOI,
     CHO_THANH_TOAN_SHIP,
     CHO_NHAP_KHO_VN,
-    CHO_NHAP_KHO_HN,
-    CHO_NHAP_KHO_SG,
+    CHO_CHUYEN_BAY,
     CHO_GIAO_HANG,
     DA_GIAO_HANG
 }
