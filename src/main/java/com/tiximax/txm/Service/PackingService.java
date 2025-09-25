@@ -5,6 +5,7 @@ import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Model.PackingEligibleOrder;
+import com.tiximax.txm.Model.PackingInWarehouse;
 import com.tiximax.txm.Model.PackingRequest;
 import com.tiximax.txm.Repository.DestinationRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
@@ -68,8 +69,14 @@ public class PackingService {
             throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
         }
 
-        List<String> shipmentCodes = request.getShipmentCodes();
-        if (shipmentCodes == null || shipmentCodes.isEmpty()) {
+//        List<String> shipmentCodes = request.getShipmentCodes();
+//        if (shipmentCodes == null || shipmentCodes.isEmpty()) {
+//            throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
+//        }
+        List<String> shipmentCodes = request.getShipmentCodes().stream()
+                .distinct()
+                .collect(Collectors.toList());
+        if (shipmentCodes.isEmpty()) {
             throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
         }
 
@@ -108,15 +115,12 @@ public class PackingService {
             }
         }
 
-//        List<String> packingList = orders.stream()
-//                .map(Orders::getOrderCode)
-//                .collect(Collectors.toList());
-
         List<String> packingList = orders.stream()
                 .filter(Objects::nonNull)
                 .flatMap(order -> order.getOrderLinks().stream())
                 .filter(Objects::nonNull)
                 .map(OrderLinks::getShipmentCode)
+                .distinct()
                 .collect(Collectors.toList());
 
         if (packingList.isEmpty()) {
@@ -131,6 +135,14 @@ public class PackingService {
         packing.setPackedDate(LocalDateTime.now());
         packing.setStaff(staff);
         packing = packingRepository.save(packing);
+
+        Set<Warehouse> packingWarehouses = new HashSet<>(warehouses);
+        packing.setWarehouses(packingWarehouses);
+
+        for (Warehouse warehouse : warehouses) {
+            warehouse.setPacking(packing);
+            warehouseRepository.save(warehouse);
+        }
 
         for (Orders order : orders) {
             order.setStatus(OrderStatus.CHO_NHAP_KHO_VN);
@@ -182,6 +194,26 @@ public class PackingService {
             }
         }
         return 1;
+    }
+
+    public Page<PackingInWarehouse> getPackingsInWarehouse(Pageable pageable) {
+        Page<Packing> packingsPage = packingRepository.findByFlightCodeIsNull(pageable);
+
+        return packingsPage.map(packing -> {
+            Map<String, Integer> trackingToCount = new HashMap<>();
+            Set<Warehouse> warehouses = packing.getWarehouses();
+            for (Warehouse warehouse : warehouses) {
+                String trackingCode = warehouse.getTrackingCode();
+                int productCount = warehouse.getOrderLinks().size();
+                trackingToCount.put(trackingCode, productCount);
+            }
+
+            PackingInWarehouse piw = new PackingInWarehouse();
+            piw.setPackingCode(packing.getPackingCode());
+            piw.setPackedDate(packing.getPackedDate());
+            piw.setTrackingCodeToProductCount(trackingToCount);
+            return piw;
+        });
     }
 
 }

@@ -2,6 +2,7 @@ package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Packing;
 import com.tiximax.txm.Model.PackingEligibleOrder;
+import com.tiximax.txm.Model.PackingInWarehouse;
 import com.tiximax.txm.Model.PackingRequest;
 import com.tiximax.txm.Service.PackingService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,6 +36,14 @@ public class PackingController {
     public ResponseEntity<Packing> createPacking(@RequestBody PackingRequest request) {
         Packing packing = packingService.createPacking(request);
         return ResponseEntity.ok(packing);
+    }
+
+    @GetMapping("/in-warehouse/{page}/{size}")
+    public ResponseEntity<Page<PackingInWarehouse>> getPackingsInWarehouse(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("packedDate").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<PackingInWarehouse> packingsPage = packingService.getPackingsInWarehouse(pageable);
+        return ResponseEntity.ok(packingsPage);
     }
 
 }
