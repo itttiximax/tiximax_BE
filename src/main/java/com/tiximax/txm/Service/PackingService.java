@@ -44,7 +44,12 @@ public class PackingService {
     private AccountUtils accountUtils;
 
     public Page<PackingEligibleOrder> getEligibleOrdersForPacking(Pageable pageable) {
-        Page<Orders> ordersPage = ordersRepository.findByStatusWithWarehousesAndLinks(OrderStatus.CHO_DONG_GOI, pageable);
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        if (staff == null || staff.getWarehouseLocation() == null) {
+            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+        }
+        Page<Orders> ordersPage = ordersRepository.findByStatusWithWarehousesAndLinksAndWarehouseLocation(
+                OrderStatus.CHO_DONG_GOI, staff.getWarehouseLocation().getLocationId(), pageable);
 
         return ordersPage.map(order -> {
             Map<String, Integer> trackingToCount = new HashMap<>();
@@ -69,10 +74,6 @@ public class PackingService {
             throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
         }
 
-//        List<String> shipmentCodes = request.getShipmentCodes();
-//        if (shipmentCodes == null || shipmentCodes.isEmpty()) {
-//            throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
-//        }
         List<String> shipmentCodes = request.getShipmentCodes().stream()
                 .distinct()
                 .collect(Collectors.toList());
@@ -163,6 +164,61 @@ public class PackingService {
         return packing;
     }
 
+    public Page<PackingInWarehouse> getPackingsInWarehouse(Pageable pageable) {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        if (staff == null || staff.getWarehouseLocation() == null) {
+            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+        }
+
+        Page<Packing> packingsPage = packingRepository.findByFlightCodeIsNullAndWarehouses_Location_LocationId(staff.getWarehouseLocation().getLocationId(), pageable);
+
+        return packingsPage.map(packing -> {
+            Map<String, Integer> trackingToCount = new HashMap<>();
+            Set<Warehouse> warehouses = packing.getWarehouses();
+            for (Warehouse warehouse : warehouses) {
+                String trackingCode = warehouse.getTrackingCode();
+                int productCount = warehouse.getOrderLinks().size();
+                trackingToCount.put(trackingCode, productCount);
+            }
+
+            PackingInWarehouse piw = new PackingInWarehouse();
+            piw.setPackingCode(packing.getPackingCode());
+            piw.setPackedDate(packing.getPackedDate());
+            piw.setTrackingCodeToProductCount(trackingToCount);
+            return piw;
+        });
+    }
+
+    public Page<Packing> getPackingsAwaitingFlight(Pageable pageable) {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        if (staff == null || staff.getWarehouseLocation() == null) {
+            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+        }
+        return packingRepository.findByFlightCodeIsNullAndWarehouses_Location_LocationId(staff.getWarehouseLocation().getLocationId(), pageable);
+    }
+
+    public void assignFlightCode(List<Long> packingIds, String flightCode) {
+        List<Packing> packings = packingRepository.findAllById(packingIds)
+                .stream()
+                .filter(packing -> packing.getFlightCode() == null)
+                .peek(packing -> packing.setFlightCode(flightCode))
+                .collect(Collectors.toList());
+
+        if (packings.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy packing nào phù hợp hoặc đã được gán chuyến bay!");
+        }
+
+        packings.forEach(packing -> {
+            packingRepository.save(packing);
+//            Set<Orders> orders = packing.getOrders();
+//            for (Orders order : orders) {
+//                order.setStatus(OrderStatus.DANG_VAN_CHUYEN_VE_VN);
+//                ordersRepository.save(order);
+//            }
+//            ordersService.addProcessLog(null, packing.getPackingCode(), ProcessLogAction.);
+        });
+    }
+
     private String generatePackingCode(String location, String destinationName) {
         String monthYear = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMyy"));
         String[] words = destinationName.split("\\s+");
@@ -195,25 +251,4 @@ public class PackingService {
         }
         return 1;
     }
-
-    public Page<PackingInWarehouse> getPackingsInWarehouse(Pageable pageable) {
-        Page<Packing> packingsPage = packingRepository.findByFlightCodeIsNull(pageable);
-
-        return packingsPage.map(packing -> {
-            Map<String, Integer> trackingToCount = new HashMap<>();
-            Set<Warehouse> warehouses = packing.getWarehouses();
-            for (Warehouse warehouse : warehouses) {
-                String trackingCode = warehouse.getTrackingCode();
-                int productCount = warehouse.getOrderLinks().size();
-                trackingToCount.put(trackingCode, productCount);
-            }
-
-            PackingInWarehouse piw = new PackingInWarehouse();
-            piw.setPackingCode(packing.getPackingCode());
-            piw.setPackedDate(packing.getPackedDate());
-            piw.setTrackingCodeToProductCount(trackingToCount);
-            return piw;
-        });
-    }
-
 }
