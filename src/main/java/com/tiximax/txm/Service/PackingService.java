@@ -3,6 +3,7 @@ package com.tiximax.txm.Service;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
+import com.tiximax.txm.Enums.PackingStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Model.PackingEligibleOrder;
 import com.tiximax.txm.Model.PackingInWarehouse;
@@ -16,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -135,6 +135,7 @@ public class PackingService {
         packing.setPackingList(packingList);
         packing.setPackedDate(LocalDateTime.now());
         packing.setStaff(staff);
+        packing.setStatus(PackingStatus.CHO_BAY);
         packing = packingRepository.save(packing);
 
         Set<Warehouse> packingWarehouses = new HashSet<>(warehouses);
@@ -145,11 +146,6 @@ public class PackingService {
             warehouseRepository.save(warehouse);
         }
 
-//        for (Orders order : orders) {
-//            order.setStatus(OrderStatus.CHO_CHUYEN_BAY);
-//            order.setPacking(packing);
-//            ordersRepository.save(order);
-//        }
         for (Orders order : orders) {
             boolean allPacked = order.getOrderLinks().stream()
                     .allMatch(orderLink -> orderLink.getStatus().equals(OrderLinkStatus.DA_DONG_GOI));
@@ -209,6 +205,7 @@ public class PackingService {
         }
 
         packings.forEach(packing -> {
+            packing.setStatus(PackingStatus.DA_BAY);
             packingRepository.save(packing);
 //            Set<Orders> orders = packing.getOrders();
 //            for (Orders order : orders) {

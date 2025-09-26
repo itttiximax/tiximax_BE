@@ -30,7 +30,7 @@ public class Domestic {
     private WarehouseLocation toLocation;
 
     @Enumerated(EnumType.STRING)
-    private DomesticStatus type;
+    private DomesticStatus status;
 
     private String note;
 

@@ -1,7 +1,9 @@
 package com.tiximax.txm.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.tiximax.txm.Enums.DomesticStatus;
 import com.tiximax.txm.Enums.PackingDestination;
+import com.tiximax.txm.Enums.PackingStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,6 +35,9 @@ public class Packing {
 
     @Column(nullable = false)
     private LocalDateTime packedDate;
+
+    @Enumerated(EnumType.STRING)
+    private PackingStatus status;
 
     @ManyToOne
     @JoinColumn(name="staff_id", nullable = false)
