@@ -15,6 +15,10 @@ import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
@@ -139,6 +143,29 @@ public class AuthenticationController {
                 .map(Enum::name)
                 .toList();
         return ResponseEntity.ok(accountRole);
+    }
+
+    @GetMapping("/staff/{page}/{size}")
+    public ResponseEntity<Page<Staff>> getAllStaff(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Staff> staffPage = authenticationService.getAllStaff(pageable);
+        return ResponseEntity.ok(staffPage);
+    }
+    @GetMapping("/customers/{page}/{size}")
+    public ResponseEntity<Page<Customer>> getAllCustomers(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Customer> customersPage = authenticationService.getAllCustomers(pageable);
+        return ResponseEntity.ok(customersPage);
+    }
+
+    @GetMapping("/my-customers/{page}/{size}")
+    public ResponseEntity<Page<Customer>> getCustomersByStaff(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Customer> customersPage = authenticationService.getCustomersByStaff(pageable);
+        return ResponseEntity.ok(customersPage);
     }
 
 }

@@ -55,10 +55,6 @@ public class WarehouseService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến mã vận đơn này!");
         }
 
-//        if (!order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN)) {
-//            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để nhập kho!");
-//        }
-
         if (!(order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN) ||
                 order.getStatus().equals(OrderStatus.CHO_DONG_GOI) ||
                 order.getStatus().equals(OrderStatus.DANG_XU_LY))) {
@@ -111,16 +107,6 @@ public class WarehouseService {
         orderLinksRepository.saveAll(orderLinks);
 
         ordersService.addProcessLog(order, shipmentCode, ProcessLogAction.DA_NHAP_KHO_NN);
-
-//        List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
-//        boolean allItemsReceived = allOrderLinks.stream()
-//                .allMatch(ol -> ol.getWarehouse() != null);
-//
-//        if (allItemsReceived) {
-//            order.setStatus(OrderStatus.CHO_DONG_GOI);
-//            ordersRepository.save(order);
-//            ordersService.addProcessLog(order, order.getOrderCode(), ProcessLogAction.DA_NHAP_KHO_NN);
-//        }
 
         return warehouse;
     }

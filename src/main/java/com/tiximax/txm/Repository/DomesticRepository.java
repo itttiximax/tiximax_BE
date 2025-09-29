@@ -11,6 +11,6 @@
 //
 //public interface DomesticRepository extends JpaRepository<Domestic, Long> {
 //
-//    Page<Domestic> findByPacking_StatusAndLocation_LocationId(PackingStatus status, Long locationId, Pageable pageable);
+//
 //
 //}

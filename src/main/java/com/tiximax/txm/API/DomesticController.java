@@ -24,18 +24,5 @@
 //    @Autowired
 //    private DomesticService domesticService;
 //
-//    @GetMapping("/{page}/{size}")
-//    public ResponseEntity<Page<Domestic>> getDomesticsByPackingStatus(@PathVariable int page, @PathVariable int size) {
-//        Sort sort = Sort.by("timestamp").descending();
-//        Pageable pageable = PageRequest.of(page, size, sort);
-//        Page<Domestic> domesticsPage = domesticService.getDomesticsByPackingStatus(pageable);
-//        return ResponseEntity.ok(domesticsPage);
-//    }
-//
-////    @PostMapping
-////    public ResponseEntity<List<Domestic>> createDomestic(@RequestBody CreateDomesticRequest request) {
-////        List<Domestic> domestics = domesticService.createDomestic(request.getPackingIds(), request.getNote());
-////        return ResponseEntity.ok(domestics);
-////    }
 //
 //}

@@ -67,4 +67,12 @@ public class PackingController {
         return ResponseEntity.ok("Flight code assigned successfully");
     }
 
+    @GetMapping("/flying-away/{page}/{size}")
+    public ResponseEntity<Page<Packing>> getPackingsWithDaBayStatus(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("packedDate").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Packing> packingsPage = packingService.getPackingsWithDaBayStatus(pageable);
+        return ResponseEntity.ok(packingsPage);
+    }
+
 }

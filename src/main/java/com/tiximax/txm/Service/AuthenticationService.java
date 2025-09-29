@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -244,5 +246,16 @@ public class AuthenticationService implements UserDetailsService {
         customer = authenticationRepository.save(customer);
 
         return customer;
+    }
+
+    public Page<Staff> getAllStaff(Pageable pageable) {
+        return staffRepository.findAll(pageable);
+    }
+    public Page<Customer> getAllCustomers(Pageable pageable) {
+        return customerRepository.findAll(pageable);
+    }
+    public Page<Customer> getCustomersByStaff(Pageable pageable) {
+        Long staffId = accountUtils.getAccountCurrent().getAccountId();
+        return customerRepository.findByStaffId(staffId, pageable);
     }
 }

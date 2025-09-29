@@ -274,4 +274,13 @@ public class PackingService {
         }
         return 1;
     }
+
+    public Page<Packing> getPackingsWithDaBayStatus(Pageable pageable) {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        if (staff == null || staff.getWarehouseLocation() == null) {
+            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+        }
+        return packingRepository.findByStatusAndWarehouses_Location_LocationId(
+                PackingStatus.DA_BAY, staff.getWarehouseLocation().getLocationId(), pageable);
+    }
 }
