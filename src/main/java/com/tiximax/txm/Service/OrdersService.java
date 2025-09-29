@@ -101,8 +101,6 @@ public class OrdersService {
                 orderLink.setPurchaseFee(linkRequest.getPurchaseFee());
                 orderLink.setProductName(linkRequest.getProductName());
 
-//                ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId()).orElseThrow(null);
-
                 ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
                         .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
 
@@ -128,7 +126,7 @@ public class OrdersService {
         order = ordersRepository.save(order);
         orderLinksRepository.saveAll(orderLinksList);
         addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
-        messagingTemplate.convertAndSend("/topic/orders", order);
+//        messagingTemplate.convertAndSend("/topic/orders", order);
         return order;
     }
 
