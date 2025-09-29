@@ -1,6 +1,7 @@
 package com.tiximax.txm.Repository;
 
 import com.tiximax.txm.Entity.Orders;
+import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,11 +32,20 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
     @Query("SELECT o FROM Orders o WHERE o.route.routeId IN :routeIds AND (:status IS NULL OR o.status = :status)")
     Page<Orders> findByRouteRouteIdInAndStatus(@Param("routeIds") Set<Long> routeIds, @Param("status") OrderStatus status, Pageable pageable);
 
-    @Query("SELECT DISTINCT o FROM Orders o " +
-            "LEFT JOIN FETCH o.payments p " +
-            "LEFT JOIN FETCH p.relatedOrders ro " +
-            "WHERE o.staff.accountId = :staffId AND o.status = :status")
-    Page<Orders> findByStaffAccountIdAndStatusForPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
+//    @Query("SELECT DISTINCT o FROM Orders o " +
+//            "LEFT JOIN FETCH o.payments p " +
+//            "LEFT JOIN FETCH p.relatedOrders ro " +
+//            "WHERE o.staff.accountId = :staffId AND o.status = :status")
+//    Page<Orders> findByStaffAccountIdAndStatusForPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
+
+    @Query("SELECT o FROM Orders o WHERE o.staff.accountId = :staffId AND o.status IN (:statuses) " +
+            "AND (o.status != :dangXuLyStatus OR EXISTS (SELECT ol FROM o.orderLinks ol WHERE ol.status = :daNhapKhoVnStatus))")
+    Page<Orders> findByStaffAccountIdAndStatusForPayment(
+            @Param("staffId") Long staffId,
+            @Param("statuses") List<OrderStatus> statuses,
+            @Param("dangXuLyStatus") OrderStatus dangXuLyStatus,
+            @Param("daNhapKhoVnStatus") OrderLinkStatus daNhapKhoVnStatus,
+            Pageable pageable);
 
     @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.orderLinks WHERE o.route.routeId IN :routeIds AND o.status = :status")
     Page<Orders> findByRouteRouteIdInAndStatusWithLinks(@Param("routeIds") Set<Long> routeIds, @Param("status") OrderStatus status, Pageable pageable);

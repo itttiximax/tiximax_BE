@@ -56,15 +56,15 @@ public class PackingController {
         return ResponseEntity.ok(packingsPage);
     }
 
-//    @PutMapping("/assign-flight")
-//    public ResponseEntity<String> assignFlightCode(@RequestBody AssignFlightRequest request) {
-//        List<Long> packingIds = request.getPackingIds();
-//        String flightCode = request.getFlightCode();
-//        if (packingIds == null || packingIds.isEmpty() || flightCode == null || flightCode.trim().isEmpty()) {
-//            return ResponseEntity.badRequest().build();
-//        }
-//        packingService.assignFlightCode(packingIds, flightCode);
-//        return ResponseEntity.ok("Flight code assigned successfully");
-//    }
+    @PutMapping("/assign-flight")
+    public ResponseEntity<String> assignFlightCode(@RequestBody AssignFlightRequest request) {
+        List<Long> packingIds = request.getPackingIds();
+        String flightCode = request.getFlightCode();
+        if (packingIds == null || packingIds.isEmpty() || flightCode == null || flightCode.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        packingService.assignFlightCode(packingIds, flightCode);
+        return ResponseEntity.ok("Flight code assigned successfully");
+    }
 
 }

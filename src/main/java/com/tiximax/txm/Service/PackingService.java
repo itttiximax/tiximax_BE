@@ -8,10 +8,7 @@ import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Model.PackingEligibleOrder;
 import com.tiximax.txm.Model.PackingInWarehouse;
 import com.tiximax.txm.Model.PackingRequest;
-import com.tiximax.txm.Repository.DestinationRepository;
-import com.tiximax.txm.Repository.OrdersRepository;
-import com.tiximax.txm.Repository.PackingRepository;
-import com.tiximax.txm.Repository.WarehouseRepository;
+import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -39,6 +36,9 @@ public class PackingService {
 
     @Autowired
     private DestinationRepository destinationRepository;
+
+    @Autowired
+    private OrderLinksRepository orderLinksRepository;
 
     @Autowired
     private AccountUtils accountUtils;
@@ -215,65 +215,32 @@ public class PackingService {
         return packingRepository.findByFlightCodeIsNullAndWarehouses_Location_LocationId(staff.getWarehouseLocation().getLocationId(), pageable);
     }
 
-//    public void assignFlightCode(List<Long> packingIds, String flightCode) {
-//        List<Packing> packings = packingRepository.findAllById(packingIds)
-//                .stream()
-//                .filter(packing -> packing.getFlightCode() == null)
-//                .peek(packing -> packing.setFlightCode(flightCode))
-//                .collect(Collectors.toList());
-//
-//        if (packings.isEmpty()) {
-//            throw new IllegalArgumentException("Không tìm thấy packing nào phù hợp hoặc đã được gán chuyến bay!");
-//        }
-//
-////        packings.forEach(packing -> {
-////            packing.setStatus(PackingStatus.DA_BAY);
-////            packingRepository.save(packing);
-////            Set<Orders> orders = packing.getOrders();
-////            for (Orders order : orders) {
-////                order.setStatus(OrderStatus.CHO_NHAP_KHO_VN);
-////                ordersRepository.save(order);
-////            }
-////            ordersService.addProcessLog(null, packing.getPackingCode(), ProcessLogAction.DA_BAY);
-////        });
-//        for (Packing packing : packings) {
-//            packing.setStatus(PackingStatus.DA_BAY);
-//            packingRepository.save(packing);
-//
-//            // Lấy OrderLinks từ packingList
-//            List<String> shipmentCodes = packing.getPackingList();
-//            List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCodeIn(shipmentCodes);
-//
-//            // Nhóm OrderLinks theo Orders
-//            Map<Orders, List<OrderLinks>> orderToLinksMap = orderLinks.stream()
-//                    .collect(Collectors.groupingBy(OrderLinks::getOrders));
-//
-//            // Cập nhật trạng thái Orders
-//            for (Map.Entry<Orders, List<OrderLinks>> entry : orderToLinksMap.entrySet()) {
-//                Orders order = entry.getKey();
-//                List<OrderLinks> links = entry.getValue();
-//
-//                // Kiểm tra xem tất cả OrderLinks của Order có trạng thái DA_DONG_GOI không
-//                boolean allPacked = links.stream()
-//                        .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_DONG_GOI);
-//
-//                if (allPacked) {
-//                    // Kiểm tra tất cả OrderLinks của Order (bao gồm cả những cái không nằm trong packing này)
-//                    List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrders(order);
-//                    boolean allOrderLinksPacked = allOrderLinks.stream()
-//                            .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_DONG_GOI);
-//
-//                    if (allOrderLinksPacked) {
-//                        order.setStatus(OrderStatus.CHO_NHAP_KHO_VN);
-//                        ordersRepository.save(order);
-//                    }
-//                }
-//            }
-//
-//            // Ghi log
-//            ordersService.addProcessLog(null, packing.getPackingCode(), ProcessLogAction.DA_GAN_CHUYEN_BAY);
-//        }
-//    }
+    public void assignFlightCode(List<Long> packingIds, String flightCode) {
+        List<Packing> packings = packingRepository.findAllById(packingIds)
+                .stream()
+                .filter(packing -> packing.getFlightCode() == null)
+                .peek(packing -> packing.setFlightCode(flightCode))
+                .collect(Collectors.toList());
+
+        if (packings.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy packing nào phù hợp hoặc đã được gán chuyến bay!");
+        }
+
+        for (Packing packing : packings) {
+            packing.setStatus(PackingStatus.DA_BAY);
+            packingRepository.save(packing);
+
+            List<String> shipmentCodes = packing.getPackingList();
+            List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCodeIn(shipmentCodes);
+
+            for (OrderLinks orderLink : orderLinks) {
+                orderLink.setStatus(OrderLinkStatus.DANG_CHUYEN_VN);
+            }
+            orderLinksRepository.saveAll(orderLinks);
+
+            ordersService.addProcessLog(null, packing.getPackingCode(), ProcessLogAction.DA_BAY);
+        }
+    }
 
     private String generatePackingCode(String location, String destinationName) {
         String monthYear = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMyy"));

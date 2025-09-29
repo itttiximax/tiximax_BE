@@ -212,20 +212,25 @@ public class OrdersService {
     }
 
 //    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status) {
-//
 //        Long staffId = accountUtils.getAccountCurrent().getAccountId();
 //
 //        List<OrderStatus> validStatuses = Arrays.asList(
 //                OrderStatus.DA_XAC_NHAN,
-//                OrderStatus.CHO_THANH_TOAN_SHIP,
 //                OrderStatus.CHO_THANH_TOAN,
-//                OrderStatus.CHO_NHAP_KHO_VN);
+//                OrderStatus.DANG_XU_LY);
 //
 //        if (status == null || !validStatuses.contains(status)) {
 //            throw new IllegalArgumentException("Trạng thái không hợp lệ!");
 //        }
 //
-//        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+////        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+//
+//        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(
+//                staffId,
+//                validStatuses,
+//                OrderStatus.DANG_XU_LY,
+//                OrderLinkStatus.DA_NHAP_KHO_VN,
+//                pageable);
 //
 //        return ordersPage.map(order -> {
 //            OrderPayment orderPayment = new OrderPayment(order);
@@ -238,6 +243,25 @@ public class OrdersService {
 //                    orderPayment.setPaymentCode(payment.get().getPaymentCode());
 //                } else {
 //                    Optional<Payment> mergedPayment = paymentRepository.findMergedPaymentByOrderIdAndStatus(order.getOrderId(), PaymentStatus.CHO_THANH_TOAN);
+//                    orderPayment.setPaymentCode(mergedPayment.map(Payment::getPaymentCode).orElse(null));
+//                }
+//            } else {
+//                orderPayment.setPaymentCode(null);
+//            }
+//            return orderPayment;
+//        });
+//        return ordersPage.map(order -> {
+//            OrderPayment orderPayment = new OrderPayment(order);
+//            if (status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.DANG_XU_LY) {
+//                Optional<Payment> payment = order.getPayments().stream()
+//                        .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
+//                        .findFirst();
+//
+//                if (payment.isPresent()) {
+//                    orderPayment.setPaymentCode(payment.get().getPaymentCode());
+//                } else {
+//                    Optional<Payment> mergedPayment = paymentRepository.findMergedPaymentByOrderIdAndStatus(
+//                            order.getOrderId(), PaymentStatus.CHO_THANH_TOAN);
 //                    orderPayment.setPaymentCode(mergedPayment.map(Payment::getPaymentCode).orElse(null));
 //                }
 //            } else {

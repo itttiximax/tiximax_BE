@@ -21,4 +21,5 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
     @Query("SELECT ol FROM OrderLinks ol LEFT JOIN FETCH ol.orders WHERE ol.shipmentCode = :shipmentCode")
     List<OrderLinks> findByShipmentCode(@Param("shipmentCode") String shipmentCode);
 
+    List<OrderLinks> findByShipmentCodeIn(List<String> shipmentCodes);
 }
