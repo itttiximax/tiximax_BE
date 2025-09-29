@@ -18,8 +18,6 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
 
     List<OrderLinks> findByOrdersOrderId(Long orderId);
 
-//    List<OrderLinks> findByShipmentCodeWithOrders(String shipmentCode);
-
     @Query("SELECT ol FROM OrderLinks ol LEFT JOIN FETCH ol.orders WHERE ol.shipmentCode = :shipmentCode")
     List<OrderLinks> findByShipmentCode(@Param("shipmentCode") String shipmentCode);
 

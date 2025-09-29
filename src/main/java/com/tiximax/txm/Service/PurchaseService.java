@@ -64,7 +64,7 @@ public class PurchaseService {
         }
 
         boolean allActive = orderLinks.stream()
-                .allMatch(link -> link.getStatus() == OrderLinkStatus.HOAT_DONG);
+                .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA);
         if (!allActive) {
             throw new IllegalArgumentException("Tất cả mã phải ở trạng thái HOẠT ĐỘNG!");
         }

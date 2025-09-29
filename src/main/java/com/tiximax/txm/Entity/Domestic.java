@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -38,7 +40,7 @@ public class Domestic {
     private LocalDateTime timestamp;
 
     @Column(nullable = false)
-    private String packingCode;
+    private List<String> shippingList = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name="staff_id", nullable = false)
@@ -50,10 +52,10 @@ public class Domestic {
     @JsonIgnore
     WarehouseLocation location;
 
-    @ManyToOne
-    @JoinColumn(name="order_id", nullable = false)
-    @JsonIgnore
-    Orders orders;
+//    @ManyToOne
+//    @JoinColumn(name="order_id", nullable = false)
+//    @JsonIgnore
+//    Orders orders;
 
     @ManyToOne
     @JoinColumn(name="packing_id", nullable = false)

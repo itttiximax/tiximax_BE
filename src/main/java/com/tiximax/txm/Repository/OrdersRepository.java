@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Repository
@@ -51,7 +50,7 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 
     @Query("SELECT o FROM Orders o JOIN o.warehouses w WHERE o.status = :status AND w.location.locationId = :warehouseLocationId")
     Page<Orders> findByStatusWithWarehousesAndLinksAndWarehouseLocation(
-            @Param("status") OrderStatus status,
+            @Param("status") List<OrderStatus> status,
             @Param("warehouseLocationId") Long warehouseLocationId,
             Pageable pageable);
 }

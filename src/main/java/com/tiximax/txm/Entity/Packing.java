@@ -51,10 +51,10 @@ public class Packing {
     @OneToMany(mappedBy = "packing", cascade = CascadeType.ALL)
     @JsonIgnore
     Set<Domestic> domestics;
-
-    @OneToMany(mappedBy = "packing", cascade = CascadeType.ALL)
-    @JsonIgnore
-    Set<Orders> orders;
+//
+//    @OneToMany(mappedBy = "packing", cascade = CascadeType.ALL)
+//    @JsonIgnore
+//    Set<Orders> orders;
 
     @ManyToOne
     @JoinColumn(name="destination_id", nullable = false)

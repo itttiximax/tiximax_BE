@@ -87,13 +87,13 @@ public class OrdersController {
         return ResponseEntity.ok(orders);
     }
 
-    @GetMapping("/for-payment/{page}/{size}/{status}")
-    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
-        Sort sort = Sort.by("createdAt").descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<OrderPayment> ordersPage = ordersService.getOrdersForPayment(pageable, status);
-        return ResponseEntity.ok(ordersPage);
-    }
+//    @GetMapping("/for-payment/{page}/{size}/{status}")
+//    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
+//        Sort sort = Sort.by("createdAt").descending();
+//        Pageable pageable = PageRequest.of(page, size, sort);
+//        Page<OrderPayment> ordersPage = ordersService.getOrdersForPayment(pageable, status);
+//        return ResponseEntity.ok(ordersPage);
+//    }
 
     @GetMapping("/detail/{orderId}")
     public ResponseEntity<OrderDetail> getOrderDetail(@PathVariable Long orderId) {
@@ -101,13 +101,13 @@ public class OrdersController {
         return ResponseEntity.ok(orderDetail);
     }
 
-    @GetMapping("/with-links/{page}/{size}")
-    public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size) {
-        Sort sort = Sort.by("createdAt").descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable);
-        return ResponseEntity.ok(ordersPage);
-    }
+//    @GetMapping("/with-links/{page}/{size}")
+//    public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size) {
+//        Sort sort = Sort.by("createdAt").descending();
+//        Pageable pageable = PageRequest.of(page, size, sort);
+//        Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable);
+//        return ResponseEntity.ok(ordersPage);
+//    }
 
     @GetMapping("/orderLink/{orderLinkId}")
     public ResponseEntity<OrderLinks> getOrderLinkById(@PathVariable Long orderLinkId) {
@@ -115,11 +115,11 @@ public class OrdersController {
         return ResponseEntity.ok(orderLink);
     }
 
-    @GetMapping("/statistics/for-payment")
-    public ResponseEntity<Map<String, Long>> getOrderStatusStatistics() {
-        Map<String, Long> statistics = ordersService.getOrderStatusStatistics();
-        return ResponseEntity.ok(statistics);
-    }
+//    @GetMapping("/statistics/for-payment")
+//    public ResponseEntity<Map<String, Long>> getOrderStatusStatistics() {
+//        Map<String, Long> statistics = ordersService.getOrderStatusStatistics();
+//        return ResponseEntity.ok(statistics);
+//    }
 
     @GetMapping("/orders/by-customer/{customerCode}")
     public ResponseEntity<List<OrderPayment>> getOrdersByCustomer(@PathVariable String customerCode) {

@@ -12,6 +12,7 @@ import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PurchasesRepository;
 import com.tiximax.txm.Repository.WarehouseRepository;
 import com.tiximax.txm.Utils.AccountUtils;
+import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -55,7 +56,13 @@ public class WarehouseService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến mã vận đơn này!");
         }
 
-        if (!order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN)) {
+//        if (!order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN)) {
+//            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để nhập kho!");
+//        }
+
+        if (!(order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN) ||
+                order.getStatus().equals(OrderStatus.CHO_DONG_GOI) ||
+                order.getStatus().equals(OrderStatus.DANG_XU_LY))) {
             throw new RuntimeException("Đơn hàng chưa đủ điều kiện để nhập kho!");
         }
 
@@ -69,26 +76,32 @@ public class WarehouseService {
         if (staff.getWarehouseLocation() == null) {
             throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
         }
+
         WarehouseLocation location = new WarehouseLocation();
         location.setLocationId(staff.getWarehouseLocation().getLocationId());
 
+        if (order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN)) {
+            order.setStatus(OrderStatus.CHO_DONG_GOI);
+            ordersRepository.save(order);
+        }
+
         Warehouse warehouse = new Warehouse();
-        warehouse.setTrackingCode(shipmentCode);
-        warehouse.setLength(warehouseRequest.getLength());
-        warehouse.setWidth(warehouseRequest.getWidth());
-        warehouse.setHeight(warehouseRequest.getHeight());
-        warehouse.setDim(dim);
-        warehouse.setWeight(warehouseRequest.getWeight());
-        warehouse.setNetWeight(warehouseRequest.getNetWeight());
-        warehouse.setImage(warehouseRequest.getImage());
-        warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
-        warehouse.setCreatedAt(LocalDateTime.now());
-        warehouse.setStaff(staff);
-        warehouse.setLocation(location);
-        warehouse.setOrders(order);
-        warehouse.setPurchase(orderLinks.get(0).getPurchase());
-        warehouse.setOrderLinks(new HashSet<>(orderLinks));
-        warehouse.setPacking(null);
+            warehouse.setTrackingCode(shipmentCode);
+            warehouse.setLength(warehouseRequest.getLength());
+            warehouse.setWidth(warehouseRequest.getWidth());
+            warehouse.setHeight(warehouseRequest.getHeight());
+            warehouse.setDim(dim);
+            warehouse.setWeight(warehouseRequest.getWeight());
+            warehouse.setNetWeight(warehouseRequest.getNetWeight());
+            warehouse.setImage(warehouseRequest.getImage());
+            warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
+            warehouse.setCreatedAt(LocalDateTime.now());
+            warehouse.setStaff(staff);
+            warehouse.setLocation(location);
+            warehouse.setOrders(order);
+            warehouse.setPurchase(orderLinks.get(0).getPurchase());
+            warehouse.setOrderLinks(new HashSet<>(orderLinks));
+            warehouse.setPacking(null);
 
         orderLinks.forEach(orderLink -> {
             orderLink.setWarehouse(warehouse);
@@ -100,15 +113,15 @@ public class WarehouseService {
 
         ordersService.addProcessLog(order, shipmentCode, ProcessLogAction.DA_NHAP_KHO_NN);
 
-        List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
-        boolean allItemsReceived = allOrderLinks.stream()
-                .allMatch(ol -> ol.getWarehouse() != null);
-
-        if (allItemsReceived) {
-            order.setStatus(OrderStatus.CHO_DONG_GOI);
-            ordersRepository.save(order);
-            ordersService.addProcessLog(order, order.getOrderCode(), ProcessLogAction.DA_NHAP_KHO_NN);
-        }
+//        List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
+//        boolean allItemsReceived = allOrderLinks.stream()
+//                .allMatch(ol -> ol.getWarehouse() != null);
+//
+//        if (allItemsReceived) {
+//            order.setStatus(OrderStatus.CHO_DONG_GOI);
+//            ordersRepository.save(order);
+//            ordersService.addProcessLog(order, order.getOrderCode(), ProcessLogAction.DA_NHAP_KHO_NN);
+//        }
 
         return warehouse;
     }

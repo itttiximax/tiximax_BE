@@ -22,6 +22,8 @@ public class Customer extends Account {
 
     private Long staffId;
 
+    private Double totalWeight;
+
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     @JsonIgnore
     Set<Orders> orders;

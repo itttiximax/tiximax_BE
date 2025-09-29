@@ -101,13 +101,15 @@ public class OrdersService {
                 orderLink.setPurchaseFee(linkRequest.getPurchaseFee());
                 orderLink.setProductName(linkRequest.getProductName());
 
-                ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId()).orElseThrow(null);
+//                ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId()).orElseThrow(null);
+
+                ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
 
                 orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP));
-
                 orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
                 orderLink.setProductType(productType);
-                orderLink.setStatus(OrderLinkStatus.HOAT_DONG);
+                orderLink.setStatus(OrderLinkStatus.CHO_MUA);
                 orderLink.setNote(linkRequest.getNote());
                 orderLink.setGroupTag(linkRequest.getGroupTag());
                 orderLink.setTrackingCode(generateOrderLinkCode());
@@ -211,41 +213,41 @@ public class OrdersService {
                 .collect(Collectors.toList());
     }
 
-    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status) {
-
-        Long staffId = accountUtils.getAccountCurrent().getAccountId();
-
-        List<OrderStatus> validStatuses = Arrays.asList(
-                OrderStatus.DA_XAC_NHAN,
-                OrderStatus.CHO_THANH_TOAN_SHIP,
-                OrderStatus.CHO_THANH_TOAN,
-                OrderStatus.CHO_NHAP_KHO_VN);
-
-        if (status == null || !validStatuses.contains(status)) {
-            throw new IllegalArgumentException("Trạng thái không hợp lệ!");
-        }
-
-        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
-
-        return ordersPage.map(order -> {
-            OrderPayment orderPayment = new OrderPayment(order);
-            if (status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.CHO_THANH_TOAN_SHIP) {
-                Optional<Payment> payment = order.getPayments().stream()
-                        .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
-                        .findFirst();
-
-                if (payment.isPresent()) {
-                    orderPayment.setPaymentCode(payment.get().getPaymentCode());
-                } else {
-                    Optional<Payment> mergedPayment = paymentRepository.findMergedPaymentByOrderIdAndStatus(order.getOrderId(), PaymentStatus.CHO_THANH_TOAN);
-                    orderPayment.setPaymentCode(mergedPayment.map(Payment::getPaymentCode).orElse(null));
-                }
-            } else {
-                orderPayment.setPaymentCode(null);
-            }
-            return orderPayment;
-        });
-    }
+//    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status) {
+//
+//        Long staffId = accountUtils.getAccountCurrent().getAccountId();
+//
+//        List<OrderStatus> validStatuses = Arrays.asList(
+//                OrderStatus.DA_XAC_NHAN,
+//                OrderStatus.CHO_THANH_TOAN_SHIP,
+//                OrderStatus.CHO_THANH_TOAN,
+//                OrderStatus.CHO_NHAP_KHO_VN);
+//
+//        if (status == null || !validStatuses.contains(status)) {
+//            throw new IllegalArgumentException("Trạng thái không hợp lệ!");
+//        }
+//
+//        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+//
+//        return ordersPage.map(order -> {
+//            OrderPayment orderPayment = new OrderPayment(order);
+//            if (status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.CHO_THANH_TOAN_SHIP) {
+//                Optional<Payment> payment = order.getPayments().stream()
+//                        .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
+//                        .findFirst();
+//
+//                if (payment.isPresent()) {
+//                    orderPayment.setPaymentCode(payment.get().getPaymentCode());
+//                } else {
+//                    Optional<Payment> mergedPayment = paymentRepository.findMergedPaymentByOrderIdAndStatus(order.getOrderId(), PaymentStatus.CHO_THANH_TOAN);
+//                    orderPayment.setPaymentCode(mergedPayment.map(Payment::getPaymentCode).orElse(null));
+//                }
+//            } else {
+//                orderPayment.setPaymentCode(null);
+//            }
+//            return orderPayment;
+//        });
+//    }
 
     public OrderDetail getOrderDetail(Long orderId) {
         Orders order = ordersRepository.findById(orderId)
@@ -253,45 +255,45 @@ public class OrdersService {
         return new OrderDetail(order);
     }
 
-    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable) {
-        Account currentAccount = accountUtils.getAccountCurrent();
-
-        if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
-            throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
-        }
-
-        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
-        Set<Long> routeIds = accountRoutes.stream()
-                .map(AccountRoute::getRoute)
-                .map(Route::getRouteId)
-                .collect(Collectors.toSet());
-
-        if (routeIds.isEmpty()) {
-            return Page.empty(pageable);
-        }
-
-        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusWithLinks(routeIds, OrderStatus.CHO_MUA, pageable);
-
-        return ordersPage.map(orders -> {
-            OrderWithLinks orderWithLinks = new OrderWithLinks(orders);
-
-            List<OrderLinks> sortedLinks = new ArrayList<>(orders.getOrderLinks());
-            sortedLinks.sort(Comparator.comparing(
-                    (OrderLinks link) -> {
-                        if (link.getStatus() == OrderLinkStatus.HOAT_DONG) return 0;
-                        if (link.getStatus() == OrderLinkStatus.DA_MUA) return 1;
-                        return 2;
-                    }
-            ).thenComparing(
-                    OrderLinks::getGroupTag,
-                    Comparator.nullsLast(Comparator.naturalOrder())
-            ));
-
-            orderWithLinks.setOrderLinks(sortedLinks);
-
-            return orderWithLinks;
-        });
-    }
+//    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable) {
+//        Account currentAccount = accountUtils.getAccountCurrent();
+//
+//        if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
+//            throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
+//        }
+//
+//        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+//        Set<Long> routeIds = accountRoutes.stream()
+//                .map(AccountRoute::getRoute)
+//                .map(Route::getRouteId)
+//                .collect(Collectors.toSet());
+//
+//        if (routeIds.isEmpty()) {
+//            return Page.empty(pageable);
+//        }
+//
+//        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusWithLinks(routeIds, OrderStatus.CHO_MUA, pageable);
+//
+//        return ordersPage.map(orders -> {
+//            OrderWithLinks orderWithLinks = new OrderWithLinks(orders);
+//
+//            List<OrderLinks> sortedLinks = new ArrayList<>(orders.getOrderLinks());
+//            sortedLinks.sort(Comparator.comparing(
+//                    (OrderLinks link) -> {
+//                        if (link.getStatus() == OrderLinkStatus.HOAT_DONG) return 0;
+//                        if (link.getStatus() == OrderLinkStatus.DA_MUA) return 1;
+//                        return 2;
+//                    }
+//            ).thenComparing(
+//                    OrderLinks::getGroupTag,
+//                    Comparator.nullsLast(Comparator.naturalOrder())
+//            ));
+//
+//            orderWithLinks.setOrderLinks(sortedLinks);
+//
+//            return orderWithLinks;
+//        });
+//    }
 
     public OrderLinks getOrderLinkById(Long orderLinkId) {
         OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
@@ -299,28 +301,28 @@ public class OrdersService {
         return orderLink;
     }
 
-    public Map<String, Long> getOrderStatusStatistics() {
-        Account currentAccount = accountUtils.getAccountCurrent();
-        if (!(currentAccount instanceof Staff)) {
-            throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập thống kê này!");
-        }
-        Long staffId = currentAccount.getAccountId();
-
-        List<OrderStatus> statusesToCount = Arrays.asList(
-                OrderStatus.DA_XAC_NHAN,
-                OrderStatus.CHO_THANH_TOAN,
-                OrderStatus.CHO_NHAP_KHO_VN,
-                OrderStatus.CHO_THANH_TOAN_SHIP
-        );
-
-        Map<String, Long> statistics = new HashMap<>();
-        for (OrderStatus status : statusesToCount) {
-            long count = ordersRepository.countByStaffAccountIdAndStatus(staffId, status);
-            statistics.put(status.name(), count);
-        }
-
-        return statistics;
-    }
+//    public Map<String, Long> getOrderStatusStatistics() {
+//        Account currentAccount = accountUtils.getAccountCurrent();
+//        if (!(currentAccount instanceof Staff)) {
+//            throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập thống kê này!");
+//        }
+//        Long staffId = currentAccount.getAccountId();
+//
+//        List<OrderStatus> statusesToCount = Arrays.asList(
+//                OrderStatus.DA_XAC_NHAN,
+//                OrderStatus.CHO_THANH_TOAN,
+//                OrderStatus.CHO_NHAP_KHO_VN,
+//                OrderStatus.CHO_THANH_TOAN_SHIP
+//        );
+//
+//        Map<String, Long> statistics = new HashMap<>();
+//        for (OrderStatus status : statusesToCount) {
+//            long count = ordersRepository.countByStaffAccountIdAndStatus(staffId, status);
+//            statistics.put(status.name(), count);
+//        }
+//
+//        return statistics;
+//    }
 
     public List<OrderPayment> getOrdersByCustomerCode(String customerCode) {
         Customer customer = authenticationRepository.findByCustomerCode(customerCode);

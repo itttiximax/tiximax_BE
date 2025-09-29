@@ -62,9 +62,9 @@ public class Orders {
     @JsonIgnore
     Set<Purchases> purchases;
 
-    @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    @JsonIgnore
-    Set<Domestic> domestics;
+//    @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
+//    @JsonIgnore
+//    Set<Domestic> domestics;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
     @JsonIgnore
@@ -92,9 +92,9 @@ public class Orders {
     @JsonIgnore
     Feedback feedback;
 
-    @ManyToOne
-    @JoinColumn(name = "packing_id", nullable = true)
-    @JsonIgnore
-    Packing packing;
+//    @ManyToOne
+//    @JoinColumn(name = "packing_id", nullable = true)
+//    @JsonIgnore
+//    Packing packing;
 
 }
