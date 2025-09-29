@@ -21,6 +21,4 @@ public interface PackingRepository extends JpaRepository<Packing, Long> {
 
     Page<Packing> findByFlightCodeIsNullAndWarehouses_Location_LocationId(Long warehouseLocationId, Pageable pageable);
 
-//    Page<Packing> findByOrders_Warehouses_Location_LocationIdAndOrders_Status(Long warehouseLocationId, OrderStatus status, Pageable pageable);
-
 }
