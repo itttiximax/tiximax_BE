@@ -100,7 +100,7 @@ public class WarehouseService {
 
         orderLinks.forEach(orderLink -> {
             orderLink.setWarehouse(warehouse);
-            orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO);
+            orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO_NN);
         });
 
         warehouseRepository.save(warehouse);

@@ -101,13 +101,13 @@ public class OrdersController {
         return ResponseEntity.ok(orderDetail);
     }
 
-//    @GetMapping("/with-links/{page}/{size}")
-//    public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size) {
-//        Sort sort = Sort.by("createdAt").descending();
-//        Pageable pageable = PageRequest.of(page, size, sort);
-//        Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable);
-//        return ResponseEntity.ok(ordersPage);
-//    }
+    @GetMapping("/with-links/{page}/{size}")
+    public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable);
+        return ResponseEntity.ok(ordersPage);
+    }
 
     @GetMapping("/orderLink/{orderLinkId}")
     public ResponseEntity<OrderLinks> getOrderLinkById(@PathVariable Long orderLinkId) {

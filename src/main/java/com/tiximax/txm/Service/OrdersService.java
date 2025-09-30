@@ -277,45 +277,45 @@ public class OrdersService {
         return new OrderDetail(order);
     }
 
-//    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable) {
-//        Account currentAccount = accountUtils.getAccountCurrent();
-//
-//        if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
-//            throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
-//        }
-//
-//        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
-//        Set<Long> routeIds = accountRoutes.stream()
-//                .map(AccountRoute::getRoute)
-//                .map(Route::getRouteId)
-//                .collect(Collectors.toSet());
-//
-//        if (routeIds.isEmpty()) {
-//            return Page.empty(pageable);
-//        }
-//
-//        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusWithLinks(routeIds, OrderStatus.CHO_MUA, pageable);
-//
-//        return ordersPage.map(orders -> {
-//            OrderWithLinks orderWithLinks = new OrderWithLinks(orders);
-//
-//            List<OrderLinks> sortedLinks = new ArrayList<>(orders.getOrderLinks());
-//            sortedLinks.sort(Comparator.comparing(
-//                    (OrderLinks link) -> {
-//                        if (link.getStatus() == OrderLinkStatus.HOAT_DONG) return 0;
-//                        if (link.getStatus() == OrderLinkStatus.DA_MUA) return 1;
-//                        return 2;
-//                    }
-//            ).thenComparing(
-//                    OrderLinks::getGroupTag,
-//                    Comparator.nullsLast(Comparator.naturalOrder())
-//            ));
-//
-//            orderWithLinks.setOrderLinks(sortedLinks);
-//
-//            return orderWithLinks;
-//        });
-//    }
+    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
+            throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
+        }
+
+        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+        Set<Long> routeIds = accountRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusWithLinks(routeIds, OrderStatus.CHO_MUA, pageable);
+
+        return ordersPage.map(orders -> {
+            OrderWithLinks orderWithLinks = new OrderWithLinks(orders);
+
+            List<OrderLinks> sortedLinks = new ArrayList<>(orders.getOrderLinks());
+            sortedLinks.sort(Comparator.comparing(
+                    (OrderLinks link) -> {
+                        if (link.getStatus() == OrderLinkStatus.CHO_MUA) return 0;
+                        if (link.getStatus() == OrderLinkStatus.DA_MUA) return 1;
+                        return 2;
+                    }
+            ).thenComparing(
+                    OrderLinks::getGroupTag,
+                    Comparator.nullsLast(Comparator.naturalOrder())
+            ));
+
+            orderWithLinks.setOrderLinks(sortedLinks);
+
+            return orderWithLinks;
+        });
+    }
 
     public OrderLinks getOrderLinkById(Long orderLinkId) {
         OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)

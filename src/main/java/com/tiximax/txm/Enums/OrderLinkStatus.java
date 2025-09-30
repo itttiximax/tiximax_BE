@@ -4,7 +4,7 @@ public enum OrderLinkStatus {
     CHO_MUA,
     DA_MUA,
     MUA_SAU,
-    DA_NHAP_KHO,
+    DA_NHAP_KHO_NN,
     DA_DONG_GOI,
     DANG_CHUYEN_VN,
     DA_NHAP_KHO_VN,
