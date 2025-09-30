@@ -5,6 +5,7 @@ import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
+import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -211,45 +212,46 @@ public class OrdersService {
                 .collect(Collectors.toList());
     }
 
-//    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status) {
-//        Long staffId = accountUtils.getAccountCurrent().getAccountId();
-//
-//        List<OrderStatus> validStatuses = Arrays.asList(
-//                OrderStatus.DA_XAC_NHAN,
-//                OrderStatus.CHO_THANH_TOAN,
-//                OrderStatus.DANG_XU_LY);
-//
-//        if (status == null || !validStatuses.contains(status)) {
-//            throw new IllegalArgumentException("Trạng thái không hợp lệ!");
-//        }
-//
-////        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
-//
+    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status) {
+        Long staffId = accountUtils.getAccountCurrent().getAccountId();
+
+        List<OrderStatus> validStatuses = Arrays.asList(
+                OrderStatus.DA_XAC_NHAN,
+                OrderStatus.CHO_THANH_TOAN,
+                OrderStatus.DA_DU_HANG,
+                OrderStatus.CHO_THANH_TOAN_SHIP);
+
+        if (status == null || !validStatuses.contains(status)) {
+            throw new IllegalArgumentException("Trạng thái không hợp lệ!");
+        }
+
+        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+
 //        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(
 //                staffId,
 //                validStatuses,
 //                OrderStatus.DANG_XU_LY,
 //                OrderLinkStatus.DA_NHAP_KHO_VN,
 //                pageable);
-//
-//        return ordersPage.map(order -> {
-//            OrderPayment orderPayment = new OrderPayment(order);
-//            if (status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.CHO_THANH_TOAN_SHIP) {
-//                Optional<Payment> payment = order.getPayments().stream()
-//                        .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
-//                        .findFirst();
-//
-//                if (payment.isPresent()) {
-//                    orderPayment.setPaymentCode(payment.get().getPaymentCode());
-//                } else {
-//                    Optional<Payment> mergedPayment = paymentRepository.findMergedPaymentByOrderIdAndStatus(order.getOrderId(), PaymentStatus.CHO_THANH_TOAN);
-//                    orderPayment.setPaymentCode(mergedPayment.map(Payment::getPaymentCode).orElse(null));
-//                }
-//            } else {
-//                orderPayment.setPaymentCode(null);
-//            }
-//            return orderPayment;
-//        });
+
+        return ordersPage.map(order -> {
+            OrderPayment orderPayment = new OrderPayment(order);
+            if (status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.CHO_THANH_TOAN_SHIP) {
+                Optional<Payment> payment = order.getPayments().stream()
+                        .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
+                        .findFirst();
+
+                if (payment.isPresent()) {
+                    orderPayment.setPaymentCode(payment.get().getPaymentCode());
+                } else {
+                    Optional<Payment> mergedPayment = paymentRepository.findMergedPaymentByOrderIdAndStatus(order.getOrderId(), PaymentStatus.CHO_THANH_TOAN);
+                    orderPayment.setPaymentCode(mergedPayment.map(Payment::getPaymentCode).orElse(null));
+                }
+            } else {
+                orderPayment.setPaymentCode(null);
+            }
+            return orderPayment;
+        });
 //        return ordersPage.map(order -> {
 //            OrderPayment orderPayment = new OrderPayment(order);
 //            if (status == OrderStatus.CHO_THANH_TOAN || status == OrderStatus.DANG_XU_LY) {
@@ -269,7 +271,7 @@ public class OrdersService {
 //            }
 //            return orderPayment;
 //        });
-//    }
+    }
 
     public OrderDetail getOrderDetail(Long orderId) {
         Orders order = ordersRepository.findById(orderId)
@@ -323,28 +325,28 @@ public class OrdersService {
         return orderLink;
     }
 
-//    public Map<String, Long> getOrderStatusStatistics() {
-//        Account currentAccount = accountUtils.getAccountCurrent();
-//        if (!(currentAccount instanceof Staff)) {
-//            throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập thống kê này!");
-//        }
-//        Long staffId = currentAccount.getAccountId();
-//
-//        List<OrderStatus> statusesToCount = Arrays.asList(
-//                OrderStatus.DA_XAC_NHAN,
-//                OrderStatus.CHO_THANH_TOAN,
-//                OrderStatus.CHO_NHAP_KHO_VN,
-//                OrderStatus.CHO_THANH_TOAN_SHIP
-//        );
-//
-//        Map<String, Long> statistics = new HashMap<>();
-//        for (OrderStatus status : statusesToCount) {
-//            long count = ordersRepository.countByStaffAccountIdAndStatus(staffId, status);
-//            statistics.put(status.name(), count);
-//        }
-//
-//        return statistics;
-//    }
+    public Map<String, Long> getOrderStatusStatistics() {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff)) {
+            throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập thống kê này!");
+        }
+        Long staffId = currentAccount.getAccountId();
+
+        List<OrderStatus> statusesToCount = Arrays.asList(
+                OrderStatus.DA_XAC_NHAN,
+                OrderStatus.CHO_THANH_TOAN,
+                OrderStatus.DA_DU_HANG,
+                OrderStatus.CHO_THANH_TOAN_SHIP
+        );
+
+        Map<String, Long> statistics = new HashMap<>();
+        for (OrderStatus status : statusesToCount) {
+            long count = ordersRepository.countByStaffAccountIdAndStatus(staffId, status);
+            statistics.put(status.name(), count);
+        }
+
+        return statistics;
+    }
 
     public List<OrderPayment> getOrdersByCustomerCode(String customerCode) {
         Customer customer = authenticationRepository.findByCustomerCode(customerCode);

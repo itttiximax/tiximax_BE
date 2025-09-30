@@ -26,10 +26,10 @@ public class DomesticController {
 
     @PostMapping("/received")
     public ResponseEntity<Domestic> createDomesticForWarehousing(@RequestBody CreateDomesticRequest request) {
-        if (request == null || request.getPackingIds() == null || request.getPackingIds().isEmpty()) {
+        if (request == null || request.getPackingCode().isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }
-        Domestic domestic = domesticService.createDomesticForWarehousing(request.getPackingIds(), request.getNote());
+        Domestic domestic = domesticService.createDomesticForWarehousing(request.getPackingCode(), request.getNote());
         return ResponseEntity.ok(domestic);
     }
 

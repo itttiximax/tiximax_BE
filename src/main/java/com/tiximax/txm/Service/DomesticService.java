@@ -40,13 +40,13 @@ public class DomesticService {
     @Autowired
     private AccountUtils accountUtils;
 
-    public Domestic createDomesticForWarehousing(List<Long> packingIds, String note) {
+    public Domestic createDomesticForWarehousing(List<String> packingCode, String note) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff == null || staff.getWarehouseLocation() == null) {
             throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
         }
 
-        List<Packing> packings = packingRepository.findAllById(packingIds);
+        List<Packing> packings = packingRepository.findAllByPackingCodeIn(packingCode);
         if (packings.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy packing nào trong danh sách cung cấp!");
         }
@@ -120,7 +120,7 @@ public class DomesticService {
                     .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN);
 
             if (allLinksReady) {
-                order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
+                order.setStatus(OrderStatus.DA_DU_HANG);
                 ordersRepository.save(order);
             }
         }

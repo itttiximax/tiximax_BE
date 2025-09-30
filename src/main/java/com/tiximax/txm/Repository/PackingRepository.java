@@ -27,4 +27,6 @@ public interface PackingRepository extends JpaRepository<Packing, Long> {
             @Param("status") PackingStatus status,
             @Param("warehouseLocationId") Long warehouseLocationId,
             Pageable pageable);
+
+    List<Packing> findAllByPackingCodeIn(List<String> packingCode);
 }

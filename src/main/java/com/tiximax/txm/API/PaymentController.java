@@ -39,6 +39,12 @@ public class PaymentController {
         return ResponseEntity.ok(createdPayment);
     }
 
+    @PostMapping("/merged-shipping")
+    public ResponseEntity<Payment> createMergedPaymentShipping(@RequestBody Set<String> orderCodes) {
+        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes);
+        return ResponseEntity.ok(createdPayment);
+    }
+
     @PutMapping("/confirm/{paymentCode}")
     public ResponseEntity<Payment> confirmPayment(@PathVariable String paymentCode) {
         Payment confirmedPayment = paymentService.confirmedPayment(paymentCode);

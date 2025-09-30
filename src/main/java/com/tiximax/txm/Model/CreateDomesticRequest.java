@@ -11,7 +11,7 @@ import java.util.List;
 
 public class CreateDomesticRequest {
 
-    private List<Long> packingIds;
+    private List<String> packingCode;
 
     private String note;
 
