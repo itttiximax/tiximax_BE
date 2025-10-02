@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -48,6 +47,12 @@ public class PaymentController {
     @PutMapping("/confirm/{paymentCode}")
     public ResponseEntity<Payment> confirmPayment(@PathVariable String paymentCode) {
         Payment confirmedPayment = paymentService.confirmedPayment(paymentCode);
+        return ResponseEntity.ok(confirmedPayment);
+    }
+
+    @PutMapping("/confirm-shipping/{paymentCode}")
+    public ResponseEntity<Payment> confirmPaymentShipping(@PathVariable String paymentCode) {
+        Payment confirmedPayment = paymentService.confirmedPaymentShipment(paymentCode);
         return ResponseEntity.ok(confirmedPayment);
     }
 
