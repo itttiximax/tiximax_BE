@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -25,8 +26,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 
@@ -251,11 +254,23 @@ public class AuthenticationService implements UserDetailsService {
     public Page<Staff> getAllStaff(Pageable pageable) {
         return staffRepository.findAll(pageable);
     }
+
     public Page<Customer> getAllCustomers(Pageable pageable) {
         return customerRepository.findAll(pageable);
     }
+
     public Page<Customer> getCustomersByStaff(Pageable pageable) {
         Long staffId = accountUtils.getAccountCurrent().getAccountId();
         return customerRepository.findByStaffId(staffId, pageable);
+    }
+
+    public Page<Staff> getSaleAndLeadSaleStaff(Pageable pageable) {
+        List<AccountRoles> roles = Arrays.asList(AccountRoles.STAFF_SALE, AccountRoles.LEAD_SALE);
+        Page<Account> accounts = authenticationRepository.findByRoleIn(roles, pageable);
+        List<Staff> staffList = accounts.getContent().stream()
+                .filter(account -> account instanceof Staff)
+                .map(account -> (Staff) account)
+                .collect(Collectors.toList());
+        return new PageImpl<>(staffList, pageable, accounts.getTotalElements());
     }
 }
