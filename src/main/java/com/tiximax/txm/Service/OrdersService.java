@@ -5,7 +5,6 @@ import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
-import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

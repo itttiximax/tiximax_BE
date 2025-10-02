@@ -68,10 +68,10 @@ public class PackingController {
     }
 
     @GetMapping("/flying-away/{page}/{size}")
-    public ResponseEntity<Page<Packing>> getPackingsWithDaBayStatus(@PathVariable int page, @PathVariable int size) {
+    public ResponseEntity<Page<Packing>> getPackingsWithFlightStatus(@PathVariable int page, @PathVariable int size) {
         Sort sort = Sort.by("packedDate").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Packing> packingsPage = packingService.getPackingsWithDaBayStatus(pageable);
+        Page<Packing> packingsPage = packingService.getPackingsWithFlightStatus(pageable);
         return ResponseEntity.ok(packingsPage);
     }
 

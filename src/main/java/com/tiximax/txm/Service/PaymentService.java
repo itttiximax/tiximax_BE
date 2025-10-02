@@ -167,6 +167,34 @@ public class PaymentService {
         return savedPayment;
     }
 
+    public Payment confirmedPaymentShipment(String paymentCode) {
+        Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
+        if (paymentOptional.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy giao dịch này!");
+        }
+        Payment payment = paymentOptional.get();
+        if (!payment.getStatus().equals(PaymentStatus.CHO_THANH_TOAN_SHIP)) {
+            throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
+        }
+        payment.setStatus(PaymentStatus.DA_THANH_TOAN_SHIP);
+        payment.setCollectedAmount(payment.getAmount());
+        payment.setActionAt(LocalDateTime.now());
+        if (payment.getIsMergedPayment()) {
+            Set<Orders> orders = payment.getRelatedOrders();
+            for (Orders order : orders) {
+                order.setStatus(OrderStatus.CHO_GIAO);
+                ordersRepository.save(order);
+                ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+            }
+        } else {
+            Orders order = payment.getOrders();
+            order.setStatus(OrderStatus.CHO_GIAO);
+            ordersRepository.save(order);
+            ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+        }
+        return paymentRepository.save(payment);
+    }
+
     public Optional<Payment> getPaymentsById(Long paymentId) {
         return paymentRepository.findById(paymentId);
     }

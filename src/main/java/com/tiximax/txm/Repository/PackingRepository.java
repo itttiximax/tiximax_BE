@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PackingRepository extends JpaRepository<Packing, Long> {
 
@@ -29,4 +30,8 @@ public interface PackingRepository extends JpaRepository<Packing, Long> {
             Pageable pageable);
 
     List<Packing> findAllByPackingCodeIn(List<String> packingCode);
+
+    Optional<Packing> findByPackingCode(String packingCode);
+
+    Page<Packing> findByStatus(PackingStatus packingStatus, Pageable pageable);
 }
