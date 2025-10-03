@@ -110,7 +110,7 @@ public class DomesticService {
 
         for (Map.Entry<Orders, List<OrderLinks>> entry : orderToLinksMap.entrySet()) {
             Orders order = entry.getKey();
-            List<OrderLinks> links = entry.getValue();
+//            List<OrderLinks> links = entry.getValue();
             Set<OrderLinks> allOrderLinks = order.getOrderLinks();
 
             boolean allLinksReady = allOrderLinks.stream()
@@ -148,7 +148,12 @@ public class DomesticService {
                 Map<String, Object> packingData = new HashMap<>();
                 packingData.put("packingCode", packing.getPackingCode());
 
+//                Set<String> trackingCodes = packingEntry.getValue().stream()
+//                        .map(Warehouse::getTrackingCode)
+//                        .collect(Collectors.toSet());
                 Set<String> trackingCodes = packingEntry.getValue().stream()
+                        .filter(warehouse -> warehouse.getOrderLinks().stream()
+                                .anyMatch(orderLink -> orderLink.getStatus() == OrderLinkStatus.CHO_GIAO))
                         .map(Warehouse::getTrackingCode)
                         .collect(Collectors.toSet());
                 packingData.put("trackingCodes", trackingCodes);

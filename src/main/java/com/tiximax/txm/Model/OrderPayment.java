@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Data
 @Getter
@@ -25,6 +24,7 @@ public class OrderPayment {
     private String note;
     private Customer customer;
     private String paymentCode;
+    private BigDecimal totalNetWeight;
 
     public OrderPayment(Orders order) {
         this.orderId = order.getOrderId();
