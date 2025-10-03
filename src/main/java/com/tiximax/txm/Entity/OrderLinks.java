@@ -21,7 +21,7 @@ public class OrderLinks {
     @Column(name = "link_id")
     private Long linkId;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String productLink;
 
     private String productName;

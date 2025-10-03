@@ -1,4 +1,4 @@
-package com.tiximax.txm.config;
+package com.tiximax.txm.Config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
