@@ -8,6 +8,8 @@ import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PackingRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -121,63 +123,43 @@ public class DomesticService {
         }
     }
 
-//    public List<Map<String, Object>> getCustomerDeliveryInfoByPackingCode(String packingCode) {
-//        Optional<Packing> optionalPacking = packingRepository.findByPackingCode(packingCode);
-//        if (optionalPacking.isEmpty()) {
-//            return Collections.emptyList();
-//        }
-//        Packing packing = optionalPacking.get();
-//        List<String> shipmentCodes = packing.getPackingList();
-//
-//        // Lấy tất cả OrderLinks từ shipmentCodes
-//        List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCodeIn(shipmentCodes);
-//        if (orderLinks.isEmpty()) {
-//            return Collections.emptyList();
-//        }
-//
-//        // Nhóm OrderLinks theo Orders
-//        Map<Orders, List<OrderLinks>> orderToLinksMap = orderLinks.stream()
-//                .collect(Collectors.groupingBy(OrderLinks::getOrders));
-//
-//        // Nhóm Orders theo Customer
-//        Map<Customer, List<Orders>> customerToOrdersMap = orderToLinksMap.keySet().stream()
-//                .collect(Collectors.groupingBy(Orders::getCustomer));
-//
-//        List<Map<String, Object>> result = new ArrayList<>();
-//        for (Map.Entry<Customer, List<Orders>> customerEntry : customerToOrdersMap.entrySet()) {
-//            Customer customer = customerEntry.getKey();
-//            Map<String, Object> customerData = new HashMap<>();
-//            customerData.put("customerId", customer.getCustomerId());
-//            customerData.put("customerName", customer.getFullName()); // Giả sử Customer có fullName, điều chỉnh nếu khác
-//
-//            List<Map<String, Object>> ordersData = new ArrayList<>();
-//            for (Orders order : customerEntry.getValue()) {
-//                List<OrderLinks> linksInPacking = orderToLinksMap.getOrDefault(order, Collections.emptyList());
-//
-//                Map<String, Object> orderData = new HashMap<>();
-//                orderData.put("orderCode", order.getOrderCode());
-//
-//                // Lấy list trackingCodes từ OrderLinks trong packing
-//                Set<String> trackingCodes = linksInPacking.stream()
-//                        .map(OrderLinks::getTrackingCode)
-//                        .collect(Collectors.toSet());
-//                orderData.put("trackingCodes", trackingCodes);
-//                orderData.put("trackingCount", trackingCodes.size());
-//
-//                // Kiểm tra nếu đủ OrderLinks trong Order
-//                Set<OrderLinks> allOrderLinks = order.getOrderLinks();
-//                boolean isComplete = linksInPacking.size() == allOrderLinks.size();
-//                orderData.put("isComplete", isComplete);
-//
-//                ordersData.add(orderData);
-//            }
-//
-//            customerData.put("orders", ordersData);
-//            result.add(customerData);
-//        }
-//
-//        logger.info("Found {} customers for packingCode {}", result.size(), packingCode);
-//        return result;
-//    }
+    public List<Map<String, Object>> getReadyForDeliveryOrders(Pageable pageable) {
+        Page<Orders> ordersPage = ordersRepository.findByStatus(OrderStatus.CHO_GIAO, pageable);
+
+        Map<Customer, List<Orders>> customerToOrdersMap = ordersPage.getContent().stream()
+                .collect(Collectors.groupingBy(Orders::getCustomer));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<Customer, List<Orders>> customerEntry : customerToOrdersMap.entrySet()) {
+            Customer customer = customerEntry.getKey();
+            Map<String, Object> customerData = new HashMap<>();
+            customerData.put("customerName", customer.getName());
+            customerData.put("customerPhone", customer.getPhone());
+            customerData.put("customerAddress", customer.getAddress());
+
+            Map<Packing, List<Warehouse>> packingToWarehousesMap = customerEntry.getValue().stream()
+                    .flatMap(order -> order.getWarehouses().stream())
+                    .filter(warehouse -> warehouse.getPacking() != null)
+                    .collect(Collectors.groupingBy(Warehouse::getPacking));
+
+            List<Map<String, Object>> packingsData = new ArrayList<>();
+            for (Map.Entry<Packing, List<Warehouse>> packingEntry : packingToWarehousesMap.entrySet()) {
+                Packing packing = packingEntry.getKey();
+                Map<String, Object> packingData = new HashMap<>();
+                packingData.put("packingCode", packing.getPackingCode());
+
+                Set<String> trackingCodes = packingEntry.getValue().stream()
+                        .map(Warehouse::getTrackingCode)
+                        .collect(Collectors.toSet());
+                packingData.put("trackingCodes", trackingCodes);
+
+                packingsData.add(packingData);
+            }
+            customerData.put("packings", packingsData);
+            result.add(customerData);
+        }
+
+        return result;
+    }
 
 }
