@@ -171,11 +171,15 @@ public class OrdersService {
                         .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
                 orderLink.setProductType(productType);
                 orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO_NN);
-                orderLink.setFinalPriceVnd(linkRequest.getExtraCharge());
-                orderLink.setNote(linkRequest.getNote());
+                orderLink.setFinalPriceVnd(
+                    linkRequest.getExtraCharge()
+                        .add(linkRequest.getDifferentFee())
+                        .setScale(2, RoundingMode.HALF_UP)
+                );     
+           orderLink.setNote(linkRequest.getNote());
                 orderLink.setTrackingCode(generateOrderLinkCode());
                 orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
-                orderLink.setShipmentCode(order.getOrderCode());
+                orderLink.setShipmentCode(linkRequest.getShipmentCode());
 
                 orderLinksList.add(orderLink);
                 BigDecimal finalPrice = orderLink.getFinalPriceVnd();
@@ -192,7 +196,7 @@ public class OrdersService {
 //        messagingTemplate.convertAndSend("/topic/orders", order);
         return order;
     }
-
+  
     public String generateOrderCode(OrderType orderType) {
         String orderCode;
         do {
