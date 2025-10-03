@@ -300,9 +300,16 @@ public class OrdersService {
                         .map(warehouse -> BigDecimal.valueOf(warehouse.getNetWeight()))
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .setScale(2, RoundingMode.HALF_UP);
+
+                if (totalNetWeight.compareTo(BigDecimal.valueOf(0.5)) < 0) {
+                    totalNetWeight = BigDecimal.valueOf(0.5);
+                } else if (totalNetWeight.compareTo(BigDecimal.valueOf(0.5)) >= 0 && totalNetWeight.compareTo(BigDecimal.ONE) < 0) {
+                    totalNetWeight = BigDecimal.ONE;
+                }
+
                 orderPayment.setTotalNetWeight(totalNetWeight);
                 if (order.getExchangeRate() != null) {
-                    BigDecimal calculatedPrice = totalNetWeight.multiply(order.getExchangeRate()).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal calculatedPrice = totalNetWeight.multiply(order.getRoute().getUnitBuyingPrice()).setScale(2, RoundingMode.HALF_UP);
                     orderPayment.setFinalPriceOrder(calculatedPrice);
                 } else {
                     orderPayment.setFinalPriceOrder(null);
