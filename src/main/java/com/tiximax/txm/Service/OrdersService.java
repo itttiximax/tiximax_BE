@@ -104,7 +104,7 @@ public class OrdersService {
                 ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
                         .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
 
-                orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP));
+                orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP)); 
                 orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
                 orderLink.setProductType(productType);
                 orderLink.setStatus(OrderLinkStatus.CHO_MUA);
@@ -115,6 +115,69 @@ public class OrdersService {
                 orderLink.setExtraCharge(linkRequest.getExtraCharge());
                 orderLinksList.add(orderLink);
 
+                BigDecimal finalPrice = orderLink.getFinalPriceVnd();
+                if (finalPrice != null) {
+                    totalPriceVnd = totalPriceVnd.add(finalPrice);
+                }
+            }
+        }
+        order.setOrderLinks(new HashSet<>(orderLinksList));
+        order.setFinalPriceOrder(totalPriceVnd);
+        order = ordersRepository.save(order);
+        orderLinksRepository.saveAll(orderLinksList);
+        addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
+//        messagingTemplate.convertAndSend("/topic/orders", order);
+        return order;
+    }
+    // dành cho staff kí gửi 
+    public Orders addConsignment(String customerCode, Long routeId, ConsignmentRequest consignmentRequest) throws IOException {
+        if (customerCode == null){
+            throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
+        }
+        if (routeId == null){
+            throw new IllegalArgumentException("Bạn phải chọn tuyến hàng để tiếp tục!");
+        }
+        Customer customer = authenticationRepository.findByCustomerCode(customerCode);
+        if (customer == null) {
+            throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
+        }
+
+        Route route = routeRepository.findById(routeId).orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
+        Optional<Destination> destination = destinationRepository.findById(consignmentRequest.getDestinationId());
+
+        if (destination.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy điểm đến!");
+        }
+        Orders order = new Orders();
+        order.setCustomer(customer);
+        order.setOrderCode(generateOrderCode(consignmentRequest.getOrderType()));
+        order.setOrderType(consignmentRequest.getOrderType());
+        order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+        order.setCreatedAt(LocalDateTime.now());
+        order.setDestination(destination.get());
+        order.setCheckRequired(consignmentRequest.getCheckRequired());
+        order.setRoute(route);
+        order.setStaff((Staff) accountUtils.getAccountCurrent());
+        BigDecimal totalPriceVnd = BigDecimal.ZERO;
+
+         List<OrderLinks> orderLinksList = new ArrayList<>();
+        if (consignmentRequest.getConsignmentLinkRequests() != null) {
+            for (ConsignmentLinkRequest linkRequest : consignmentRequest. getConsignmentLinkRequests()) {
+                OrderLinks orderLink = new OrderLinks();
+                orderLink.setOrders(order);
+                orderLink.setQuantity(linkRequest.getQuantity());
+                orderLink.setProductName(linkRequest.getProductName());
+                ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
+                orderLink.setProductType(productType);
+                orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO_NN);
+                orderLink.setFinalPriceVnd(linkRequest.getExtraCharge());
+                orderLink.setNote(linkRequest.getNote());
+                orderLink.setTrackingCode(generateOrderLinkCode());
+                orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
+                orderLink.setShipmentCode(order.getOrderCode());
+
+                orderLinksList.add(orderLink);
                 BigDecimal finalPrice = orderLink.getFinalPriceVnd();
                 if (finalPrice != null) {
                     totalPriceVnd = totalPriceVnd.add(finalPrice);
