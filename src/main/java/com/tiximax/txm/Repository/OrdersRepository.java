@@ -58,9 +58,11 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
     @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.warehouses w LEFT JOIN FETCH w.orderLinks WHERE o.status = :status")
     Page<Orders> findByStatusWithWarehousesAndLinks(@Param("status") OrderStatus status, Pageable pageable);
 
-    @Query("SELECT o FROM Orders o JOIN o.warehouses w WHERE o.status = :status AND w.location.locationId = :warehouseLocationId")
-    Page<Orders> findByStatusWithWarehousesAndLinksAndWarehouseLocation(
-            @Param("status") List<OrderStatus> status,
-            @Param("warehouseLocationId") Long warehouseLocationId,
-            Pageable pageable);
+//    @Query("SELECT o FROM Orders o JOIN o.warehouses w WHERE o.status = :status AND w.location.locationId = :warehouseLocationId")
+//    Page<Orders> findByStatusWithWarehousesAndLinksAndWarehouseLocation(
+//            @Param("status") List<OrderStatus> status,
+//            @Param("warehouseLocationId") Long warehouseLocationId,
+//            Pageable pageable);
+
+    Page<Orders> findByStatusInAndWarehouses_Location_LocationId(List<OrderStatus> statuses, Long locationId, Pageable pageable);
 }

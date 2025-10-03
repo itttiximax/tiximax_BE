@@ -5,7 +5,6 @@ import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
-import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -422,6 +421,30 @@ public class OrdersService {
         }
 
         List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_XAC_NHAN);
+
+        if (orders.size() < 2){
+            throw new IllegalStateException("Khách hàng này không đủ đơn để gộp thanh toán!");
+        }
+
+        return orders.stream()
+                .map(order -> {
+                    OrderPayment orderPayment = new OrderPayment(order);
+                    return orderPayment;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<OrderPayment> getOrdersShippingByCustomerCode(String customerCode) {
+        Customer customer = authenticationRepository.findByCustomerCode(customerCode);
+        if (customer == null) {
+            throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
+        }
+
+        if (!customer.getStaffId().equals(accountUtils.getAccountCurrent().getAccountId())) {
+            throw new IllegalStateException("Bạn không có quyền truy cập đơn hàng của khách hàng này!");
+        }
+
+        List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_DU_HANG);
 
         if (orders.size() < 2){
             throw new IllegalStateException("Khách hàng này không đủ đơn để gộp thanh toán!");

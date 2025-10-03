@@ -152,6 +152,7 @@ public class AuthenticationController {
         Page<Staff> staffPage = authenticationService.getAllStaff(pageable);
         return ResponseEntity.ok(staffPage);
     }
+
     @GetMapping("/customers/{page}/{size}")
     public ResponseEntity<Page<Customer>> getAllCustomers(@PathVariable int page, @PathVariable int size) {
         Sort sort = Sort.by("createdAt").descending();
@@ -168,4 +169,11 @@ public class AuthenticationController {
         return ResponseEntity.ok(customersPage);
     }
 
+    @GetMapping("/sale-lead-staff/{page}/{size}")
+    public ResponseEntity<Page<Staff>> getSaleLeadStaff(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Staff> staffPage = authenticationService.getSaleAndLeadSaleStaff(pageable);
+        return ResponseEntity.ok(staffPage);
+    }
 }

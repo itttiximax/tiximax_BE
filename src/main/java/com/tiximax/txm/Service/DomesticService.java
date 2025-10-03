@@ -12,10 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -124,6 +121,45 @@ public class DomesticService {
                 ordersRepository.save(order);
             }
         }
+    }
+
+    public List<Map<String, Object>> getReadyForDeliveryOrders(Pageable pageable) {
+        Page<Orders> ordersPage = ordersRepository.findByStatus(OrderStatus.CHO_GIAO, pageable);
+
+        Map<Customer, List<Orders>> customerToOrdersMap = ordersPage.getContent().stream()
+                .collect(Collectors.groupingBy(Orders::getCustomer));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map.Entry<Customer, List<Orders>> customerEntry : customerToOrdersMap.entrySet()) {
+            Customer customer = customerEntry.getKey();
+            Map<String, Object> customerData = new HashMap<>();
+            customerData.put("customerName", customer.getName());
+            customerData.put("customerPhone", customer.getPhone());
+            customerData.put("customerAddress", customer.getAddress());
+
+            Map<Packing, List<Warehouse>> packingToWarehousesMap = customerEntry.getValue().stream()
+                    .flatMap(order -> order.getWarehouses().stream())
+                    .filter(warehouse -> warehouse.getPacking() != null)
+                    .collect(Collectors.groupingBy(Warehouse::getPacking));
+
+            List<Map<String, Object>> packingsData = new ArrayList<>();
+            for (Map.Entry<Packing, List<Warehouse>> packingEntry : packingToWarehousesMap.entrySet()) {
+                Packing packing = packingEntry.getKey();
+                Map<String, Object> packingData = new HashMap<>();
+                packingData.put("packingCode", packing.getPackingCode());
+
+                Set<String> trackingCodes = packingEntry.getValue().stream()
+                        .map(Warehouse::getTrackingCode)
+                        .collect(Collectors.toSet());
+                packingData.put("trackingCodes", trackingCodes);
+
+                packingsData.add(packingData);
+            }
+            customerData.put("packings", packingsData);
+            result.add(customerData);
+        }
+
+        return result;
     }
 
 }

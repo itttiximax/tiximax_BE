@@ -12,6 +12,7 @@ import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -49,38 +50,35 @@ public class PackingService {
             throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
         }
         List<OrderStatus> statuses = Arrays.asList(OrderStatus.CHO_DONG_GOI, OrderStatus.DANG_XU_LY);
-        Page<Orders> ordersPage = ordersRepository.findByStatusWithWarehousesAndLinksAndWarehouseLocation(
+        Page<Orders> ordersPage = ordersRepository.findByStatusInAndWarehouses_Location_LocationId(
                 statuses, staff.getWarehouseLocation().getLocationId(), pageable);
 
-//        return ordersPage.map(order -> {
-//            Map<String, Integer> trackingToCount = new HashMap<>();
-//            Set<Warehouse> warehouses = order.getWarehouses();
-//            for (Warehouse warehouse : warehouses) {
-//                String trackingCode = warehouse.getTrackingCode();
-//                int productCount = warehouse.getOrderLinks().size();
-//                trackingToCount.put(trackingCode, productCount);
-//            }
-//
-//            PackingEligibleOrder eligibleOrder = new PackingEligibleOrder();
-//            eligibleOrder.setOrderCode(order.getOrderCode());
-//            eligibleOrder.setTrackingCodeToProductCount(trackingToCount);
-//            return eligibleOrder;
-//        });
-        return ordersPage.map(order -> {
-            Map<String, Integer> trackingToCount = new HashMap<>();
-            Set<Warehouse> warehouses = order.getWarehouses();
-            for (Warehouse warehouse : warehouses) {
-                if (warehouse.getPacking() == null) {
-                    String trackingCode = warehouse.getTrackingCode();
-                    int productCount = warehouse.getOrderLinks().size();
-                    trackingToCount.put(trackingCode, productCount);
-                }
-            }
-            PackingEligibleOrder eligibleOrder = new PackingEligibleOrder();
-            eligibleOrder.setOrderCode(order.getOrderCode());
-            eligibleOrder.setTrackingCodeToProductCount(trackingToCount);
-            return eligibleOrder;
-        });
+        List<PackingEligibleOrder> eligibleOrders = ordersPage.getContent().stream()
+                .filter(order -> order.getWarehouses().stream()
+                        .anyMatch(warehouse -> warehouse.getPacking() == null &&
+                                warehouse.getOrderLinks().stream()
+                                        .anyMatch(orderLink -> orderLink.getStatus() == OrderLinkStatus.DA_NHAP_KHO_NN)))
+                .map(order -> {
+                    Map<String, Integer> trackingToCount = new HashMap<>();
+                    Set<Warehouse> warehouses = order.getWarehouses();
+                    for (Warehouse warehouse : warehouses) {
+                        if (warehouse.getPacking() == null) {
+                            int productCount = (int) warehouse.getOrderLinks().stream()
+                                    .filter(orderLink -> orderLink.getStatus() == OrderLinkStatus.DA_NHAP_KHO_NN)
+                                    .count();
+                            if (productCount > 0) {
+                                trackingToCount.put(warehouse.getTrackingCode(), productCount);
+                            }
+                        }
+                    }
+                    PackingEligibleOrder eligibleOrder = new PackingEligibleOrder();
+                    eligibleOrder.setOrderCode(order.getOrderCode());
+                    eligibleOrder.setTrackingCodeToProductCount(trackingToCount);
+                    return eligibleOrder;
+                })
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(eligibleOrders, pageable, ordersPage.getTotalElements());
     }
 
     public Packing createPacking(PackingRequest request) {
@@ -275,12 +273,11 @@ public class PackingService {
         return 1;
     }
 
-    public Page<Packing> getPackingsWithDaBayStatus(Pageable pageable) {
-        Staff staff = (Staff) accountUtils.getAccountCurrent();
-        if (staff == null || staff.getWarehouseLocation() == null) {
-            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
-        }
-        return packingRepository.findByStatusAndWarehouses_Location_LocationId(
-                PackingStatus.DA_BAY, staff.getWarehouseLocation().getLocationId(), pageable);
+    public Page<Packing> getPackingsWithFlightStatus(Pageable pageable) {
+//        Staff staff = (Staff) accountUtils.getAccountCurrent();
+//        if (staff == null || staff.getWarehouseLocation() == null) {
+//            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+//        }
+        return packingRepository.findByStatus(PackingStatus.DA_BAY, pageable);
     }
 }
