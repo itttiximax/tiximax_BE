@@ -5,6 +5,7 @@ import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
+import com.tiximax.txm.Model.ConsignmentRequest;
 import com.tiximax.txm.Model.OrderDetail;
 import com.tiximax.txm.Model.OrderPayment;
 import com.tiximax.txm.Model.OrderWithLinks;
@@ -37,9 +38,16 @@ public class OrdersController {
     @Autowired
     private OrdersService ordersService;
 
+    // dành cho staff order cho khách hàng
     @PostMapping("/{customerCode}/{routeId}")
     public ResponseEntity<Orders> createdReview(@PathVariable String customerCode, @PathVariable long routeId, @RequestBody OrdersRequest ordersRequest) throws IOException {
         Orders orders = ordersService.addOrder(customerCode, routeId, ordersRequest);
+        return ResponseEntity.ok(orders);
+    }
+
+    @PostMapping("/deposit/{customerCode}/{routeId}")
+    public ResponseEntity<Orders> createdConsignment(@PathVariable String customerCode, @PathVariable long routeId, @RequestBody ConsignmentRequest consignmentRequest) throws IOException {
+        Orders orders = ordersService.addConsignment(customerCode, routeId, consignmentRequest);
         return ResponseEntity.ok(orders);
     }
 

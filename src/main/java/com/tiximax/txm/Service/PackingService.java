@@ -250,8 +250,20 @@ public class PackingService {
             }
         }
         String baseCode = location + monthYear + shortDestination;
-        int sequence = getNextSequence(baseCode);
-        return baseCode + sequence;
+
+        String finalCode = baseCode + "1";
+        boolean exists;
+        int sequence = 1 ;
+
+          do {
+        exists = packingRepository.existsByPackingCode(finalCode);
+        if (exists) {
+            sequence++;
+            finalCode = baseCode + sequence;
+        }
+        } while (exists);
+
+        return finalCode;
     }
 
     private int getNextSequence(String baseCode) {
