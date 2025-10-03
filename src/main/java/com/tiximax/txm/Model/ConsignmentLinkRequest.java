@@ -15,6 +15,10 @@ public class ConsignmentLinkRequest {
     private Integer quantity;
 
     private String productName;
+
+    private String shipmentCode;
+
+    private BigDecimal differentFee;
     
     private BigDecimal extraCharge;
 
