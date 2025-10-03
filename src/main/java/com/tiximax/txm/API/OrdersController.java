@@ -45,7 +45,7 @@ public class OrdersController {
         return ResponseEntity.ok(orders);
     }
 
-    @PostMapping("/consignment/{customerCode}/{routeId}")
+    @PostMapping("/deposit/{customerCode}/{routeId}")
     public ResponseEntity<Orders> createdConsignment(@PathVariable String customerCode, @PathVariable long routeId, @RequestBody ConsignmentRequest consignmentRequest) throws IOException {
         Orders orders = ordersService.addConsignment(customerCode, routeId, consignmentRequest);
         return ResponseEntity.ok(orders);
