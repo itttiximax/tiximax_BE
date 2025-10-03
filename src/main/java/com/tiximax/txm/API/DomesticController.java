@@ -11,8 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin
@@ -31,6 +31,14 @@ public class DomesticController {
         }
         Domestic domestic = domesticService.createDomesticForWarehousing(request.getPackingCode(), request.getNote());
         return ResponseEntity.ok(domestic);
+    }
+
+    @GetMapping("/ready-for-delivery/{page}/{size}")
+    public ResponseEntity<List<Map<String, Object>>> getReadyForDeliveryOrders(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        List<Map<String, Object>> result = domesticService.getReadyForDeliveryOrders(pageable);
+        return ResponseEntity.ok(result);
     }
 
 }
