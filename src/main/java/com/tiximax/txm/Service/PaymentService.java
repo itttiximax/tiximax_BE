@@ -1,10 +1,7 @@
 package com.tiximax.txm.Service;
 
 import com.tiximax.txm.Entity.*;
-import com.tiximax.txm.Enums.OrderStatus;
-import com.tiximax.txm.Enums.PaymentStatus;
-import com.tiximax.txm.Enums.PaymentType;
-import com.tiximax.txm.Enums.ProcessLogAction;
+import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PaymentRepository;
 import com.tiximax.txm.Repository.ProcessLogRepository;
@@ -183,12 +180,20 @@ public class PaymentService {
             Set<Orders> orders = payment.getRelatedOrders();
             for (Orders order : orders) {
                 order.setStatus(OrderStatus.CHO_GIAO);
+                Set<OrderLinks> orderLinks = order.getOrderLinks();
+                for (OrderLinks orderLink : orderLinks) {
+                    orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
+                }
                 ordersRepository.save(order);
                 ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
             }
         } else {
             Orders order = payment.getOrders();
             order.setStatus(OrderStatus.CHO_GIAO);
+            Set<OrderLinks> orderLinks = order.getOrderLinks();
+            for (OrderLinks orderLink : orderLinks) {
+                orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
+            }
             ordersRepository.save(order);
             ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
         }
