@@ -68,7 +68,6 @@ public class PurchaseService {
         if (!allActive) {
             throw new IllegalArgumentException("Tất cả mã phải ở trạng thái HOẠT ĐỘNG!");
         }
-
         Purchases purchase = new Purchases();
         purchase.setPurchaseCode(generatePurchaseCode());
         purchase.setPurchaseTime(LocalDateTime.now());
@@ -83,7 +82,6 @@ public class PurchaseService {
             orderLink.setShipmentCode(purchaseRequest.getShipmentCode());
         }
         purchase.setOrderLinks(Set.copyOf(orderLinks));
-
         purchase = purchasesRepository.save(purchase);
         orderLinksRepository.saveAll(orderLinks);
         ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_MUA_HANG);
