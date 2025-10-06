@@ -177,10 +177,12 @@ public class OrdersService {
                         .setScale(2, RoundingMode.HALF_UP)
                 );     
            orderLink.setNote(linkRequest.getNote());
-                orderLink.setTrackingCode(generateOrderLinkCode());
-                orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
-                orderLink.setShipmentCode(linkRequest.getShipmentCode());
 
+   // set shipment code = tracking code
+                String trackingCode = generateOrderLinkCode();
+                orderLink.setTrackingCode(trackingCode);
+                orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
+                orderLink.setShipmentCode(trackingCode);
                 orderLinksList.add(orderLink);
                 BigDecimal finalPrice = orderLink.getFinalPriceVnd();
                 if (finalPrice != null) {

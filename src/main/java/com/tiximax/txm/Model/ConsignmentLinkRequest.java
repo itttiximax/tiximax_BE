@@ -16,8 +16,6 @@ public class ConsignmentLinkRequest {
 
     private String productName;
 
-    private String shipmentCode;
-
     private BigDecimal differentFee;
     
     private BigDecimal extraCharge;
