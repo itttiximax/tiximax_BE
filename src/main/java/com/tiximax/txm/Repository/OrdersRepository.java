@@ -3,6 +3,8 @@ package com.tiximax.txm.Repository;
 import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
+import com.tiximax.txm.Enums.OrderType;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -65,4 +67,17 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 //            Pageable pageable);
 
     Page<Orders> findByStatusInAndWarehouses_Location_LocationId(List<OrderStatus> statuses, Long locationId, Pageable pageable);
+
+     @Query("SELECT DISTINCT o FROM Orders o " +
+           "LEFT JOIN FETCH o.orderLinks " + 
+           "WHERE o.route.routeId IN :routeIds " +
+           "AND o.status = :status " +
+           "AND o.orderType = :orderType")
+    Page<Orders> findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(
+        @Param("routeIds") Set<Long> routeIds,
+        @Param("status") OrderStatus status, 
+        @Param("orderType") OrderType orderType,
+        Pageable pageable
+    );
+
 }
