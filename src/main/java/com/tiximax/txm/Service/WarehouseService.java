@@ -55,6 +55,7 @@ public class WarehouseService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến mã vận đơn này!");
         }
 
+        System.out.println("Order Status: " + order.getStatus());
         if (!(order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN) ||
                 order.getStatus().equals(OrderStatus.CHO_DONG_GOI) ||
                 order.getStatus().equals(OrderStatus.DANG_XU_LY))) {

@@ -113,6 +113,9 @@ public class PaymentService {
             }
         } else {
             Orders order = payment.getOrders();
+            if(order.getStatus() == OrderStatus.CHO_THANH_TOAN_DAU_GIA){
+               order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            } else
             order.setStatus(OrderStatus.CHO_MUA);
             ordersRepository.save(order);
             ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
@@ -202,6 +205,12 @@ public class PaymentService {
 
     public Optional<Payment> getPaymentsById(Long paymentId) {
         return paymentRepository.findById(paymentId);
+    }
+
+    // lấy payment của các đơn đấu giá thành công đang chờ thanh toán
+    public List <Payment> getPaymentByStaffandStatus(){
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        return paymentRepository.findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(staff, OrderStatus.CHO_THANH_TOAN_DAU_GIA,   PaymentStatus.CHO_THANH_TOAN);
     }
 
     public Optional<Payment> getPendingPaymentByOrderId(Long orderId) {
