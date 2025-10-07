@@ -37,6 +37,8 @@ public class Orders {
 
     private BigDecimal finalPriceOrder;
 
+    private BigDecimal priceBeforeFee ; 
+
     @Column(nullable = false)
     private Boolean checkRequired;
 

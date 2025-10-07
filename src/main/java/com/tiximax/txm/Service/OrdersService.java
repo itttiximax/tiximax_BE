@@ -87,6 +87,7 @@ public class OrdersService {
         order.setRoute(route);
         order.setStaff((Staff) accountUtils.getAccountCurrent());
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
+        BigDecimal priceBeforeFee = BigDecimal.ZERO;
 
         List<OrderLinks> orderLinksList = new ArrayList<>();
         if (ordersRequest.getOrderLinkRequests() != null) {
@@ -100,7 +101,6 @@ public class OrdersService {
                 orderLink.setTotalWeb((linkRequest.getPriceWeb().add(linkRequest.getShipWeb())).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP).add(linkRequest.getPurchaseFee()));
                 orderLink.setPurchaseFee(linkRequest.getPurchaseFee());
                 orderLink.setProductName(linkRequest.getProductName());
-
                 ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
                         .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
 
@@ -118,11 +118,13 @@ public class OrdersService {
                 BigDecimal finalPrice = orderLink.getFinalPriceVnd();
                 if (finalPrice != null) {
                     totalPriceVnd = totalPriceVnd.add(finalPrice);
+                    priceBeforeFee = priceBeforeFee.add(orderLink.getPriceWeb());
                 }
             }
         }
         order.setOrderLinks(new HashSet<>(orderLinksList));
         order.setFinalPriceOrder(totalPriceVnd);
+        order.setPriceBeforeFee(priceBeforeFee);
         order = ordersRepository.save(order);
         orderLinksRepository.saveAll(orderLinksList);
         addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
@@ -206,6 +208,8 @@ public class OrdersService {
                 orderCode = "MH-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
             } else if (orderType.equals(OrderType.KY_GUI)) {
                 orderCode = "KG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
+            } else if (orderType.equals(OrderType.DAU_GIA)) {
+                orderCode = "DG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
             } else {
                 throw new IllegalStateException("Không có kiểu đơn hàng " + orderType);
             }
@@ -287,6 +291,7 @@ public class OrdersService {
                 OrderStatus.DA_XAC_NHAN,
                 OrderStatus.CHO_THANH_TOAN,
                 OrderStatus.DA_DU_HANG,
+                OrderStatus.CHO_THANH_TOAN_DAU_GIA,
                 OrderStatus.CHO_THANH_TOAN_SHIP);
 
         if (status == null || !validStatuses.contains(status)) {
@@ -294,9 +299,19 @@ public class OrdersService {
         }
 
         Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
-
+        
         return ordersPage.map(order -> {
             OrderPayment orderPayment = new OrderPayment(order);
+             if (status == OrderStatus.CHO_THANH_TOAN_DAU_GIA) {
+            System.out.println("Check status nha ku ");
+            Optional<Payment> payment = order.getPayments().stream()
+                    .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
+                    .findFirst();
+            orderPayment.setPaymentCode(payment.map(Payment::getPaymentCode).orElse(null));
+            return orderPayment;
+        }
+
+
             if (status == OrderStatus.DA_DU_HANG || status == OrderStatus.CHO_THANH_TOAN_SHIP) {
                 BigDecimal totalNetWeight = order.getWarehouses().stream()
                         .map(warehouse -> BigDecimal.valueOf(warehouse.getNetWeight()))
@@ -400,6 +415,7 @@ public class OrdersService {
         List<OrderStatus> statusesToCount = Arrays.asList(
                 OrderStatus.DA_XAC_NHAN,
                 OrderStatus.CHO_THANH_TOAN,
+                OrderStatus.CHO_THANH_TOAN_DAU_GIA,
                 OrderStatus.DA_DU_HANG,
                 OrderStatus.CHO_THANH_TOAN_SHIP
         );

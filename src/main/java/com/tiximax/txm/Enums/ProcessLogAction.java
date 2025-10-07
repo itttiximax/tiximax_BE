@@ -5,6 +5,7 @@ public enum ProcessLogAction {
     TAO_THANH_TOAN_HANG,
     DA_THANH_TOAN,
     DA_MUA_HANG,
+    DAU_GIA_THANH_CONG,
     DA_NHAP_KHO_NN,
     TAO_THANH_TOAN_SHIP,
     DA_DONG_GOI,

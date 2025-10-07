@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -25,6 +26,8 @@ public class Purchases {
     private String purchaseImage;
 
     private LocalDateTime purchaseTime;
+
+    private BigDecimal finalPriceOrder;
 
     private String note;
 
