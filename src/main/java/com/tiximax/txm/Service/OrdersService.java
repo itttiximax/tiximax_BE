@@ -284,7 +284,7 @@ public class OrdersService {
                 .collect(Collectors.toList());
     }
 
-    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status) {
+    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status ) {
         Long staffId = accountUtils.getAccountCurrent().getAccountId();
 
         List<OrderStatus> validStatuses = Arrays.asList(
@@ -359,7 +359,7 @@ public class OrdersService {
         return new OrderDetail(order);
     }
 
-    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable) {
+    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable, OrderType orderType) {
         Account currentAccount = accountUtils.getAccountCurrent();
 
         if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
@@ -376,7 +376,7 @@ public class OrdersService {
             return Page.empty(pageable);
         }
 
-        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusWithLinks(routeIds, OrderStatus.CHO_MUA, pageable);
+        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(routeIds, OrderStatus.CHO_MUA,orderType, pageable);
 
         return ordersPage.map(orders -> {
             OrderWithLinks orderWithLinks = new OrderWithLinks(orders);

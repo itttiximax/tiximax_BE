@@ -33,7 +33,6 @@ public class PurchaseController {
     @PostMapping("auction/add")
     public ResponseEntity<Purchases> addAuction(@RequestParam String orderCode, @RequestBody PurchaseRequest purchaseRequest) {
         Purchases purchase = purchaseService.createAuction(orderCode, purchaseRequest);
-        System.out.println("Check code nha ku ");
         return ResponseEntity.ok(purchase);
     }   
 
