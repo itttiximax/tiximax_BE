@@ -4,6 +4,7 @@ import com.tiximax.txm.Config.SecurityConfig;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.AccountStatus;
+import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
@@ -25,10 +26,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -64,6 +66,9 @@ public class AuthenticationService implements UserDetailsService {
 
     @Autowired
     private RouteRepository routeRepository;
+
+    @Autowired
+    private OrdersRepository ordersRepository;
 
     @Autowired
     private AccountUtils accountUtils;
@@ -272,5 +277,141 @@ public class AuthenticationService implements UserDetailsService {
                 .map(account -> (Staff) account)
                 .collect(Collectors.toList());
         return new PageImpl<>(staffList, pageable, accounts.getTotalElements());
+    }
+
+    public Page<Staff> getSalesInSameRoute(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (currentAccount.getRole() != AccountRoles.LEAD_SALE) {
+            throw new SecurityException("Vị trí của bạn không được phép cho chức năng này!");
+        }
+
+        List<AccountRoute> leadSaleRoutes = accountRouteRepository.findByAccount_AccountId(currentAccount.getAccountId());
+        Set<Long> routeIds = leadSaleRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        List<AccountRoute> allAccountRoutes = accountRouteRepository.findByRoute_RouteIdIn(routeIds);
+
+        List<Staff> sales = allAccountRoutes.stream()
+                .map(AccountRoute::getAccount)
+                .filter(account -> account instanceof Staff && account.getRole() == AccountRoles.STAFF_SALE)
+                .map(account -> (Staff) account)
+                .distinct()
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), sales.size());
+        List<Staff> pagedSales = sales.subList(start, end);
+        return new PageImpl<>(pagedSales, pageable, sales.size());
+    }
+
+    public List<SaleStats> getSalesStatsInSameRoute(String timeFrame, Integer year, Integer month, Integer week) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (currentAccount.getRole() != AccountRoles.LEAD_SALE) {
+            throw new SecurityException("Chỉ LEAD_SALE được phép truy cập dữ liệu này!");
+        }
+
+        // Lấy danh sách route của LEAD_SALE
+        List<AccountRoute> leadSaleRoutes = accountRouteRepository.findByAccount_AccountId(currentAccount.getAccountId());
+        Set<Long> routeIds = leadSaleRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        // Lấy danh sách nhân viên SALE và LEAD_SALE trong cùng route
+        List<AccountRoute> allAccountRoutes = accountRouteRepository.findByRoute_RouteIdIn(routeIds);
+        List<Staff> sales = allAccountRoutes.stream()
+                .map(AccountRoute::getAccount)
+                .filter(account -> account instanceof Staff &&
+                        (account.getRole() == AccountRoles.STAFF_SALE || account.getRole() == AccountRoles.LEAD_SALE))
+                .map(account -> (Staff) account)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Xác định khoảng thời gian
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+
+        if (timeFrame != null && year != null && month != null) {
+            if (timeFrame.equalsIgnoreCase("MONTH")) {
+                if (month < 1 || month > 12) {
+                    throw new IllegalArgumentException("Tháng phải từ 1 đến 12");
+                }
+                startDate = LocalDateTime.of(year, month, 1, 0, 0);
+                endDate = startDate.plusMonths(1);
+            } else if (timeFrame.equalsIgnoreCase("WEEK")) {
+                if (month < 1 || month > 12) {
+                    throw new IllegalArgumentException("Tháng phải từ 1 đến 12");
+                }
+                if (week == null || week < 1 || week > 5) {
+                    throw new IllegalArgumentException("Tuần phải từ 1 đến 5");
+                }
+                LocalDate firstDayOfMonth = LocalDate.of(year, month, 1);
+                startDate = firstDayOfMonth.plusWeeks(week - 1).atStartOfDay();
+                endDate = startDate.plusWeeks(1);
+            } else {
+                throw new IllegalArgumentException("timeFrame không hợp lệ. Sử dụng MONTH hoặc WEEK");
+            }
+        } else if (timeFrame != null || year != null || month != null || week != null) {
+            throw new IllegalArgumentException("Thiếu tham số bắt buộc: MONTH cần timeFrame, year, month; WEEK cần thêm week");
+        }
+
+        // Tính thống kê cho từng nhân viên
+        List<SaleStats> statsList = new ArrayList<>();
+        for (Staff sale : sales) {
+            // Lấy danh sách đơn hàng
+            List<Orders> saleOrders;
+            if (startDate != null && endDate != null) {
+                saleOrders = ordersRepository.findByStaff_AccountIdAndRoute_RouteIdInAndCreatedAtBetween(
+                        sale.getAccountId(), routeIds, startDate, endDate);
+            } else {
+                saleOrders = ordersRepository.findByStaff_AccountIdAndRoute_RouteIdIn(sale.getAccountId(), routeIds);
+            }
+
+            // Tổng số đơn hàng
+            long totalOrders = saleOrders.size();
+
+            // Tổng doanh thu
+            BigDecimal totalRevenue = saleOrders.stream()
+                    .map(Orders::getFinalPriceOrder)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Số khách hàng duy nhất
+            long uniqueCustomers = saleOrders.stream()
+                    .map(Orders::getCustomer)
+                    .map(Customer::getAccountId)
+                    .distinct()
+                    .count();
+
+            // Số khách hàng mới
+            long newCustomerCount;
+            if (startDate != null && endDate != null) {
+                newCustomerCount = customerRepository.countByStaffIdAndCreatedAtBetween(sale.getAccountId(), startDate, endDate);
+            } else {
+                newCustomerCount = customerRepository.countByStaffId(sale.getAccountId());
+            }
+
+            // Giá trị trung bình đơn hàng
+            BigDecimal averageOrderValue = totalOrders > 0 ? totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO;
+
+            // Tạo SaleStats
+            SaleStats stats = new SaleStats();
+            stats.setSaleId(sale.getAccountId());
+            stats.setSaleName(sale.getName());
+            stats.setTotalOrders(totalOrders);
+            stats.setTotalRevenue(totalRevenue);
+            stats.setUniqueCustomers(uniqueCustomers);
+            stats.setNewCustomers(newCustomerCount);
+            stats.setAverageOrderValue(averageOrderValue);
+
+            statsList.add(stats);
+        }
+
+        // Sắp xếp theo tổng số đơn hàng giảm dần
+        statsList.sort(Comparator.comparingLong(SaleStats::getTotalOrders).reversed());
+
+        return statsList;
     }
 }

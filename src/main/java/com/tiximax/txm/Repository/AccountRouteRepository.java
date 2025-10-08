@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 
@@ -21,5 +22,9 @@ public interface AccountRouteRepository extends JpaRepository<AccountRoute, Long
     List<Orders> findByStatusAndRouteIdsIn(OrderStatus status, List<Long> routeIds);
 
     List<AccountRoute> findByAccountAccountId(Long accountId);
+
+    List<AccountRoute> findByAccount_AccountId(Long accountId);
+
+    List<AccountRoute> findByRoute_RouteIdIn(Set<Long> routeIds);
 }
 
