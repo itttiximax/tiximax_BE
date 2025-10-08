@@ -131,7 +131,7 @@ public class OrdersService {
 //        messagingTemplate.convertAndSend("/topic/orders", order);
         return order;
     }
-    // dành cho staff kí gửi 
+
     public Orders addConsignment(String customerCode, Long routeId, ConsignmentRequest consignmentRequest) throws IOException {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
@@ -162,7 +162,7 @@ public class OrdersService {
         order.setStaff((Staff) accountUtils.getAccountCurrent());
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
 
-         List<OrderLinks> orderLinksList = new ArrayList<>();
+        List<OrderLinks> orderLinksList = new ArrayList<>();
         if (consignmentRequest.getConsignmentLinkRequests() != null) {
             for (ConsignmentLinkRequest linkRequest : consignmentRequest. getConsignmentLinkRequests()) {
                 OrderLinks orderLink = new OrderLinks();
@@ -180,7 +180,6 @@ public class OrdersService {
                 );     
            orderLink.setNote(linkRequest.getNote());
 
-   // set shipment code = tracking code
                 String trackingCode = generateOrderLinkCode();
                 orderLink.setTrackingCode(trackingCode);
                 orderLink.setPurchaseImage(linkRequest.getPurchaseImage());

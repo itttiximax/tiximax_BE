@@ -4,10 +4,7 @@ import com.tiximax.txm.Entity.Account;
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Enums.AccountRoles;
-import com.tiximax.txm.Model.EmailDetail;
-import com.tiximax.txm.Model.LoginRequest;
-import com.tiximax.txm.Model.RegisterCustomerRequest;
-import com.tiximax.txm.Model.RegisterStaffRequest;
+import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Service.AuthenticationService;
 import com.tiximax.txm.Service.EmailService;
 import com.tiximax.txm.Service.TokenService;
@@ -176,4 +173,23 @@ public class AuthenticationController {
         Page<Staff> staffPage = authenticationService.getSaleAndLeadSaleStaff(pageable);
         return ResponseEntity.ok(staffPage);
     }
+
+    @GetMapping("/sales-in-route/{page}/{size}")
+    public ResponseEntity<Page<Staff>> getSalesInSameRoute(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Staff> salesPage = authenticationService.getSalesInSameRoute(pageable);
+        return ResponseEntity.ok(salesPage);
+    }
+
+    @GetMapping("/sales-in-route/stats")
+    public ResponseEntity<List<SaleStats>> getSalesStatsInSameRoute(
+            @RequestParam(required = false) String timeFrame,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer week) {
+        List<SaleStats> stats = authenticationService.getSalesStatsInSameRoute(timeFrame, year, month, week);
+        return ResponseEntity.ok(stats);
+    }
+
 }

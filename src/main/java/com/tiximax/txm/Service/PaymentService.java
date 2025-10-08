@@ -210,7 +210,7 @@ public class PaymentService {
     // lấy payment của các đơn đấu giá thành công đang chờ thanh toán
     public List <Payment> getPaymentByStaffandStatus(){
         Staff staff = (Staff) accountUtils.getAccountCurrent();
-        return paymentRepository.findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(staff, OrderStatus.CHO_THANH_TOAN_DAU_GIA,   PaymentStatus.CHO_THANH_TOAN);
+        return paymentRepository.findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(staff, OrderStatus.CHO_THANH_TOAN_DAU_GIA, PaymentStatus.CHO_THANH_TOAN);
     }
 
     public Optional<Payment> getPendingPaymentByOrderId(Long orderId) {
