@@ -80,7 +80,10 @@ public class PurchaseService {
         if (!allBelongToOrder) {
             throw new IllegalArgumentException("Tất cả mã phải thuộc cùng đơn hàng " + orderCode);
         }
-
+      
+        if (!orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
+            throw new IllegalArgumentException("Một hoặc nhiều mã đã có mã vận đơn, không thể mua lại!");
+        }
         boolean allActive = orderLinks.stream()
                 .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA);
         if (!allActive) {
@@ -114,7 +117,7 @@ public class PurchaseService {
         }
         return purchase;
     }
-
+    
     
     public Purchases createAuction(String orderCode, PurchaseRequest purchaseRequest) {
         Orders order = ordersRepository.findByOrderCode(orderCode);
