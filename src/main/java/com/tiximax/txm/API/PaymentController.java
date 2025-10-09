@@ -58,12 +58,12 @@ public class PaymentController {
         Payment confirmedPayment = paymentService.confirmedPaymentShipment(paymentCode);
         return ResponseEntity.ok(confirmedPayment);
     }
+
     @GetMapping("/auction")
     public ResponseEntity<List<Payment>> getAuctionPayment() {
         List<Payment> confirmedPayment = paymentService.getPaymentByStaffandStatus();
         return ResponseEntity.ok(confirmedPayment);
     }
-    
 
     @GetMapping("code/{paymentCode}")
     public ResponseEntity<Payment> getPaymentById(@PathVariable String paymentCode) {

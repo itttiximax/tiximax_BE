@@ -134,7 +134,7 @@ public class PurchaseService {
         if (!order.getStatus().equals(OrderStatus.CHO_MUA)){
             throw new RuntimeException("Đơn hàng chưa đủ điều kiện để mua hàng!");
         }
-         boolean allBelongToOrder = orderLinks.stream()
+        boolean allBelongToOrder = orderLinks.stream()
                 .allMatch(link -> link.getOrders().getOrderId().equals(order.getOrderId()));
         if (!allBelongToOrder) {
             throw new IllegalArgumentException("Tất cả mã phải thuộc cùng đơn hàng " + orderCode);
@@ -170,27 +170,25 @@ public class PurchaseService {
 
         if (allOrderLinksArePurchased && !allOrderLinks.isEmpty()) {
             BigDecimal totalFinalPrice = purchasesRepository.getTotalFinalPriceByOrderId(order.getOrderId());
-            
-           
             if (totalFinalPrice.compareTo(order.getPriceBeforeFee()) >= 0){
-            Payment payment = new Payment();
-            payment.setOrders(order);
-            payment.setContent(order.getOrderCode());
-            payment.setAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
-            payment.setCollectedAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
-            payment.setPaymentType(PaymentType.MA_QR);
-            payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-            String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
-            payment.setActionAt(LocalDateTime.now());
-            payment.setQrCode(qrCodeUrl);
-            payment.setPaymentCode(paymentService.generatePaymentCode());
-            payment.setCustomer(order.getCustomer());
-            payment.setStaff(order.getStaff());
-            payment.setIsMergedPayment(false);
-            paymentRepository.save(payment);
-            order.setStatus(OrderStatus.CHO_THANH_TOAN_DAU_GIA);
+                Payment payment = new Payment();
+                payment.setOrders(order);
+                payment.setContent(order.getOrderCode());
+                payment.setAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
+                payment.setCollectedAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
+                payment.setPaymentType(PaymentType.MA_QR);
+                payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+                String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+                payment.setActionAt(LocalDateTime.now());
+                payment.setQrCode(qrCodeUrl);
+                payment.setPaymentCode(paymentService.generatePaymentCode());
+                payment.setCustomer(order.getCustomer());
+                payment.setStaff(order.getStaff());
+                payment.setIsMergedPayment(false);
+                paymentRepository.save(payment);
+                order.setStatus(OrderStatus.CHO_THANH_TOAN_DAU_GIA);
             } else {
-            order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+                order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
             }
             ordersRepository.save(order);
         }
