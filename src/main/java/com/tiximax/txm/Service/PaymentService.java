@@ -131,6 +131,21 @@ public class PaymentService {
         if (ordersList.stream().anyMatch(o -> !o.getStatus().equals(OrderStatus.DA_DU_HANG))) {
             throw new RuntimeException("Một hoặc một số đơn hàng chưa đủ điều kiện để thanh toán!");
         }
+        BigDecimal UnitPrice = null ;
+        if (ordersList.get(0).getOrderType() == OrderType.DAU_GIA) {
+            UnitPrice = ordersList.get(0).getRoute().getUnitDepositPrice();
+        } else{
+            UnitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
+        }
+        UnitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
+        // Check if any warehouse has netWeight null
+        boolean hasNullNetWeight = ordersList.stream()
+                .flatMap(order -> order.getWarehouses().stream())
+                .anyMatch(warehouse -> warehouse != null && warehouse.getNetWeight() == null);
+        if (hasNullNetWeight) {
+            throw new RuntimeException("Một hoặc nhiều đơn hàng chưa được cân, vui lòng kiểm tra lại!");
+        }
+
 
         BigDecimal totalWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
@@ -139,7 +154,7 @@ public class PaymentService {
                 .map(BigDecimal::valueOf)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalAmount = totalWeight.multiply(totalWeight);
+        BigDecimal totalAmount = totalWeight.multiply(UnitPrice);
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
