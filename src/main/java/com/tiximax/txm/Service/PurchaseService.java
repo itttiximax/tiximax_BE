@@ -80,7 +80,10 @@ public class PurchaseService {
         if (!allBelongToOrder) {
             throw new IllegalArgumentException("Tất cả mã phải thuộc cùng đơn hàng " + orderCode);
         }
-
+      
+        if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
+            throw new IllegalArgumentException("Một hoặc nhiều mã đã có mã vận đơn, không thể mua lại!");
+        }
         boolean allActive = orderLinks.stream()
                 .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA);
         if (!allActive) {
@@ -105,6 +108,17 @@ public class PurchaseService {
         ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DA_MUA_HANG);
 
         List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
+
+        long countcountDamua = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_MUA)
+                .count();
+        long countCancel = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_HUY)
+                .count();
+        if (countcountDamua > 0 && (countcountDamua + countCancel == allOrderLinks.size())) {
+            order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            ordersRepository.save(order);
+}
         boolean allOrderLinksArePurchased = allOrderLinks.stream()
                 .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_MUA);
 
@@ -114,7 +128,7 @@ public class PurchaseService {
         }
         return purchase;
     }
-
+    
     
     public Purchases createAuction(String orderCode, PurchaseRequest purchaseRequest) {
         Orders order = ordersRepository.findByOrderCode(orderCode);
@@ -128,6 +142,13 @@ public class PurchaseService {
             throw new IllegalArgumentException("Một hoặc nhiều mã không được tìm thấy!");
         }
 
+        // Check if any orderLink has already been purchased
+        boolean anyPurchased = orderLinks.stream()
+                .anyMatch(link -> link.getPurchase() != null);
+        if (anyPurchased) {
+            throw new IllegalArgumentException("Một hoặc nhiều mã đã được mua, không thể mua lại!");
+        }
+
         if (!order.getStatus().equals(OrderStatus.CHO_MUA)){
             throw new RuntimeException("Đơn hàng chưa đủ điều kiện để mua hàng!");
         }
@@ -136,12 +157,16 @@ public class PurchaseService {
         if (!allBelongToOrder) {
             throw new IllegalArgumentException("Tất cả mã phải thuộc cùng đơn hàng " + orderCode);
         }
+          if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
+            throw new IllegalArgumentException("Mã vận đơn đã tồn tại trong hệ thống, không thể xử lý!");
+        }
 
         boolean allActive = orderLinks.stream()
                 .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA ||link.getStatus() == OrderLinkStatus.DAU_GIA_THANH_CONG) ;
         if (!allActive) {
             throw new IllegalArgumentException("Tất cả mã phải ở trạng thái HOẠT ĐỘNG!");
         }
+     
         
         Purchases purchase = new Purchases();
         purchase.setPurchaseCode(generatePurchaseCode());
@@ -157,16 +182,32 @@ public class PurchaseService {
             orderLink.setShipmentCode(purchaseRequest.getShipmentCode());
         }
         purchase.setOrderLinks(Set.copyOf(orderLinks));
-        purchase = purchasesRepository.save(purchase);
+        purchasesRepository.save(purchase);
         orderLinksRepository.saveAll(orderLinks);
         ordersService.addProcessLog(order, purchase.getPurchaseCode(), ProcessLogAction.DAU_GIA_THANH_CONG);
 
         List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
+        
+             long countcountDamua = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_MUA)
+                .count();
+        long countCancel = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_HUY)
+                .count();
+        if (countcountDamua > 0 && (countcountDamua + countCancel == allOrderLinks.size())) {
+            order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            ordersRepository.save(order);
+}
+   
+
         boolean allOrderLinksArePurchased = allOrderLinks.stream()
-                .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_MUA || link.getStatus() == OrderLinkStatus.DAU_GIA_THANH_CONG);
+                .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_MUA || link.getStatus() == OrderLinkStatus.DAU_GIA_THANH_CONG || link.getStatus() == OrderLinkStatus.DA_HUY
+                );
 
         if (allOrderLinksArePurchased && !allOrderLinks.isEmpty()) {
             BigDecimal totalFinalPrice = purchasesRepository.getTotalFinalPriceByOrderId(order.getOrderId());
+
+
             if (totalFinalPrice.compareTo(order.getPriceBeforeFee()) >= 0){
                 Payment payment = new Payment();
                 payment.setOrders(order);
@@ -175,20 +216,34 @@ public class PurchaseService {
                 payment.setCollectedAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
                 payment.setPaymentType(PaymentType.MA_QR);
                 payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+                payment.setPaymentCode(paymentService.generatePaymentCode());
                 String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
                 payment.setActionAt(LocalDateTime.now());
                 payment.setQrCode(qrCodeUrl);
-                payment.setPaymentCode(paymentService.generatePaymentCode());
                 payment.setCustomer(order.getCustomer());
                 payment.setStaff(order.getStaff());
                 payment.setIsMergedPayment(false);
                 paymentRepository.save(payment);
                 order.setStatus(OrderStatus.CHO_THANH_TOAN_DAU_GIA);
-            } else {
-                order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            } else if(order.getPriceBeforeFee().compareTo(totalFinalPrice) >= 0) {
+                System.out.println("Số tiền cần thu: " + order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
+                Payment payment = new Payment();
+                payment.setOrders(order);
+                payment.setContent(order.getOrderCode());
+                payment.setAmount(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
+                payment.setCollectedAmount(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
+                payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+                payment.setPaymentCode(paymentService.generatePaymentCode());   
+                payment.setCustomer(order.getCustomer());
+                payment.setStaff(order.getStaff());
+                payment.setActionAt(LocalDateTime.now());
+                payment.setIsMergedPayment(false);
+                paymentRepository.save(payment);       
+                order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);      
             }
             ordersRepository.save(order);
         }
+         
         return purchase;
     }
     private String generatePurchaseCode() {

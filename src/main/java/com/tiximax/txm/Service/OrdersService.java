@@ -172,7 +172,7 @@ public class OrdersService {
                 ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
                         .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
                 orderLink.setProductType(productType);
-                orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO_NN);
+                orderLink.setStatus(OrderLinkStatus.DA_MUA);
                 orderLink.setFinalPriceVnd(
                     linkRequest.getExtraCharge()
                         .add(linkRequest.getDifferentFee())
@@ -198,6 +198,53 @@ public class OrdersService {
         addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
 //        messagingTemplate.convertAndSend("/topic/orders", order);
         return order;
+    }
+
+    public Orders updateStatusOrderLink(Long OrderId,Long orderLinkId) {
+        Orders order = ordersRepository.findById(OrderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+        OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng link"));
+        if (orderLink.getStatus().equals(OrderLinkStatus.DA_MUA)){
+            throw new IllegalArgumentException("Sản phẩm đã được mua, không thể hủy được!");
+        }
+
+        orderLink.setStatus(OrderLinkStatus.DA_HUY);
+        order.setLeftoverMoney(orderLink.getFinalPriceVnd());
+        orderLinksRepository.save(orderLink);
+
+        List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
+       
+        long countNhapKhoVN = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN)
+                .count();
+        Long countDamua = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_MUA)
+                .count();
+      
+        long countCancel = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_HUY)
+                .count();
+        if (countDamua > 0 && (countDamua + countCancel == allOrderLinks.size())) {
+            order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            ordersRepository.save(order);
+        }
+        if (countNhapKhoVN > 0 && (countNhapKhoVN + countCancel == allOrderLinks.size())) {
+            
+            allOrderLinks.stream()
+                    .filter(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN)
+                    .forEach(link -> {
+                        link.setStatus(OrderLinkStatus.CHO_GIAO);
+                        orderLinksRepository.save(link);
+                    });
+            order.setStatus(OrderStatus.DA_DU_HANG);
+            ordersRepository.save(order);
+        } else if (countCancel == allOrderLinks.size()) {
+            order.setStatus(OrderStatus.DA_HUY);
+            ordersRepository.save(order);
+        }
+
+        return order; 
     }
   
     public String generateOrderCode(OrderType orderType) {

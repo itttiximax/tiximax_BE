@@ -39,7 +39,7 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String qrCode;
 
     @Column(nullable = false)
