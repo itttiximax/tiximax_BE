@@ -21,7 +21,7 @@ import java.util.Set;
 @Setter
 @Inheritance(strategy = InheritanceType.JOINED)
 
-public abstract class Account implements UserDetails {
+public class Account implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
