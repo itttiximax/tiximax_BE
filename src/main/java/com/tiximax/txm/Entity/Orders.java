@@ -39,6 +39,8 @@ public class Orders {
 
     private BigDecimal priceBeforeFee ; 
 
+    private BigDecimal leftoverMoney;
+
     @Column(nullable = false)
     private Boolean checkRequired;
 

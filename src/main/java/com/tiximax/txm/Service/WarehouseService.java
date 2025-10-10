@@ -44,6 +44,8 @@ public class WarehouseService {
     @Autowired
     private AccountUtils accountUtils;
 
+
+    // nhập kho nước ngoài 
     public Warehouse createWarehouseEntryByShipmentCode(String shipmentCode, WarehouseRequest warehouseRequest) {
         List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
         if (orderLinks.isEmpty()) {

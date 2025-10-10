@@ -13,6 +13,8 @@ import java.util.List;
 public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
 
     boolean existsByTrackingCode(String orderLinkCode);
+    
+    boolean existsByShipmentCode(String shipmentCode);
 
     List<OrderLinks> findByTrackingCodeIn(List<String> trackingCodes);
 
