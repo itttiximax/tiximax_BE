@@ -61,24 +61,18 @@ public class SecurityConfig {
                                 "/websocket/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/auth/**",
+                                "/accounts/userinfo"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(authenticationService)
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .maximumSessions(-1)
                         .sessionRegistry(sessionRegistry())
                 )
-//                .oauth2Login(oauth2 -> oauth2
-//                        .redirectionEndpoint(redirection -> redirection
-//                                .baseUri("/accounts/callback")
-//                        )
-//                        .defaultSuccessUrl("/accounts/callback", true)
-//                        .failureUrl("/login?error")
-//                )
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

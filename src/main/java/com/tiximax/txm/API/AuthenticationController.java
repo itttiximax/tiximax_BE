@@ -10,14 +10,18 @@ import com.tiximax.txm.Service.EmailService;
 import com.tiximax.txm.Service.TokenService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,6 +31,8 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 
 public class AuthenticationController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
 
     @Autowired
     private AuthenticationService authenticationService;
@@ -45,6 +51,8 @@ public class AuthenticationController {
 
     @Value("${supabase.key}")
     private String supabaseAnonKey;
+
+    private final WebClient webClient = WebClient.create();
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody LoginRequest loginRequest) {
@@ -90,43 +98,6 @@ public class AuthenticationController {
         authenticationService.logout();
         return ResponseEntity.ok("Đăng xuất thành công!");
     }
-
-//    @GetMapping("/enum-customer-type")
-//    public ResponseEntity<List<String>> getCustomerType() {
-//        List<String> customerType = Arrays.stream(CustomerType.values())
-//                .map(Enum::name)
-//                .toList();
-//        return ResponseEntity.ok(customerType);
-//    }
-
-//    @GetMapping("/login-google")
-//    public ResponseEntity<?> initiateGoogleLogin() {
-//        String redirectUrl = supabaseUrl + "/auth/v1/authorize?provider=google&redirect_to=http://localhost:8080/accounts/callback";
-//        return ResponseEntity.ok().body("{\"redirect\": \"" + redirectUrl + "\"}");
-//    }
-
-//    @GetMapping("/callback")
-//    public Mono<ResponseEntity<?>> handleCallback(@AuthenticationPrincipal OAuth2User principal, HttpServletRequest request) {
-//        System.out.println("Callback called with principal: " + principal); // Log debug
-//        if (principal == null) {
-//            String accessToken = request.getParameter("access_token"); // Thử lấy từ query nếu có
-//            if (accessToken != null) {
-//                // Xử lý token từ Supabase nếu cần, nhưng ưu tiên OAuth2
-//            }
-//            return Mono.just(ResponseEntity.status(401).body("{\"error\": \"Principal null - Empty token\"}"));
-//        }
-//        String email = principal.getAttribute("email");
-//        String name = principal.getAttribute("name");
-//        if (email == null || name == null) {
-//            return Mono.just(ResponseEntity.status(400).body("{\"error\": \"Missing info\"}"));
-//        }
-//        Account account = authenticationService.findOrCreateGoogleAccount(email, name);
-//        if (account == null) {
-//            return Mono.just(ResponseEntity.status(500).body("{\"error\": \"Save DB failed\"}"));
-//        }
-//        String jwt = tokenService.generateToken(account);
-//        return Mono.just(ResponseEntity.ok("{\"jwt\": \"" + jwt + "\", \"user\": \"" + name + " (" + email + ")\"}"));
-//    }
 
     @GetMapping("/search")
     public ResponseEntity<List<Customer>> searchCustomers(@RequestParam(required = false) String keyword) {
@@ -190,6 +161,48 @@ public class AuthenticationController {
             @RequestParam(required = false) Integer week) {
         List<SaleStats> stats = authenticationService.getSalesStatsInSameRoute(timeFrame, year, month, week);
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/login-google")
+    public ResponseEntity<String> loginWithGoogle() {
+        String url = supabaseUrl + "/auth/v1/authorize?provider=google";
+        return ResponseEntity.ok(url);
+    }
+
+    // ✅ Step 2: Nhận code từ Google và đổi token từ Supabase
+    @GetMapping("/callback")
+    public ResponseEntity<String> callback(@RequestParam("code") String code) {
+
+        String tokenUrl = supabaseUrl + "/auth/v1/token?grant_type=authorization_code";
+
+        String body = "{ \"code\": \"" + code + "\", " +
+                "\"redirect_to\": \"http://localhost:8080/auth/callback\" }";
+
+        String response = webClient.post()
+                .uri(tokenUrl)
+                .header("apikey", supabaseAnonKey)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ✅ Step 3: Lấy thông tin user từ access_token
+    @GetMapping("/userinfo")
+    public ResponseEntity<String> getUserInfo(@RequestHeader("Authorization") String bearerToken) {
+
+        String response = webClient.get()
+                .uri(supabaseUrl + "/auth/v1/user")
+                .header("apikey", supabaseAnonKey)
+                .header("Authorization", bearerToken)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        return ResponseEntity.ok(response);
     }
 
 }
