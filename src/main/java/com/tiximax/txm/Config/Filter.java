@@ -37,6 +37,7 @@ public class Filter extends OncePerRequestFilter {
 
     private final List<String> AUTH_PERMISSION = List.of(
             "/accounts/login",
+            "/accounts/verify",
             "/accounts/register/staff",
             "/accounts/register/customer",
             "/accounts/update-all-passwords",
@@ -111,6 +112,11 @@ public class Filter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String uri = request.getRequestURI();
         if (isPermitted(uri)) {
+              if (isPermitted(uri)) {
+        filterChain.doFilter(request, response);
+        return;
+    }
+    
             String token = getToken(request);
             if (token != null) {
                 Account account;

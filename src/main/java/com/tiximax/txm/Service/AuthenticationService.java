@@ -9,6 +9,7 @@ import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -28,10 +29,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+import org.json.JSONObject;
 
 @Service
 
@@ -72,6 +80,13 @@ public class AuthenticationService implements UserDetailsService {
 
     @Autowired
     private AccountUtils accountUtils;
+
+    
+    @Value("${supabase.url}")
+    private String supabaseUrl;
+
+    @Value("${supabase.key}")
+    private String supabaseAnonKey;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -435,4 +450,19 @@ public class AuthenticationService implements UserDetailsService {
             return customer;
         }
     }
-}
+     public Account verifyAndSaveUser(String email, String name) {
+        Account account = authenticationRepository.findByEmail(email);
+                if(account != null) {
+                    return account;
+                }
+                    Account newAcc = new Account();
+                    newAcc.setUsername(email);
+                    newAcc.setEmail(email);
+                    newAcc.setName(name);
+                    newAcc.setPhone("0000000000");
+                    newAcc.setRole(AccountRoles.CUSTOMER);
+                    newAcc.setStatus(AccountStatus.HOAT_DONG);
+                    newAcc.setCreatedAt(LocalDateTime.now());
+                    return authenticationRepository.save(newAcc);
+    }        
+} 
