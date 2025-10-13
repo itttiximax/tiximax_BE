@@ -103,7 +103,7 @@ public class RouteService {
         return (ExchangeRateList) unmarshaller.unmarshal(new StringReader(xmlResponse));
     }
 
-    @Scheduled(cron = "0 0 7 * * ?", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 30 15 * * ?", zone = "Asia/Ho_Chi_Minh")
     public void updateExchangeRate() throws Exception {
         ExchangeRateList exchangeRateList = getExchangeRate();
         List<ExchangeRateList.Exrate> exrates = exchangeRateList.getExrates();
