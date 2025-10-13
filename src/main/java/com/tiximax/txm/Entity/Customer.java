@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.math.BigDecimal;
 import java.util.Set;
 
 @Entity
@@ -22,6 +23,8 @@ public class Customer extends Account {
     private Long staffId;
 
     private Double totalWeight;
+
+    private BigDecimal balance;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     @JsonIgnore
