@@ -104,7 +104,12 @@ public class DomesticService {
 
         return domestic;
     }
-
+    
+    public Domestic TransferPacking(List<Long> packingCode){
+        Domestic domestic = new 
+        Domestic();
+        return domesticRepository.save(domestic);
+    } 
     
     
 

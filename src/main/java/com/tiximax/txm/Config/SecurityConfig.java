@@ -55,6 +55,7 @@ public class SecurityConfig {
                                 "/accounts/register/staff",
                                 "/accounts/register/customer",
                                 "/accounts/update-all-passwords",
+                                "/otp/send",
                                 "/images/upload-image",
                                 "/orders/{customerCode}/{routeId}",
                                 "/accounts/login-google",

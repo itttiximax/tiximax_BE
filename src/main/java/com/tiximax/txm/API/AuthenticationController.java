@@ -77,7 +77,6 @@ public class AuthenticationController {
        
         String token = authorizationHeader.replace("Bearer ", "").trim();
 
-        // Gọi Supabase để verify
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(supabaseUrl + "/auth/v1/user"))
@@ -85,7 +84,7 @@ public class AuthenticationController {
                 .header("apikey", supabaseAnonKey)
                 .GET()
                 .build();
-
+     
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 200) {
