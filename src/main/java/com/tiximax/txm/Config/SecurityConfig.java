@@ -57,7 +57,6 @@ public class SecurityConfig {
                                 "/accounts/update-all-passwords",
                                 "/otp/send",
                                 "/images/upload-image",
-                                "/orders/{customerCode}/{routeId}",
                                 "/accounts/login-google",
                                 "/accounts/callback",
                                 "/websocket/**",
