@@ -44,7 +44,6 @@ public class Filter extends OncePerRequestFilter {
             "/accounts/update-all-passwords",
             "/accounts/login-google",
             "/accounts/callback",
-            "/orders/{customerCode}/{routeId}",
             "/images/upload-image",
             "/websocket/**",
             "/swagger-ui/**",
@@ -111,29 +110,26 @@ public class Filter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String uri = request.getRequestURI();
+    String uri = request.getRequestURI();
+    String token = getToken(request);
 
-    
     if (isPermitted(uri)) {
         filterChain.doFilter(request, response);
         return;
     }
 
-    String token = getToken(request);
+    
     if (token == null) {
         resolver.resolveException(request, response, null, new AuthException("Empty token!"));
         return;
     }
 
     try {
-        
         Account account = tokenService.extractAccount(token);
-
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(account, null, account.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
     } catch (ExpiredJwtException e) {
         resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
         return;
@@ -142,7 +138,6 @@ public class Filter extends OncePerRequestFilter {
         return;
     }
 
-    // ✅ Cho request đi tiếp
     filterChain.doFilter(request, response);
 }
 
