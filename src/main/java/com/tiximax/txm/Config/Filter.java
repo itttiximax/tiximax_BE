@@ -37,6 +37,7 @@ public class Filter extends OncePerRequestFilter {
 
     private final List<String> AUTH_PERMISSION = List.of(
             "/accounts/login",
+            "/otp/send",
             "/accounts/verify",
             "/accounts/register/staff",
             "/accounts/register/customer",
@@ -111,56 +112,39 @@ public class Filter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String uri = request.getRequestURI();
-        if (isPermitted(uri)) {
-              if (isPermitted(uri)) {
+
+    
+    if (isPermitted(uri)) {
         filterChain.doFilter(request, response);
         return;
     }
-    
-            String token = getToken(request);
-            if (token != null) {
-                Account account;
-                try {
-                    account = tokenService.extractAccount(token);
-                } catch (ExpiredJwtException expiredJwtException) {
-                    resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
-                    return;
-                } catch (MalformedJwtException malformedJwtException) {
-                    resolver.resolveException(request, response, null, new AuthException("Invalid Token!"));
-                    return;
-                }
-                UsernamePasswordAuthenticationToken
-                        authenToken =
-                        new UsernamePasswordAuthenticationToken(account, token, account.getAuthorities());
-                authenToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenToken);
-            }
-            filterChain.doFilter(request, response);
-        } else {
-            String token = getToken(request);
-            if (token == null) {
-                resolver.resolveException(request, response, null, new AuthException("Empty token!"));
-                return;
-            }
 
-            Account account;
-            try {
-                account = tokenService.extractAccount(token);
-            } catch (ExpiredJwtException expiredJwtException) {
-                resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
-                return;
-            } catch (MalformedJwtException malformedJwtException) {
-                resolver.resolveException(request, response, null, new AuthException("Invalid Token!"));
-                return;
-            }
-            UsernamePasswordAuthenticationToken
-                    authenToken =
-                    new UsernamePasswordAuthenticationToken(account, token, account.getAuthorities());
-            authenToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authenToken);
-            filterChain.doFilter(request, response);
-        }
+    String token = getToken(request);
+    if (token == null) {
+        resolver.resolveException(request, response, null, new AuthException("Empty token!"));
+        return;
     }
+
+    try {
+        
+        Account account = tokenService.extractAccount(token);
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(account, null, account.getAuthorities());
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+    } catch (ExpiredJwtException e) {
+        resolver.resolveException(request, response, null, new AuthException("Expired Token!"));
+        return;
+    } catch (MalformedJwtException e) {
+        resolver.resolveException(request, response, null, new AuthException("Invalid Token!"));
+        return;
+    }
+
+    // ✅ Cho request đi tiếp
+    filterChain.doFilter(request, response);
+}
 
     public String getToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");

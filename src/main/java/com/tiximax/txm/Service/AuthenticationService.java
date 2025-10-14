@@ -115,9 +115,7 @@ public class AuthenticationService implements UserDetailsService {
             if(!account.getStatus().equals(AccountStatus.HOAT_DONG)){
                 throw new AuthenticationServiceException("Tài khoản bạn đã bị khóa!");
             }
-
             String token = tokenService.generateToken(account);
-
             if (account instanceof Staff){
                 StaffReponse staffReponse = new StaffReponse();
                 staffReponse.setAccountId(account.getAccountId());
@@ -450,19 +448,25 @@ public class AuthenticationService implements UserDetailsService {
             return customer;
         }
     }
-     public Account verifyAndSaveUser(String email, String name) {
-        Account account = authenticationRepository.findByEmail(email);
-                if(account != null) {
-                    return account;
-                }
-                    Account newAcc = new Account();
-                    newAcc.setUsername(email);
-                    newAcc.setEmail(email);
-                    newAcc.setName(name);
-                    newAcc.setPhone("0000000000");
-                    newAcc.setRole(AccountRoles.CUSTOMER);
-                    newAcc.setStatus(AccountStatus.HOAT_DONG);
-                    newAcc.setCreatedAt(LocalDateTime.now());
-                    return authenticationRepository.save(newAcc);
-    }        
-} 
+    public Account verifyAndSaveUser(String email, String name) {
+    // 1️⃣ Kiểm tra nếu Account đã tồn tại
+    Account existingAccount = authenticationRepository.findByEmail(email);
+    if (existingAccount != null) {
+        return existingAccount;
+    }
+       Customer customer = new Customer();
+        customer.setUsername(email);
+        customer.setPassword(email);
+        customer.setEmail(email);
+        customer.setPhone("00000000000");
+        customer.setName(name);
+        customer.setRole(AccountRoles.CUSTOMER);
+        customer.setStatus(AccountStatus.HOAT_DONG);
+        customer.setCreatedAt(LocalDateTime.now());
+        customer.setCustomerCode(generateCustomerCode());
+        customer.setAddress(null);
+        customer.setSource("Google");
+        customer = authenticationRepository.save(customer);
+        return customer;
+}
+}

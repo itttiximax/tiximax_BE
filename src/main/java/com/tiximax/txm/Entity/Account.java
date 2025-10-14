@@ -53,6 +53,13 @@ public class Account implements UserDetails {
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<AccountRoute> accountRoutes;
+   
+    private String otpCode;
+
+    private LocalDateTime otpExpiration;
+
+// @Column(nullable = false)
+//  private boolean isVerify = false;
 
     @Override
     public String getPassword() {
