@@ -483,6 +483,7 @@ public class AuthenticationService implements UserDetailsService {
         customer.setCustomerCode(generateCustomerCode());
         customer.setAddress(null);
         customer.setSource("Google");
+        customer.setVerify(true);
         customer = authenticationRepository.save(customer);
         return customer;
 }
