@@ -42,6 +42,8 @@ public class Payment {
     @Column(nullable = true)
     private String qrCode;
 
+    private Integer depositPercent;
+
     @Column(nullable = false)
     private LocalDateTime actionAt;
 

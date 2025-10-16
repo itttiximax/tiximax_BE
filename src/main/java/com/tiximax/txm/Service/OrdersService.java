@@ -210,7 +210,7 @@ public class OrdersService {
         }
 
         orderLink.setStatus(OrderLinkStatus.DA_HUY);
-        order.setLeftoverMoney(orderLink.getFinalPriceVnd());
+        order.setLeftoverMoney(order.getLeftoverMoney().add(orderLink.getFinalPriceVnd()));
         orderLinksRepository.save(orderLink);
 
         List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());

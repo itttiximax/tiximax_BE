@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 @RestController
 @CrossOrigin
@@ -23,9 +21,11 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
-    @PostMapping("{orderCode}")
-    public ResponseEntity<Payment> createPayment(@PathVariable String orderCode) {
-        Payment createdPayment = paymentService.createPayment(orderCode);
+    @PostMapping("{orderCode}/{depositPercent}/{isUseBalance}")
+    public ResponseEntity<Payment> createPayment(@PathVariable String orderCode,
+                                                 @PathVariable Integer depositPercent,
+                                                 @PathVariable boolean isUseBalance) {
+        Payment createdPayment = paymentService.createPayment(orderCode, depositPercent, isUseBalance);
         return ResponseEntity.ok(createdPayment);
     }
 
@@ -35,15 +35,17 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
-    @PostMapping("/merged")
-    public ResponseEntity<Payment> createMergedPayment(@RequestBody Set<String> orderCodes) {
-        Payment createdPayment = paymentService.createMergedPayment(orderCodes);
+    @PostMapping("/merged/{depositPercent}")
+    public ResponseEntity<Payment> createMergedPayment(@RequestBody Set<String> orderCodes, @PathVariable Integer depositPercent) {
+        Payment createdPayment = paymentService.createMergedPayment(orderCodes, depositPercent);
         return ResponseEntity.ok(createdPayment);
     }
 
     @PostMapping("/merged-shipping")
-    public ResponseEntity<Payment> createMergedPaymentShipping(@RequestBody Set<String> orderCodes) {
-        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes);
+    public ResponseEntity<Payment> createMergedPaymentShipping(@RequestBody Set<String> orderCodes,
+                                                               @PathVariable Integer depositPercent,
+                                                               @PathVariable boolean isUseBalance) {
+        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes, depositPercent, isUseBalance);
         return ResponseEntity.ok(createdPayment);
     }
 

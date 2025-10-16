@@ -42,11 +42,9 @@ public class Purchases {
     Orders orders;
 
     @OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL)
-//    @JsonIgnore
     Set<OrderLinks> orderLinks;
 
     @OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL)
-//    @JsonIgnore
     Set<Warehouse> warehouses;
 
 }
