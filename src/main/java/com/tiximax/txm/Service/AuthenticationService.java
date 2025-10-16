@@ -9,6 +9,7 @@ import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -26,12 +27,21 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+import org.json.JSONObject;
 
 @Service
 
@@ -73,6 +83,13 @@ public class AuthenticationService implements UserDetailsService {
     @Autowired
     private AccountUtils accountUtils;
 
+    
+    @Value("${supabase.url}")
+    private String supabaseUrl;
+
+    @Value("${supabase.key}")
+    private String supabaseAnonKey;
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         log.debug("Loading user by username: {}", username);
@@ -84,60 +101,73 @@ public class AuthenticationService implements UserDetailsService {
         return account;
     }
 
-    public Object login(LoginRequest loginRequest) {
-        try {
-            if(loginRequest == null || loginRequest.getPassword().isEmpty() || loginRequest.getUsername().isEmpty()){
-                throw new BadCredentialsException("Vui lòng điền đầy đủ thông tin đăng nhập!");
-            }
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                    loginRequest.getUsername(),
-                    loginRequest.getPassword()
-            ));
-            Account account = authenticationRepository.findByUsername(loginRequest.getUsername());
-            if (account == null || !securityConfig.passwordEncoder().matches(loginRequest.getPassword(), account.getPassword())) {
-                throw new BadCredentialsException("Tên đăng nhập hoặc mật khẩu không đúng!");
-            }
-            if(!account.getStatus().equals(AccountStatus.HOAT_DONG)){
-                throw new AuthenticationServiceException("Tài khoản bạn đã bị khóa!");
-            }
+   public Object login(LoginRequest loginRequest) {
+    try {
+        if (loginRequest == null || loginRequest.getPassword().isEmpty() || loginRequest.getUsername().isEmpty()) {
+            throw new BadCredentialsException("Vui lòng điền đầy đủ thông tin đăng nhập!");
+        }
 
-            String token = tokenService.generateToken(account);
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getUsername(),
+                        loginRequest.getPassword()
+                )
+        );
 
-            if (account instanceof Staff){
-                StaffReponse staffReponse = new StaffReponse();
-                staffReponse.setAccountId(account.getAccountId());
-                staffReponse.setUsername(account.getUsername());
-                staffReponse.setEmail(account.getEmail());
-                staffReponse.setPhone(account.getPhone());
-                staffReponse.setName(account.getName());
-                staffReponse.setRole(account.getRole());
-                staffReponse.setStatus(account.getStatus());
-                staffReponse.setCreatedAt(account.getCreatedAt());
-                staffReponse.setStaffCode(((Staff) account).getStaffCode());
-                staffReponse.setDepartment(((Staff) account).getDepartment());
-                staffReponse.setLocation(((Staff) account).getLocation());
-                staffReponse.setToken(token);
-                return staffReponse;
-            } else if (account instanceof Customer){
-                CustomerReponse customerReponse = new CustomerReponse();
-                customerReponse.setAccountId(account.getAccountId());
-                customerReponse.setUsername(account.getUsername());
-                customerReponse.setEmail(account.getEmail());
-                customerReponse.setPhone(account.getPhone());
-                customerReponse.setName(account.getName());
-                customerReponse.setRole(account.getRole());
-                customerReponse.setStatus(account.getStatus());
-                customerReponse.setCustomerCode(((Customer) account).getCustomerCode());
-                customerReponse.setAddress(((Customer) account).getAddress());
-                customerReponse.setSource(((Customer) account).getSource());
-                customerReponse.setToken(token);
-                return customerReponse;
-            }
-        } catch (AuthenticationException e) {
+        Account account = (Account) authentication.getPrincipal();
+
+        if (account == null) {
             throw new BadCredentialsException("Tên đăng nhập hoặc mật khẩu không đúng!");
         }
-        return null;
+
+        if (!account.getStatus().equals(AccountStatus.HOAT_DONG)) {
+            throw new AuthenticationServiceException("Tài khoản bạn đã bị khóa!");
+        }
+
+        // Lưu thông tin xác thực vào SecurityContext
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Sinh token JWT
+        String token = tokenService.generateToken(account);
+
+        if (account instanceof Staff) {
+            StaffReponse response = new StaffReponse();
+            response.setAccountId(account.getAccountId());
+            response.setUsername(account.getUsername());
+            response.setEmail(account.getEmail());
+            response.setPhone(account.getPhone());
+            response.setName(account.getName());
+            response.setRole(account.getRole());
+            response.setStatus(account.getStatus());
+            response.setCreatedAt(account.getCreatedAt());
+            response.setStaffCode(((Staff) account).getStaffCode());
+            response.setDepartment(((Staff) account).getDepartment());
+            response.setLocation(((Staff) account).getLocation());
+            response.setToken(token);
+            return response;
+        } else if (account instanceof Customer) {
+            CustomerReponse response = new CustomerReponse();
+            response.setAccountId(account.getAccountId());
+            response.setUsername(account.getUsername());
+            response.setEmail(account.getEmail());
+            response.setPhone(account.getPhone());
+            response.setName(account.getName());
+            response.setRole(account.getRole());
+            response.setStatus(account.getStatus());
+            response.setCustomerCode(((Customer) account).getCustomerCode());
+            response.setAddress(((Customer) account).getAddress());
+            response.setSource(((Customer) account).getSource());
+            response.setToken(token);
+            return response;
+        }
+
+    } catch (AuthenticationException e) {
+        throw new BadCredentialsException("Tên đăng nhập hoặc mật khẩu không đúng!");
     }
+
+    return null;
+}
+
 
     public Staff registerStaff(RegisterStaffRequest registerRequest) {
         if (authenticationRepository.findByUsername(registerRequest.getUsername()) != null){
@@ -435,4 +465,25 @@ public class AuthenticationService implements UserDetailsService {
             return customer;
         }
     }
+    public Account verifyAndSaveUser(String email, String name) {
+    // 1️⃣ Kiểm tra nếu Account đã tồn tại
+    Account existingAccount = authenticationRepository.findByEmail(email);
+    if (existingAccount != null) {
+        return existingAccount;
+    }
+       Customer customer = new Customer();
+        customer.setUsername(email);
+        customer.setPassword(email);
+        customer.setEmail(email);
+        customer.setPhone("00000000000");
+        customer.setName(name);
+        customer.setRole(AccountRoles.CUSTOMER);
+        customer.setStatus(AccountStatus.HOAT_DONG);
+        customer.setCreatedAt(LocalDateTime.now());
+        customer.setCustomerCode(generateCustomerCode());
+        customer.setAddress(null);
+        customer.setSource("Google");
+        customer = authenticationRepository.save(customer);
+        return customer;
+}
 }

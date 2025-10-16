@@ -8,11 +8,17 @@ import org.springframework.stereotype.Component;
 @Component
 
 public class AccountUtils {
-    public Account getAccountCurrent(){
-        return (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+       public Account getAccountCurrent() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof Account account) {
+            return account; 
+        }
+        return null;
     }
+
     public boolean isLoggedIn() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return principal instanceof UserDetails;
+        return principal instanceof Account;
     }
 }

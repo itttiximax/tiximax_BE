@@ -51,11 +51,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(
                                 "/accounts/login",
+                                "/accounts/verify",
                                 "/accounts/register/staff",
                                 "/accounts/register/customer",
                                 "/accounts/update-all-passwords",
+                                "/otp/send",
                                 "/images/upload-image",
-                                "/orders/{customerCode}/{routeId}",
                                 "/accounts/login-google",
                                 "/accounts/callback",
                                 "/websocket/**",

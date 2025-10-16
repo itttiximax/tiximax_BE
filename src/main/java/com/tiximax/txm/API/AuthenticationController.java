@@ -10,6 +10,8 @@ import com.tiximax.txm.Service.EmailService;
 import com.tiximax.txm.Service.TokenService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+//import net.minidev.json.JSONObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +24,16 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Map;
+import org.json.JSONObject;
+
 
 @RestController
 @CrossOrigin
@@ -59,6 +69,56 @@ public class AuthenticationController {
         Object account = authenticationService.login(loginRequest);
         return ResponseEntity.ok(account);
     }
+  
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyToken(@RequestHeader("Authorization") String authorizationHeader) {
+        try {
+
+       
+        String token = authorizationHeader.replace("Bearer ", "").trim();
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(supabaseUrl + "/auth/v1/user"))
+                .header("Authorization", "Bearer " + token)
+                .header("apikey", supabaseAnonKey)
+                .GET()
+                .build();
+     
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            JSONObject json = new JSONObject(response.body());
+            String email = json.optString("email", "");
+            JSONObject metadata = json.optJSONObject("user_metadata");
+            String name = metadata != null ? metadata.optString("full_name", "") : "";
+
+            Account account = authenticationService.verifyAndSaveUser(email, name);
+
+            String appJwt = tokenService.generateToken(account);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Login success",
+                    "jwt", appJwt,
+                    "user", Map.of(
+                        "id", account.getAccountId(),
+                        "email", account.getEmail(),
+                        "name", account.getName(),
+                        "role", account.getRole()
+                    )
+            ));
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid Supabase token"));
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+    }
+}
+
+    
 
     @PostMapping("/register/staff")
     public ResponseEntity<Staff> registerStaff(@RequestBody RegisterStaffRequest registerRequest) {
