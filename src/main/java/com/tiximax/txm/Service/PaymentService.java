@@ -139,7 +139,7 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
-    public Payment createMergedPaymentShipping(Set<String> orderCodes, Integer depositPercent, boolean isUseBalance) {
+    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance) {
         List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
         if (ordersList.size() != orderCodes.size()) {
             throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
@@ -176,23 +176,57 @@ public class PaymentService {
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
 
+        BigDecimal totalLeftover = ordersList.stream()
+                .map(Orders::getLeftoverMoney)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
         if (isUseBalance) {
-            BigDecimal collect = totalAmount.multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal collect = totalAmount;
+            if (totalLeftover.compareTo(BigDecimal.ZERO) < 0) {
+                collect = collect.add(totalLeftover.abs()).setScale(2, RoundingMode.HALF_UP);
+            }
+            collect = collect.max(BigDecimal.ZERO);
+
             BigDecimal balance = ordersList.get(0).getCustomer().getBalance();
+
             if (balance.compareTo(collect) >= 0) {
-                ordersList.forEach(order -> order.setLeftoverMoney(collect.subtract(totalAmount).setScale(2, RoundingMode.HALF_UP)));
-                payment.setCollectedAmount(BigDecimal.ZERO);
-                ordersList.get(0).getCustomer().setBalance(balance.subtract(collect));
+                BigDecimal leftoverValue = collect.subtract(totalAmount).setScale(2, RoundingMode.HALF_UP);
+                ordersList.forEach(order -> order.setLeftoverMoney(leftoverValue));
+                if (leftoverValue.compareTo(BigDecimal.ZERO) < 0) {
+                    payment.setCollectedAmount(leftoverValue.abs());
+                } else {
+                    payment.setCollectedAmount(BigDecimal.ZERO);
+                }
+                ordersList.get(0).getCustomer().setBalance(balance.subtract(collect).setScale(2, RoundingMode.HALF_UP));
             } else {
-                ordersList.forEach(order -> order.setLeftoverMoney(collect.subtract(totalAmount).setScale(2, RoundingMode.HALF_UP)));
-                payment.setCollectedAmount(collect.subtract(balance));
+                BigDecimal leftoverValue = collect.subtract(totalAmount).setScale(2, RoundingMode.HALF_UP);
+                ordersList.forEach(order -> order.setLeftoverMoney(leftoverValue));
+                BigDecimal remaining = collect.subtract(balance).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+                if (leftoverValue.compareTo(BigDecimal.ZERO) < 0) {
+                    payment.setCollectedAmount(remaining.add(leftoverValue.abs()).setScale(2, RoundingMode.HALF_UP));
+                } else {
+                    payment.setCollectedAmount(remaining);
+                }
                 ordersList.get(0).getCustomer().setBalance(BigDecimal.ZERO);
             }
         } else {
-            payment.setCollectedAmount(totalAmount.multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP));
+            BigDecimal collect = totalAmount;
+            if (totalLeftover.compareTo(BigDecimal.ZERO) < 0) {
+                collect = collect.add(totalLeftover.abs()).setScale(2, RoundingMode.HALF_UP);
+            }
+            collect = collect.max(BigDecimal.ZERO);
+
+            BigDecimal leftoverValue = collect.subtract(totalAmount).setScale(2, RoundingMode.HALF_UP);
+            ordersList.forEach(order -> order.setLeftoverMoney(leftoverValue));
+            if (leftoverValue.compareTo(BigDecimal.ZERO) < 0) {
+                payment.setCollectedAmount(collect.add(leftoverValue.abs()).setScale(2, RoundingMode.HALF_UP));
+            } else {
+                payment.setCollectedAmount(collect);
+            }
         }
 
-        payment.setDepositPercent(depositPercent);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);
         String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
         payment.setQrCode(qrCodeUrl);
@@ -259,7 +293,7 @@ public class PaymentService {
         return paymentRepository.findFirstByOrdersOrderIdAndStatus(orderId, PaymentStatus.CHO_THANH_TOAN);
     }
 
-    public Payment createMergedPayment(Set<String> orderCodes, Integer depositPercent) {
+    public Payment createMergedPayment(Set<String> orderCodes, Integer depositPercent, boolean isUseBalance) {
         List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
         if (ordersList.size() != orderCodes.size()) {
             throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
@@ -276,7 +310,7 @@ public class PaymentService {
         payment.setContent(orderCodes + " ");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
-        payment.setCollectedAmount(totalAmount.multiply(BigDecimal.valueOf(depositPercent/100)).setScale(2, RoundingMode.HALF_UP));
+        payment.setCollectedAmount(totalAmount.multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP));
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
         String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
         payment.setQrCode(qrCodeUrl);
@@ -290,7 +324,21 @@ public class PaymentService {
 
         for (Orders order : ordersList) {
             ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
-            order.setLeftoverMoney(order.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent/100)).divide(order.getFinalPriceOrder()).setScale(2, RoundingMode.HALF_UP));
+            if (isUseBalance) {
+                BigDecimal collect = order.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal balance = order.getCustomer().getBalance();
+                if (balance.compareTo(collect) >= 0) {
+                    order.setLeftoverMoney(collect.subtract(BigDecimal.ZERO));
+                    savedPayment.setCollectedAmount(BigDecimal.ZERO);
+                    order.getCustomer().setBalance(balance.subtract(collect));
+                } else {
+                    order.setLeftoverMoney(collect.subtract(savedPayment.getAmount()).setScale(2, RoundingMode.HALF_UP));
+                    savedPayment.setCollectedAmount(collect.subtract(balance));
+                    order.getCustomer().setBalance(BigDecimal.ZERO);
+                }
+            } else {
+                savedPayment.setCollectedAmount(order.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP));
+            }
             order.setStatus(OrderStatus.CHO_THANH_TOAN);
             ordersRepository.save(order);
         }
