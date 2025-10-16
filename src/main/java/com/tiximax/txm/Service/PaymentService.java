@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -37,7 +38,7 @@ public class PaymentService {
     @Autowired
     private ProcessLogRepository processLogRepository;
 
-    public Payment createPayment(String orderCode) {
+    public Payment createPayment(String orderCode, Integer depositPercent, boolean isUseBalance) {
         Orders orders = ordersRepository.findByOrderCode(orderCode);
 
         if (orders == null){
@@ -53,9 +54,24 @@ public class PaymentService {
         payment.setContent(orders.getOrderCode());
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(orders.getFinalPriceOrder());
-        payment.setCollectedAmount(orders.getFinalPriceOrder());
+        payment.setDepositPercent(depositPercent);
+        if (isUseBalance){
+            BigDecimal collect = orders.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal balance = orders.getCustomer().getBalance();
+            if (balance.compareTo(collect) >= 0){
+                orders.setLeftoverMoney(collect.subtract(payment.getAmount()).setScale(2, RoundingMode.HALF_UP));
+                payment.setCollectedAmount(BigDecimal.ZERO);
+                orders.getCustomer().setBalance(balance.subtract(collect));
+            } else {
+                orders.setLeftoverMoney(collect.subtract(payment.getAmount()).setScale(2, RoundingMode.HALF_UP));
+                payment.setCollectedAmount(collect.subtract(balance));
+                orders.getCustomer().setBalance(BigDecimal.ZERO);
+            }
+        } else {
+            payment.setCollectedAmount(orders.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP));
+        }
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber+ "-print.png?amount=" + payment.getCollectedAmount() + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + payment.getCollectedAmount() + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
         payment.setQrCode(qrCodeUrl);
         payment.setActionAt(LocalDateTime.now());
         payment.setCustomer(orders.getCustomer());
@@ -123,7 +139,7 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
-    public Payment createMergedPaymentShipping(Set<String> orderCodes) {
+    public Payment createMergedPaymentShipping(Set<String> orderCodes, Integer depositPercent, boolean isUseBalance) {
         List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
         if (ordersList.size() != orderCodes.size()) {
             throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
@@ -131,21 +147,19 @@ public class PaymentService {
         if (ordersList.stream().anyMatch(o -> !o.getStatus().equals(OrderStatus.DA_DU_HANG))) {
             throw new RuntimeException("Một hoặc một số đơn hàng chưa đủ điều kiện để thanh toán!");
         }
-        BigDecimal UnitPrice = null ;
+        BigDecimal unitPrice = null ;
         if (ordersList.get(0).getOrderType() == OrderType.DAU_GIA) {
-            UnitPrice = ordersList.get(0).getRoute().getUnitDepositPrice();
+            unitPrice = ordersList.get(0).getRoute().getUnitDepositPrice();
         } else{
-            UnitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
+            unitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
         }
-        UnitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
-        // Check if any warehouse has netWeight null
+        unitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
         boolean hasNullNetWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
                 .anyMatch(warehouse -> warehouse != null && warehouse.getNetWeight() == null);
         if (hasNullNetWeight) {
             throw new RuntimeException("Một hoặc nhiều đơn hàng chưa được cân, vui lòng kiểm tra lại!");
         }
-
 
         BigDecimal totalWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
@@ -154,14 +168,31 @@ public class PaymentService {
                 .map(BigDecimal::valueOf)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalAmount = totalWeight.multiply(UnitPrice);
+        BigDecimal totalAmount = totalWeight.multiply(unitPrice);
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
         payment.setContent(orderCodes + " ");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
-        payment.setCollectedAmount(totalAmount);
+
+        if (isUseBalance) {
+            BigDecimal collect = totalAmount.multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal balance = ordersList.get(0).getCustomer().getBalance();
+            if (balance.compareTo(collect) >= 0) {
+                ordersList.forEach(order -> order.setLeftoverMoney(collect.subtract(totalAmount).setScale(2, RoundingMode.HALF_UP)));
+                payment.setCollectedAmount(BigDecimal.ZERO);
+                ordersList.get(0).getCustomer().setBalance(balance.subtract(collect));
+            } else {
+                ordersList.forEach(order -> order.setLeftoverMoney(collect.subtract(totalAmount).setScale(2, RoundingMode.HALF_UP)));
+                payment.setCollectedAmount(collect.subtract(balance));
+                ordersList.get(0).getCustomer().setBalance(BigDecimal.ZERO);
+            }
+        } else {
+            payment.setCollectedAmount(totalAmount.multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP));
+        }
+
+        payment.setDepositPercent(depositPercent);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);
         String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
         payment.setQrCode(qrCodeUrl);
@@ -172,12 +203,6 @@ public class PaymentService {
         payment.setRelatedOrders(new HashSet<>(ordersList));
         payment.setOrders(null);
         Payment savedPayment = paymentRepository.save(payment);
-
-        for (Orders order : ordersList) {
-            ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_SHIP);
-            order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
-            ordersRepository.save(order);
-        }
 
         return savedPayment;
     }
@@ -222,7 +247,6 @@ public class PaymentService {
         return paymentRepository.findById(paymentId);
     }
 
-    // lấy payment của các đơn đấu giá thành công đang chờ thanh toán
     public List <Payment> getPaymentByStaffandStatus(){
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         return paymentRepository.findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(staff, OrderStatus.CHO_THANH_TOAN_DAU_GIA, PaymentStatus.CHO_THANH_TOAN);
@@ -235,7 +259,7 @@ public class PaymentService {
         return paymentRepository.findFirstByOrdersOrderIdAndStatus(orderId, PaymentStatus.CHO_THANH_TOAN);
     }
 
-    public Payment createMergedPayment(Set<String> orderCodes) {
+    public Payment createMergedPayment(Set<String> orderCodes, Integer depositPercent) {
         List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
         if (ordersList.size() != orderCodes.size()) {
             throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
@@ -252,7 +276,7 @@ public class PaymentService {
         payment.setContent(orderCodes + " ");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
-        payment.setCollectedAmount(totalAmount);
+        payment.setCollectedAmount(totalAmount.multiply(BigDecimal.valueOf(depositPercent/100)).setScale(2, RoundingMode.HALF_UP));
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
         String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
         payment.setQrCode(qrCodeUrl);
@@ -266,6 +290,7 @@ public class PaymentService {
 
         for (Orders order : ordersList) {
             ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
+            order.setLeftoverMoney(order.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent/100)).divide(order.getFinalPriceOrder()).setScale(2, RoundingMode.HALF_UP));
             order.setStatus(OrderStatus.CHO_THANH_TOAN);
             ordersRepository.save(order);
         }
