@@ -51,6 +51,15 @@ public class Packing {
     @OneToMany(mappedBy = "packing", cascade = CascadeType.ALL)
     @JsonIgnore
     Set<Domestic> domestics;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "domestic_packing",
+            joinColumns = @JoinColumn(name = "packing_id"),
+            inverseJoinColumns = @JoinColumn(name = "domestic_id")
+    )
+    @JsonIgnore
+    private Set<Orders> relatedOrders;
 //
 //    @OneToMany(mappedBy = "packing", cascade = CascadeType.ALL)
 //    @JsonIgnore

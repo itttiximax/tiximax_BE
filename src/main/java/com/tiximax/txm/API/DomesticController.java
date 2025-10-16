@@ -5,7 +5,6 @@ import com.tiximax.txm.Model.CreateDomesticRequest;
 import com.tiximax.txm.Service.DomesticService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
