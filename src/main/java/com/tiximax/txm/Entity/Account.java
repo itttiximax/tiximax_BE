@@ -59,7 +59,6 @@ public class Account implements UserDetails {
     @JsonIgnore
     private Set<Otp> otps;
 
-
     @Column(nullable = false)
      private boolean isVerify = false;
 

@@ -47,6 +47,7 @@ public class OtpService {
         EmailDetail emailDetail = new EmailDetail();
         emailDetail.setRecipient(account.getEmail());
         emailDetail.setSubject("Your OTP Code");
+        emailDetail.setFullName(account.getName());
         emailDetail.setMsgBody("Your OTP is: " + otp.getCode() + "\nIt will expire in 5 minutes.");
         emailService.sendOtp(emailDetail , otp.getCode());
     }

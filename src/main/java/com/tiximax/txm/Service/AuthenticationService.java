@@ -194,6 +194,7 @@ public class AuthenticationService implements UserDetailsService {
         staff.setStaffCode(generateStaffCode());
         staff.setDepartment(registerRequest.getDepartment());
         staff.setLocation(registerRequest.getLocation());
+        staff.setVerify(true);
         List<Long> routeIds = registerRequest.getRouteIds();
         if (routeIds != null && !routeIds.isEmpty()) {
             for (Long routeId : routeIds) {
