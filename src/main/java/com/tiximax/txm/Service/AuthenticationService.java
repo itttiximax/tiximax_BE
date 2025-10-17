@@ -83,6 +83,9 @@ public class AuthenticationService implements UserDetailsService {
     @Autowired
     private AccountUtils accountUtils;
 
+    @Autowired
+    private OtpService otpService;
+
     
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -107,6 +110,8 @@ public class AuthenticationService implements UserDetailsService {
             throw new BadCredentialsException("Vui lòng điền đầy đủ thông tin đăng nhập!");
         }
 
+        System.out.println("Attempting to authenticate user: " + loginRequest.getUsername());
+        System.out.println("Password: " + loginRequest.getPassword());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),
@@ -123,6 +128,9 @@ public class AuthenticationService implements UserDetailsService {
         if (!account.getStatus().equals(AccountStatus.HOAT_DONG)) {
             throw new AuthenticationServiceException("Tài khoản bạn đã bị khóa!");
         }
+        if (!account.isVerify()) {
+          throw new AuthenticationServiceException("Tài khoản của bạn chưa được xác minh, vui lòng kiểm tra email để xác minh tài khoản!");
+         }
 
         // Lưu thông tin xác thực vào SecurityContext
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -162,7 +170,8 @@ public class AuthenticationService implements UserDetailsService {
         }
 
     } catch (AuthenticationException e) {
-        throw new BadCredentialsException("Tên đăng nhập hoặc mật khẩu không đúng!");
+         e.printStackTrace(); 
+        throw e;
     }
 
     return null;
@@ -185,7 +194,6 @@ public class AuthenticationService implements UserDetailsService {
         staff.setStaffCode(generateStaffCode());
         staff.setDepartment(registerRequest.getDepartment());
         staff.setLocation(registerRequest.getLocation());
-
         List<Long> routeIds = registerRequest.getRouteIds();
         if (routeIds != null && !routeIds.isEmpty()) {
             for (Long routeId : routeIds) {
@@ -201,7 +209,7 @@ public class AuthenticationService implements UserDetailsService {
         return staff;
     }
 
-    public Customer registerCustomer(RegisterCustomerRequest registerRequest) {
+    public Customer registerCustomer(RegisterCustomerRequest registerRequest) throws Exception {
         if (authenticationRepository.findByUsername(registerRequest.getUsername()) != null){
             throw new BadCredentialsException("Tên đăng nhập bị trùng, vui lòng chọn một tên khác!");
         }
@@ -227,9 +235,10 @@ public class AuthenticationService implements UserDetailsService {
         customer.setAddress(registerRequest.getAddress());
         customer.setSource(registerRequest.getSource());
         customer = authenticationRepository.save(customer);
-
+        System.out.println("New customer saved: " + customer.getEmail());
+        otpService.sendOtpToEmail(customer.getEmail());
         return customer;
-    }
+}
 
     public String generateCustomerCode() {
         String customerCode;
@@ -483,6 +492,7 @@ public class AuthenticationService implements UserDetailsService {
         customer.setCustomerCode(generateCustomerCode());
         customer.setAddress(null);
         customer.setSource("Google");
+        customer.setVerify(true);
         customer = authenticationRepository.save(customer);
         return customer;
 }
