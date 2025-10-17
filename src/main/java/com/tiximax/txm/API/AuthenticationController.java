@@ -236,7 +236,7 @@ public class AuthenticationController {
         String tokenUrl = supabaseUrl + "/auth/v1/token?grant_type=authorization_code";
 
         String body = "{ \"code\": \"" + code + "\", " +
-                "\"redirect_to\": \"http://localhost:8080/accounts/callback\" }";
+                "\"redirect_to\": \"http://localhost:8080/auth/callback\" }";
 
         String response = webClient.post()
                 .uri(tokenUrl)
