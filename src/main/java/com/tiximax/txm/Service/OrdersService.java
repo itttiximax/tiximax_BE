@@ -511,13 +511,32 @@ public class OrdersService {
 
         List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_DU_HANG);
 
-        if (orders.size() < 2){
+        if (orders.size() < 2) {
             throw new IllegalStateException("Khách hàng này không đủ đơn để gộp thanh toán!");
         }
 
         return orders.stream()
                 .map(order -> {
                     OrderPayment orderPayment = new OrderPayment(order);
+
+                    // Tính tổng netWeight từ tất cả Warehouse của Order
+                    BigDecimal totalNetWeight = order.getWarehouses() != null
+                            ? order.getWarehouses().stream()
+                            .map(Warehouse::getNetWeight)
+                            .filter(netWeight -> netWeight != null)
+                            .map(BigDecimal::valueOf)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                            : BigDecimal.ZERO;
+                    orderPayment.setTotalNetWeight(totalNetWeight);
+
+                    // Tính finalPriceOrder: totalNetWeight * (unitBuyingPrice hoặc unitDepositPrice nếu KY_GUI)
+                    Route route = order.getRoute();
+                    BigDecimal unitPrice = (order.getOrderType() == OrderType.KY_GUI && route.getUnitDepositPrice() != null)
+                            ? route.getUnitDepositPrice()
+                            : route.getUnitBuyingPrice() != null ? route.getUnitBuyingPrice() : BigDecimal.ZERO;
+                    BigDecimal finalPriceOrder = totalNetWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+                    orderPayment.setFinalPriceOrder(finalPriceOrder);
+
                     return orderPayment;
                 })
                 .collect(Collectors.toList());

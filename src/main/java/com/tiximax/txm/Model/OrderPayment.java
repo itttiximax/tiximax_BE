@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Data
@@ -36,13 +37,7 @@ public class OrderPayment {
         this.finalPriceOrder = order.getFinalPriceOrder();
         this.customer = order.getCustomer();
         this.paymentCode = null;
-        this.totalNetWeight = order.getWarehouses() != null
-                ? order.getWarehouses().stream()
-                .map(Warehouse::getNetWeight)
-                .filter(netWeight -> netWeight != null)
-                .map(BigDecimal::valueOf)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                : BigDecimal.ZERO;
+        this.totalNetWeight = order.getFinalPriceOrder();
     }
 
 }
