@@ -164,7 +164,7 @@ public class AuthenticationController {
     @GetMapping("/send-mail")
     public void sendMail() {
         EmailDetail emailDetail = new EmailDetail();
-        emailDetail.setRecipient("thinhvan.231003@gmail.com");
+        emailDetail.setRecipient("lethinhphat7102003@gmail.com");
         emailDetail.setSubject("test123");
         emailDetail.setMsgBody("abc");
         emailService.sendMailTemplate(emailDetail);
@@ -253,7 +253,7 @@ public class AuthenticationController {
         String tokenUrl = supabaseUrl + "/auth/v1/token?grant_type=authorization_code";
 
         String body = "{ \"code\": \"" + code + "\", " +
-                "\"redirect_to\": \"http://localhost:8080/auth/callback\" }";
+                "\"redirect_to\": \"http://localhost:8080/accounts/callback\" }";
 
         String response = webClient.post()
                 .uri(tokenUrl)

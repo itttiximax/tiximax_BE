@@ -21,13 +21,13 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
-    @PostMapping("{orderCode}/{depositPercent}/{isUseBalance}")
-    public ResponseEntity<Payment> createPayment(@PathVariable String orderCode,
-                                                 @PathVariable Integer depositPercent,
-                                                 @PathVariable boolean isUseBalance) {
-        Payment createdPayment = paymentService.createPayment(orderCode, depositPercent, isUseBalance);
-        return ResponseEntity.ok(createdPayment);
-    }
+//    @PostMapping("{orderCode}/{depositPercent}/{isUseBalance}")
+//    public ResponseEntity<Payment> createPayment(@PathVariable String orderCode,
+//                                                 @PathVariable Integer depositPercent,
+//                                                 @PathVariable boolean isUseBalance) {
+//        Payment createdPayment = paymentService.createPayment(orderCode, depositPercent, isUseBalance);
+//        return ResponseEntity.ok(createdPayment);
+//    }
 
     @GetMapping("/order/{orderCode}")
     public ResponseEntity<List<Payment>> getPaymentsByOrderId(@PathVariable String orderCode) {
@@ -35,17 +35,19 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
-    @PostMapping("/merged/{depositPercent}")
-    public ResponseEntity<Payment> createMergedPayment(@RequestBody Set<String> orderCodes, @PathVariable Integer depositPercent) {
-        Payment createdPayment = paymentService.createMergedPayment(orderCodes, depositPercent);
+    @PostMapping("/merged/{depositPercent}/{isUseBalance}")
+    public ResponseEntity<Payment> createMergedPayment(@RequestBody Set<String> orderCodes,
+                                                       @PathVariable Integer depositPercent,
+                                                       @PathVariable boolean isUseBalance) {
+        Payment createdPayment = paymentService.createMergedPayment(orderCodes, depositPercent, isUseBalance);
         return ResponseEntity.ok(createdPayment);
     }
 
-    @PostMapping("/merged-shipping")
+    @PostMapping("/merged-shipping/{isUseBalance}/{voucherId}")
     public ResponseEntity<Payment> createMergedPaymentShipping(@RequestBody Set<String> orderCodes,
-                                                               @PathVariable Integer depositPercent,
-                                                               @PathVariable boolean isUseBalance) {
-        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes, depositPercent, isUseBalance);
+                                                               @PathVariable boolean isUseBalance,
+                                                               @PathVariable int voucherId) {
+        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes, isUseBalance);
         return ResponseEntity.ok(createdPayment);
     }
 
