@@ -481,14 +481,12 @@ public class PaymentService {
         BigDecimal depositRate = BigDecimal.valueOf(depositPercent / 100.00);
         BigDecimal totalCollect = totalAmount.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
 
-        // Tính và cập nhật collect/leftover cho TỪNG order + save ngay để persist per order
         for (Orders order : ordersList) {
             BigDecimal orderFinalPrice = order.getFinalPriceOrder();
             BigDecimal orderCollect = orderFinalPrice.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
             BigDecimal orderLeftover = orderFinalPrice.subtract(orderCollect).setScale(2, RoundingMode.HALF_UP);
             order.setLeftoverMoney(orderLeftover);
-            // Giả sử bạn muốn lưu thêm field collected per order nếu cần (nếu entity có), ví dụ: order.setCollectedMoney(orderCollect);
-            ordersRepository.save(order);  // Save ngay để leftover được persist cho từng order khi gộp
+            ordersRepository.save(order);
         }
 
         Payment payment = new Payment();
@@ -498,12 +496,12 @@ public class PaymentService {
         payment.setAmount(totalAmount);
         payment.setCollectedAmount(totalCollect);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+        payment.setDepositPercent(depositPercent);
         payment.setActionAt(LocalDateTime.now());
         payment.setCustomer(commonCustomer);
         payment.setStaff((Staff) accountUtils.getAccountCurrent());
         payment.setIsMergedPayment(true);
         payment.setRelatedOrders(new HashSet<>(ordersList));
-        // Bỏ setOrders(null) để tránh nullify relation nếu có
 
         BigDecimal qrAmount = totalCollect;
         BigDecimal balance = (commonCustomer.getBalance() != null) ? commonCustomer.getBalance() : BigDecimal.ZERO;
@@ -513,37 +511,28 @@ public class PaymentService {
             qrAmount = totalCollect.subtract(usedBalance);
         }
 
-        payment.setCollectedAmount(qrAmount);  // Update lại collected sau khi trừ balance (qr only)
+        payment.setCollectedAmount(qrAmount);
 
         String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + qrAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
         payment.setQrCode(qrCodeUrl);
 
         Payment savedPayment = paymentRepository.save(payment);
 
-        // Update status và add log, save lại order (leftover đã save trước đó)
         for (Orders order : ordersList) {
             ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
             order.setStatus(OrderStatus.CHO_THANH_TOAN);
-            ordersRepository.save(order);  // Save lại cho status
+            ordersRepository.save(order);
         }
 
-        // Save customer nếu balance thay đổi (luôn save để an toàn)
         if (isUseBalance && balance.compareTo(BigDecimal.ZERO) > 0) {
             authenticationRepository.save(commonCustomer);
-        } else if (commonCustomer.getBalance() != null) {  // Optional: save nếu có thay đổi khác
+        } else if (commonCustomer.getBalance() != null) {
             authenticationRepository.save(commonCustomer);
         }
 
-        // Nếu qr=0 và deposit=100, update payment status + optional update order status nếu cần
         if (qrAmount.compareTo(BigDecimal.ZERO) == 0 && depositPercent >= 100) {
             savedPayment.setStatus(PaymentStatus.DA_THANH_TOAN);
             savedPayment = paymentRepository.save(savedPayment);
-
-            // Optional: Update status order thành DA_HOAN_THANH hoặc tương tự nếu business require
-            // for (Orders order : ordersList) {
-            //     order.setStatus(OrderStatus.DA_THANH_TOAN);
-            //     ordersRepository.save(order);
-            // }
         }
 
         return savedPayment;
