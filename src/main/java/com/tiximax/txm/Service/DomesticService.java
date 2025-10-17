@@ -104,7 +104,7 @@ public class DomesticService {
         return domestic;
     }
     
-    public Domestic TransferPacking(List<Long> packingCode){
+    public Domestic TransferToCustomer(Long customer){
         Domestic domestic = new 
         Domestic();
         return domesticRepository.save(domestic);

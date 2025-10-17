@@ -104,7 +104,7 @@ public class EmailService {
         }
     }
     @Async
-public void sendOtp(EmailDetail emailDetail, String otp) {
+    public void sendOtp(EmailDetail emailDetail, String otp) {
     try {
         Context context = new Context();
         context.setVariable("name", emailDetail.getFullName());
