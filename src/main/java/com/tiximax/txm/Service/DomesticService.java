@@ -37,7 +37,6 @@ public class DomesticService {
     @Autowired
     private AccountUtils accountUtils;
 
-    // nhập kho nội địa
     public Domestic createDomesticForWarehousing(List<String> packingCode, String note) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff == null || staff.getWarehouseLocation() == null) {
@@ -109,9 +108,7 @@ public class DomesticService {
         Domestic domestic = new 
         Domestic();
         return domesticRepository.save(domestic);
-    } 
-    
-    
+    }
 
     private void updateOrderStatusIfAllLinksReady(List<OrderLinks> orderLinks) {
         Map<Orders, List<OrderLinks>> orderToLinksMap = orderLinks.stream()
