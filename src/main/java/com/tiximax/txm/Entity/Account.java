@@ -55,12 +55,12 @@ public class Account implements UserDetails {
     @JsonIgnore
     private Set<AccountRoute> accountRoutes;
    
-    private String otpCode;
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Otp> otps;
 
-    private LocalDateTime otpExpiration;
-
-// @Column(nullable = false)
-//  private boolean isVerify = false;
+    @Column(nullable = false)
+     private boolean isVerify = false;
 
     @Override
     public String getPassword() {
