@@ -50,6 +50,8 @@ public class OtpService {
         emailDetail.setFullName(account.getName());
         emailDetail.setMsgBody("Your OTP is: " + otp.getCode() + "\nIt will expire in 5 minutes.");
         emailService.sendOtp(emailDetail , otp.getCode());
+        System.out.println(">>> [DEBUG] sendOtp() CALLED for: " + emailDetail.getRecipient());
+
     }
 
  public boolean validateOtp(String email, String code) throws Exception {
