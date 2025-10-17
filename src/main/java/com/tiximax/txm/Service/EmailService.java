@@ -29,9 +29,10 @@ public class EmailService {
             context.setVariable("button", emailDetail.getButtonValue());
 
             String text = templateEngine.process("emailtemplate", context);
+            
 
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
             mimeMessageHelper.setFrom("global.trans@tiximax.net");
             mimeMessageHelper.setTo(emailDetail.getRecipient());
@@ -60,7 +61,7 @@ public class EmailService {
 
             // Creating a simple mail message
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
             // Setting up necessary details
             mimeMessageHelper.setFrom("jeweljoust@gmail.com");
@@ -88,7 +89,7 @@ public class EmailService {
 
             // Creating a simple mail message
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
             // Setting up necessary details
             mimeMessageHelper.setFrom("jeweljoust@gmail.com");
@@ -102,6 +103,32 @@ public class EmailService {
             messagingException.printStackTrace();
         }
     }
+    @Async
+public void sendOtp(EmailDetail emailDetail, String otp) {
+    try {
+        Context context = new Context();
+        context.setVariable("name", emailDetail.getFullName());
+        context.setVariable("otp", otp);
+        context.setVariable("purpose", emailDetail.getSubject()); // Ví dụ: "Xác minh tài khoản"
+
+        String text = templateEngine.process("otptemplate", context); // tên file: otp-template.html
+
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+        mimeMessageHelper.setFrom("jeweljoust@gmail.com");
+        mimeMessageHelper.setTo(emailDetail.getRecipient());
+        mimeMessageHelper.setSubject("Your OTP Code - Tiximax");
+        mimeMessageHelper.setText(text, true);
+
+        javaMailSender.send(mimeMessage);
+
+        System.out.println("OTP email sent successfully to " + emailDetail.getRecipient());
+    } catch (MessagingException messagingException) {
+        messagingException.printStackTrace();
+        System.err.println("Failed to send OTP email: " + messagingException.getMessage());
+    }
+}
     //test
 }
 

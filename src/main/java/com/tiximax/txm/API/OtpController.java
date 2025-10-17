@@ -21,7 +21,7 @@ public class OtpController {
     }
 
     @PostMapping("/send")
-    public ResponseEntity<?> sendOtp(@RequestParam String email) {
+    public ResponseEntity<?> sendOtp(@RequestParam String email) throws Exception {
         
         otpService.sendOtpToEmail(email);
         return ResponseEntity.ok("OTP sent successfully");

@@ -26,9 +26,9 @@ public class Otp {
     private LocalDateTime expiration;
 
 //   @Enumerated(EnumType.STRING)
-//  private OtpType type; // tuỳ chọn: LOGIN, VERIFY_EMAIL, RESET_PASSWORD,...
+//   private OtpType type; // tuỳ chọn: LOGIN, VERIFY_EMAIL, RESET_PASSWORD,...
 
-    private boolean used = false;
+//   private boolean used = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)

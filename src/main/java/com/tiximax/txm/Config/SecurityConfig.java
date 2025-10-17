@@ -52,10 +52,11 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/accounts/login",
                                 "/accounts/verify",
+                                "/otp/send",
+                                "/accounts/verify-account",
                                 "/accounts/register/staff",
                                 "/accounts/register/customer",
                                 "/accounts/update-all-passwords",
-                                "/otp/send",
                                 "/images/upload-image",
                                 "/accounts/login-google",
                                 "/accounts/callback",
@@ -64,6 +65,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/auth/**",
+                                "/error",
                                 "/accounts/userinfo"
                         ).permitAll()
                         .anyRequest().authenticated()

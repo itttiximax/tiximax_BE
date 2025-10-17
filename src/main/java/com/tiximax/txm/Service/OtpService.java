@@ -34,14 +34,13 @@ public class OtpService {
         otp.setAccount(account);
         otp.setCode(String.format("%06d", random.nextInt(999999)));
         otp.setExpiration(LocalDateTime.now().plusMinutes(5));
-        otp.setUsed(false);
         return otpRepository.save(otp);
     }
 
-     public void sendOtpToEmail(String email) {
+     public void sendOtpToEmail(String email) throws Exception {
         Account account = authenticationRepository.findByEmail(email);
         if (account == null) {
-            throw new IllegalArgumentException("User not found");
+            throw new Exception("User not found");
         }
         Otp otp = generateOtp(account);
 
@@ -49,20 +48,22 @@ public class OtpService {
         emailDetail.setRecipient(account.getEmail());
         emailDetail.setSubject("Your OTP Code");
         emailDetail.setMsgBody("Your OTP is: " + otp.getCode() + "\nIt will expire in 5 minutes.");
-
-        emailService.sendMailTemplate(emailDetail);
+        emailService.sendOtp(emailDetail , otp.getCode());
     }
 
  public boolean validateOtp(String email, String code) throws Exception {
         var otpOptional = otpRepository.findTopByAccount_EmailOrderByExpirationDesc(
-                email);
+        email);
+        var account = authenticationRepository.findByEmail(email);
+        if (account == null) {
+            throw new Exception("User not found");
+        }
+        account.setVerify(true);
 
         if (otpOptional.isEmpty()) return false;
         Otp otp = otpOptional.get();
 
-        if (otp.isUsed()){
-            throw new Exception("mã OTP của bạn đã được sử dụng");
-        }
+        
         if ( otp.isExpired()){
             throw new Exception("mã OTP của bạn đã hết hạn");
         }
@@ -70,10 +71,8 @@ public class OtpService {
         if (!otp.getCode().equals(code)) {
             throw new Exception("mã OTP của bạn không đúng");
         }
-
-       
-        otp.setUsed(true);
-        otpRepository.save(otp);
+        otpRepository.delete(otp);
+        authenticationRepository.save(account);
         return true;
     }
     
