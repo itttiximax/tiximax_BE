@@ -206,7 +206,7 @@ public class PurchaseService {
             BigDecimal totalFinalPrice = purchasesRepository.getTotalFinalPriceByOrderId(order.getOrderId());
 
 
-            if (totalFinalPrice.compareTo(order.getPriceBeforeFee()) >= 0){
+            if (totalFinalPrice.compareTo(order.getPriceBeforeFee()) > 0){
                 Payment payment = new Payment();
                 payment.setOrders(order);
                 payment.setContent(order.getOrderCode());
@@ -223,24 +223,28 @@ public class PurchaseService {
                 payment.setIsMergedPayment(false);
                 paymentRepository.save(payment);
                 order.setStatus(OrderStatus.CHO_THANH_TOAN_DAU_GIA);
-            } else if(order.getPriceBeforeFee().compareTo(totalFinalPrice) >= 0) {
+            } else if(order.getPriceBeforeFee().compareTo(totalFinalPrice) > 0) {
                 System.out.println("Số tiền cần thu: " + order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
-                Payment payment = new Payment();
-                payment.setOrders(order);
-                payment.setContent(order.getOrderCode());
-                payment.setAmount(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
-                payment.setCollectedAmount(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
-                payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-                payment.setPaymentCode(paymentService.generatePaymentCode());   
-                payment.setCustomer(order.getCustomer());
-                payment.setStaff(order.getStaff());
-                payment.setActionAt(LocalDateTime.now());
-                payment.setIsMergedPayment(false);
-                paymentRepository.save(payment);       
+                // Payment payment = new Payment();
+                // payment.setOrders(order);
+                // payment.setContent(order.getOrderCode());
+                // payment.setAmount(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
+                // payment.setCollectedAmount(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
+                // payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+                // payment.setPaymentCode(paymentService.generatePaymentCode());   
+                // payment.setCustomer(order.getCustomer());
+                // payment.setStaff(order.getStaff());
+                // payment.setActionAt(LocalDateTime.now());
+                // payment.setIsMergedPayment(false);
+                // paymentRepository.save(payment);       
+                order.setLeftoverMoney(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate().negate()));
                 order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);      
             }
-            ordersRepository.save(order);
-        }
+            else {
+                order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            }
+                ordersRepository.save(order);
+            }
          
         return purchase;
     }
