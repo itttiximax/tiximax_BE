@@ -349,7 +349,7 @@ public class OrdersService {
         return ordersPage.map(order -> {
             OrderPayment orderPayment = new OrderPayment(order);
              if (status == OrderStatus.CHO_THANH_TOAN_DAU_GIA) {
-            System.out.println("Check status nha ku ");
+
             Optional<Payment> payment = order.getPayments().stream()
                     .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
                     .findFirst();

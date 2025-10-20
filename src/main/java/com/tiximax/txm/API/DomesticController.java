@@ -40,4 +40,9 @@ public class DomesticController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/transfer-to-customer")
+    public ResponseEntity<Domestic> transferToCustomer(){
+        Domestic domestic = domesticService.TransferToCustomer();
+        return ResponseEntity.ok(domestic);
+    }
 }
