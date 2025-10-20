@@ -80,8 +80,8 @@ public class AuthenticationController {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(Map.of("error", e.getMessage()));
+        }
     }
-}
   
     @PostMapping("/verify")
     public ResponseEntity<?> verifyToken(@RequestHeader("Authorization") String authorizationHeader) {
@@ -130,8 +130,6 @@ public class AuthenticationController {
         return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
     }
 }
-
-    
 
     @PostMapping("/register/staff")
     public ResponseEntity<Staff> registerStaff(@RequestBody RegisterStaffRequest registerRequest) {
@@ -280,6 +278,7 @@ public class AuthenticationController {
 
         return ResponseEntity.ok(response);
     }
+
     @PostMapping("/verify-account")
     public ResponseEntity<?> verifyAccount(@RequestBody VerifyAccountRequest request) throws Exception {
        try {
