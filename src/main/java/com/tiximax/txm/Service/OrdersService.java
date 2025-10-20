@@ -356,7 +356,6 @@ public class OrdersService {
             return orderPayment;
         }
 
-
             if (status == OrderStatus.DA_DU_HANG || status == OrderStatus.CHO_THANH_TOAN_SHIP) {
                 BigDecimal totalNetWeight = order.getWarehouses().stream()
                         .map(warehouse -> BigDecimal.valueOf(warehouse.getNetWeight()))
@@ -531,7 +530,7 @@ public class OrdersService {
                             : route.getUnitBuyingPrice() != null ? route.getUnitBuyingPrice() : BigDecimal.ZERO;
                     BigDecimal finalPriceOrder = totalNetWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
                     orderPayment.setFinalPriceOrder(finalPriceOrder);
-
+                    orderPayment.setLeftoverMoney(order.getLeftoverMoney());
                     return orderPayment;
                 })
                 .collect(Collectors.toList());

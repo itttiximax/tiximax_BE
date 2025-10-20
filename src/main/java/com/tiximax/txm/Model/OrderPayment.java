@@ -26,6 +26,7 @@ public class OrderPayment {
     private Customer customer;
     private String paymentCode;
     private BigDecimal totalNetWeight;
+    private BigDecimal leftoverMoney;
 
     public OrderPayment(Orders order) {
         this.orderId = order.getOrderId();
@@ -38,6 +39,7 @@ public class OrderPayment {
         this.customer = order.getCustomer();
         this.paymentCode = null;
         this.totalNetWeight = order.getFinalPriceOrder();
+        this.leftoverMoney = order.getLeftoverMoney();
     }
 
 }
