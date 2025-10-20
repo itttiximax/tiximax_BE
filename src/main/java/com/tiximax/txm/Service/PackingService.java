@@ -290,6 +290,13 @@ public class PackingService {
 //        if (staff == null || staff.getWarehouseLocation() == null) {
 //            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
 //        }
-        return packingRepository.findByStatus(PackingStatus.DA_BAY, pageable);
+        Page<Packing> packings = packingRepository.findByStatus(PackingStatus.DA_BAY, pageable);
+        packings.getContent().forEach(packing -> {
+            List<String> filteredList = packing.getPackingList().stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            packing.setPackingList(filteredList);
+        });
+        return packings;
     }
 }
