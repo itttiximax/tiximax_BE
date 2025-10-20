@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
 @CrossOrigin
 @RequestMapping("/orders")
@@ -39,9 +38,6 @@ public class OrdersController {
     @Autowired
     private OrdersService ordersService;
 
-   
-
-    // dành cho staff order cho khách hàng
     @PostMapping("/{customerCode}/{routeId}")
     public ResponseEntity<Orders> createdReview(@PathVariable String customerCode, @PathVariable long routeId, @RequestBody OrdersRequest ordersRequest) throws IOException {
         Orders orders = ordersService.addOrder(customerCode, routeId, ordersRequest);
@@ -53,6 +49,7 @@ public class OrdersController {
         Orders orders = ordersService.addConsignment(customerCode, routeId, consignmentRequest);
         return ResponseEntity.ok(orders);
     }
+
     @PutMapping("order-link/cancel/{orderId}/{orderLinkId}")
     public ResponseEntity<Orders> CancelOrderLink(@PathVariable Long orderId, @PathVariable Long orderLinkId) {
         Orders orders = ordersService.updateStatusOrderLink(orderId, orderLinkId);  

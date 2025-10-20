@@ -80,8 +80,8 @@ public class AuthenticationController {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(Map.of("error", e.getMessage()));
+        }
     }
-}
   
     @PostMapping("/verify")
     public ResponseEntity<?> verifyToken(@RequestHeader("Authorization") String authorizationHeader) {
@@ -130,8 +130,6 @@ public class AuthenticationController {
         return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
     }
 }
-
-    
 
     @PostMapping("/register/staff")
     public ResponseEntity<Staff> registerStaff(@RequestBody RegisterStaffRequest registerRequest) {
@@ -253,7 +251,7 @@ public class AuthenticationController {
         String tokenUrl = supabaseUrl + "/auth/v1/token?grant_type=authorization_code";
 
         String body = "{ \"code\": \"" + code + "\", " +
-                "\"redirect_to\": \"http://localhost:8080/accounts/callback\" }";
+                "\"redirect_to\": \"http://localhost:8080/auth/callback\" }";
 
         String response = webClient.post()
                 .uri(tokenUrl)
@@ -280,6 +278,7 @@ public class AuthenticationController {
 
         return ResponseEntity.ok(response);
     }
+
     @PostMapping("/verify-account")
     public ResponseEntity<?> verifyAccount(@RequestBody VerifyAccountRequest request) throws Exception {
        try {
