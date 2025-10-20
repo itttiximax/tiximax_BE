@@ -104,9 +104,9 @@ public class DomesticService {
         return domestic;
     }
     
-    public Domestic TransferToCustomer(Long customer){
-        Domestic domestic = new 
-        Domestic();
+    public Domestic TransferToCustomer(String customerCode){
+        var orderList = ordersRepository.findByCustomerCodeAndStatus(customerCode,OrderStatus.CHO_GIAO);
+        var domestic = new Domestic();
         return domesticRepository.save(domestic);
     }
 

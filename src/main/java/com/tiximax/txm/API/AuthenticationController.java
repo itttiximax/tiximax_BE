@@ -162,7 +162,7 @@ public class AuthenticationController {
     @GetMapping("/send-mail")
     public void sendMail() {
         EmailDetail emailDetail = new EmailDetail();
-        emailDetail.setRecipient("lethinhphat7102003@gmail.com");
+        emailDetail.setRecipient("thinhnguyen.231003@gmail.com");
         emailDetail.setSubject("test123");
         emailDetail.setMsgBody("abc");
         emailService.sendMailTemplate(emailDetail);
