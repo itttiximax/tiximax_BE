@@ -104,8 +104,6 @@ public class EmailService {
         Content content = new Content("text/html", htmlContent);
         Mail mail = new Mail(from, subject, to, content);
 
-        System.out.println("SendGrid key: " + sendGridKey);
-        System.out.println("Length: " + sendGridKey.length());  
         SendGrid sg = new SendGrid(sendGridKey);
         Request request = new Request();
 

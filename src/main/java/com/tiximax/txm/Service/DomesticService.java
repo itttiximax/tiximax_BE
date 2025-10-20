@@ -104,11 +104,43 @@ public class DomesticService {
         return domestic;
     }
     
-    public Domestic TransferToCustomer(String customerCode){
-        var orderList = ordersRepository.findByCustomerCodeAndStatus(customerCode,OrderStatus.CHO_GIAO);
+    public Domestic TransferToCustomer(){
+    List<Map<String, Object>> dataList = getReadyForDeliveryOrders(Pageable.unpaged());       
+        List<String> shippingList = new ArrayList<>();
         var domestic = new Domestic();
-        return domesticRepository.save(domestic);
-    }
+        
+        String lastCustomerName = null;
+       
+
+        for (Map<String, Object> customerData : dataList) {
+        lastCustomerName = (String) customerData.get("customerName");
+
+        List<Map<String, Object>> packings = (List<Map<String, Object>>) customerData.get("packings");
+         if (packings == null || packings.isEmpty()) continue;
+
+    for (Map<String, Object> packingData : packings) {
+        // Lấy packingCode ra từ Map
+        String packingCode = (String) packingData.get("packingCode");
+          Optional<Packing> optionalPacking = packingRepository.findByPackingCode(packingCode);
+        if (optionalPacking.isPresent()) {
+            Packing packingEntity = optionalPacking.get();
+            domestic.setPacking(packingEntity);
+       
+            Set<String> trackingCodes = (Set<String>) packingData.get("trackingCodes");
+            shippingList.addAll(trackingCodes);
+        }
+}
+}
+        domestic.setShippingList(shippingList);
+        domestic.setStatus(DomesticStatus.DA_GIAO);
+        domestic.setTimestamp(LocalDateTime.now());
+        domestic.setNote("Giao hàng cho khách hàng: " + lastCustomerName);
+        domestic.setStaff((Staff) accountUtils.getAccountCurrent());
+        domestic.setLocation(((Staff) accountUtils.getAccountCurrent()).getWarehouseLocation());
+        domestic.setFromLocation(((Staff) accountUtils.getAccountCurrent()).getWarehouseLocation());
+        domestic.setToLocation(null);
+        return domesticRepository.save(domestic); 
+}
 
     private void updateOrderStatusIfAllLinksReady(List<OrderLinks> orderLinks) {
         Map<Orders, List<OrderLinks>> orderToLinksMap = orderLinks.stream()
