@@ -4,6 +4,7 @@ import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
+import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -317,6 +318,7 @@ public class PaymentService {
 
         for (Orders order : ordersList) {
             order.setLeftoverMoney(BigDecimal.ZERO);
+            order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
             ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
             ordersRepository.save(order);
         }

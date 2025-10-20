@@ -349,7 +349,6 @@ public class OrdersService {
         return ordersPage.map(order -> {
             OrderPayment orderPayment = new OrderPayment(order);
              if (status == OrderStatus.CHO_THANH_TOAN_DAU_GIA) {
-            System.out.println("Check status nha ku ");
             Optional<Payment> payment = order.getPayments().stream()
                     .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
                     .findFirst();
@@ -510,10 +509,6 @@ public class OrdersService {
         }
 
         List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_DU_HANG);
-
-        if (orders.size() < 2) {
-            throw new IllegalStateException("Khách hàng này không đủ đơn để gộp thanh toán!");
-        }
 
         return orders.stream()
                 .map(order -> {
