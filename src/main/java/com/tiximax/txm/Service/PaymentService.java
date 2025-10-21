@@ -39,6 +39,9 @@ public class PaymentService {
     @Autowired
     private AuthenticationRepository authenticationRepository;
 
+    @Autowired
+    private CustomerVoucherRepository customerVoucherRepository;
+
     public Payment createPayment(String orderCode, Integer depositPercent, boolean isUseBalance) {
         Orders orders = ordersRepository.findByOrderCode(orderCode);
 
@@ -242,7 +245,11 @@ public class PaymentService {
 //        return savedPayment;
 //    }
 
-    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance) {
+    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance, Long customerVoucherId) {
+        if (orderCodes == null || orderCodes.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy đơn hàng nào!");
+        }
+
         List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
         if (ordersList.size() != orderCodes.size()) {
             throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
@@ -278,6 +285,36 @@ public class PaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalAmount = totalWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal discount = BigDecimal.ZERO;
+        CustomerVoucher customerVoucher = null;
+        if (customerVoucherId != null) {
+            customerVoucher = customerVoucherRepository.findById(customerVoucherId).orElseThrow(() -> new RuntimeException("Voucher không tồn tại!"));
+            Voucher voucher = customerVoucher.getVoucher();
+            if (customerVoucher.isUsed()) {
+                throw new RuntimeException("Voucher đã sử dụng!");
+            }
+            if (voucher.getEndDate() != null && LocalDateTime.now().isAfter(voucher.getEndDate())) {
+                throw new RuntimeException("Voucher đã hết hạn!");
+            }
+            if (voucher.getMinOrderValue() != null && totalAmount.compareTo(voucher.getMinOrderValue()) < 0) {
+                throw new RuntimeException("Tổng giá trị đơn hàng chưa đạt yêu cầu của voucher!");
+            }
+            Set<Route> applicableRoutes = voucher.getApplicableRoutes();
+            if (!applicableRoutes.isEmpty()) {
+                boolean allRoutesMatch = ordersList.stream()
+                        .allMatch(order -> applicableRoutes.contains(order.getRoute()));
+                if (!allRoutesMatch) {
+                    throw new RuntimeException("Voucher không áp dụng cho tuyến của một số đơn hàng!");
+                }
+            }
+            if (voucher.getType() == VoucherType.PHAN_TRAM) {
+                discount = totalAmount.multiply(voucher.getValue()).divide(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+            } else if (voucher.getType() == VoucherType.CO_DINH) {
+                discount = voucher.getValue();
+            }
+            totalAmount = totalAmount.subtract(discount);
+        }
 
         BigDecimal totalDebt = ordersList.stream()
                 .map(Orders::getLeftoverMoney)
@@ -331,7 +368,11 @@ public class PaymentService {
             savedPayment.setStatus(PaymentStatus.DA_THANH_TOAN_SHIP);
             savedPayment = paymentRepository.save(savedPayment);
         }
-
+        if (customerVoucher != null) {
+            customerVoucher.setUsed(true);
+            customerVoucher.setUsedDate(LocalDateTime.now());
+            customerVoucherRepository.save(customerVoucher);
+        }
         return savedPayment;
     }
 
