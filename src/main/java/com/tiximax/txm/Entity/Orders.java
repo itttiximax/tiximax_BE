@@ -37,7 +37,7 @@ public class Orders {
 
     private BigDecimal finalPriceOrder;
 
-    private BigDecimal priceBeforeFee ; 
+    private BigDecimal priceBeforeFee;
 
     private BigDecimal leftoverMoney;
 
@@ -95,6 +95,11 @@ public class Orders {
     @OneToOne(mappedBy = "orders", cascade = CascadeType.ALL)
     @JsonIgnore
     Feedback feedback;
+
+    @ManyToOne
+    @JoinColumn(name = "voucherAppliedId")
+    @JsonIgnore
+    private CustomerVoucher voucherApplied;
 
 //    @ManyToOne
 //    @JoinColumn(name = "packing_id", nullable = true)

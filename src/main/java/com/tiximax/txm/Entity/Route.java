@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -38,5 +39,9 @@ public class Route {
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL)
     @JsonIgnore
     Set<AccountRoute> accountRoutes;
+
+    @ManyToMany(mappedBy = "applicableRoutes")
+    @JsonIgnore
+    private Set<Voucher> vouchers = new HashSet<>();
 
 }

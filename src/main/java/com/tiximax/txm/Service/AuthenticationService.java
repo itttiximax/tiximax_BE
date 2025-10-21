@@ -86,7 +86,9 @@ public class AuthenticationService implements UserDetailsService {
     @Autowired
     private OtpService otpService;
 
-    
+    @Autowired
+    private VoucherService voucherService;
+
     @Value("${supabase.url}")
     private String supabaseUrl;
 
@@ -104,7 +106,7 @@ public class AuthenticationService implements UserDetailsService {
         return account;
     }
 
-   public Object login(LoginRequest loginRequest) {
+    public Object login(LoginRequest loginRequest) {
     try {
         if (loginRequest == null || loginRequest.getPassword().isEmpty() || loginRequest.getUsername().isEmpty()) {
             throw new BadCredentialsException("Vui lòng điền đầy đủ thông tin đăng nhập!");
@@ -177,7 +179,6 @@ public class AuthenticationService implements UserDetailsService {
     return null;
 }
 
-
     public Staff registerStaff(RegisterStaffRequest registerRequest) {
         if (authenticationRepository.findByUsername(registerRequest.getUsername()) != null){
             throw new BadCredentialsException("Tên đăng nhập bị trùng, vui lòng chọn một tên khác!");
@@ -236,6 +237,7 @@ public class AuthenticationService implements UserDetailsService {
         customer.setAddress(registerRequest.getAddress());
         customer.setSource(registerRequest.getSource());
         customer = authenticationRepository.save(customer);
+        voucherService.assignOnRegisterVouchers(customer);
         System.out.println("New customer saved: " + customer.getEmail());
         otpService.sendOtpToEmail(customer.getEmail());
         return customer;
@@ -292,7 +294,7 @@ public class AuthenticationService implements UserDetailsService {
         customer.setSource(registerRequest.getSource());
         customer.setStaffId(accountUtils.getAccountCurrent().getAccountId());
         customer = authenticationRepository.save(customer);
-
+        voucherService.assignOnRegisterVouchers(customer);
         return customer;
     }
 
@@ -475,8 +477,8 @@ public class AuthenticationService implements UserDetailsService {
             return customer;
         }
     }
+
     public Account verifyAndSaveUser(String email, String name) {
-    // 1️⃣ Kiểm tra nếu Account đã tồn tại
     Account existingAccount = authenticationRepository.findByEmail(email);
     if (existingAccount != null) {
         return existingAccount;
