@@ -13,9 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @CrossOrigin
@@ -47,8 +45,8 @@ public class VoucherController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Voucher> updateVoucher(@PathVariable Long id, @RequestBody Voucher updatedVoucher, @RequestParam(required = false) Set<Long> routeIds) {
-        Voucher updated = voucherService.updateVoucher(id, updatedVoucher, routeIds);
+    public ResponseEntity<Voucher> updateVoucher(@PathVariable Long id, @RequestBody VoucherCreateRequest request) {
+        Voucher updated = voucherService.updateVoucher(id, request);
         return ResponseEntity.ok(updated);
     }
 

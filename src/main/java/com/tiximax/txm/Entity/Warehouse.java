@@ -29,14 +29,15 @@ public class Warehouse {
 
     private Double height;
 
+    @Column(nullable = true)
     private Double dim;
 
     private String image;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Double weight;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Double netWeight;
 
     @Enumerated(EnumType.STRING)

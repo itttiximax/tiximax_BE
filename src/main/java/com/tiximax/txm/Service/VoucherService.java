@@ -95,22 +95,23 @@ public class VoucherService {
         return voucherRepository.findById(voucherId).orElseThrow(() -> new IllegalArgumentException("Voucher không tồn tại."));
     }
 
-    public Voucher updateVoucher(Long voucherId, Voucher updatedVoucher, Set<Long> routeIds) {
+    public Voucher updateVoucher(Long voucherId, VoucherCreateRequest request) {
         Voucher existing = getVoucherById(voucherId);
-        if (updatedVoucher.getValue() != null) existing.setValue(updatedVoucher.getValue());
-        if (updatedVoucher.getType() != null) existing.setType(updatedVoucher.getType());
-        if (updatedVoucher.getDescription() != null) existing.setDescription(updatedVoucher.getDescription());
-        if (updatedVoucher.getStartDate() != null) existing.setStartDate(updatedVoucher.getStartDate());
-        if (updatedVoucher.getEndDate() != null) existing.setEndDate(updatedVoucher.getEndDate());
-        if (updatedVoucher.getMinOrderValue() != null) existing.setMinOrderValue(updatedVoucher.getMinOrderValue());
-        if (updatedVoucher.getMaxUses() != null) existing.setMaxUses(updatedVoucher.getMaxUses());
-        if (updatedVoucher.getAssignType() != null) existing.setAssignType(updatedVoucher.getAssignType());
-        if (updatedVoucher.getThresholdAmount() != null) existing.setThresholdAmount(updatedVoucher.getThresholdAmount());
+        if (request.getCode() != null) existing.setCode(request.getCode());
+        if (request.getType() != null) existing.setType(request.getType());
+        if (request.getValue() != null) existing.setValue(request.getValue());
+        if (request.getDescription() != null) existing.setDescription(request.getDescription());
+        if (request.getStartDate() != null) existing.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) existing.setEndDate(request.getEndDate());
+        if (request.getMinOrderValue() != null) existing.setMinOrderValue(request.getMinOrderValue());
+        if (request.getAssignType() != null) existing.setAssignType(request.getAssignType());
+        if (request.getThresholdAmount() != null) existing.setThresholdAmount(request.getThresholdAmount());
 
-        if (routeIds != null) {
+        Set<Long> routeIds = request.getRouteIds();
+        if (routeIds != null && !routeIds.isEmpty()) {
             Set<Route> routes = new HashSet<>();
             for (Long routeId : routeIds) {
-                Route route = routeRepository.findById(routeId).orElseThrow();
+                Route route = routeRepository.findById(routeId).orElseThrow(() -> new IllegalArgumentException("Kiểm tra lại tuyến vì có tuyến không tồn tại!"));
                 routes.add(route);
             }
             existing.setApplicableRoutes(routes);
