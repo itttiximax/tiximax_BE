@@ -18,8 +18,6 @@ public class WarehouseRequest {
 
         private Double weight;
 
-        private Double netWeight;
-
         private String image;
 
 }

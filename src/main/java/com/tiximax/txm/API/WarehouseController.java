@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -35,6 +37,11 @@ public class WarehouseController {
             @RequestBody WarehouseRequest warehouseRequest) {
         Warehouse warehouse = warehouseService.createWarehouseEntryByShipmentCode(shipmentCode, warehouseRequest);
         return ResponseEntity.ok(warehouse);
+    }
+
+    @PostMapping("/list-shipment")
+    public ResponseEntity<String> createWarehouseEntryByListShipmentCode(@RequestBody List<String> shipmentCodes) {
+        return ResponseEntity.ok(warehouseService.createWarehouseEntryByListShipmentCodes(shipmentCodes));
     }
 
     @GetMapping("/{page}/{size}/ready-warehouses")

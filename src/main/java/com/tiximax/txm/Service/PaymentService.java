@@ -272,7 +272,7 @@ public class PaymentService {
 
         boolean hasNullWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
-                .anyMatch(warehouse -> warehouse != null && warehouse.getWeight() == null);
+                .anyMatch(warehouse -> warehouse != null && warehouse.getNetWeight() == null);
         if (hasNullWeight) {
             throw new RuntimeException("Một hoặc nhiều đơn hàng chưa được cân, vui lòng kiểm tra lại!");
         }
@@ -280,7 +280,7 @@ public class PaymentService {
         BigDecimal totalWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
                 .filter(warehouse -> warehouse != null && warehouse.getWeight() != null)
-                .map(Warehouse::getWeight)
+                .map(Warehouse::getNetWeight)
                 .map(BigDecimal::valueOf)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

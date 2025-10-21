@@ -44,8 +44,6 @@ public class WarehouseService {
     @Autowired
     private AccountUtils accountUtils;
 
-
-    // nhập kho nước ngoài 
     public Warehouse createWarehouseEntryByShipmentCode(String shipmentCode, WarehouseRequest warehouseRequest) {
         List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
         if (orderLinks.isEmpty()) {
@@ -57,7 +55,6 @@ public class WarehouseService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến mã vận đơn này!");
         }
 
-        System.out.println("Order Status: " + order.getStatus());
         if (!(order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN) ||
                 order.getStatus().equals(OrderStatus.CHO_DONG_GOI) ||
                 order.getStatus().equals(OrderStatus.DANG_XU_LY))) {
@@ -67,8 +64,6 @@ public class WarehouseService {
         if (warehouseRepository.existsByTrackingCode(shipmentCode)) {
             throw new IllegalArgumentException("Mục kho đã tồn tại cho mã vận đơn này!");
         }
-
-        Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 5000;
 
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff.getWarehouseLocation() == null) {
@@ -83,6 +78,8 @@ public class WarehouseService {
             ordersRepository.save(order);
         }
 
+        Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 6000;
+
         Warehouse warehouse = new Warehouse();
             warehouse.setTrackingCode(shipmentCode);
             warehouse.setLength(warehouseRequest.getLength());
@@ -90,7 +87,11 @@ public class WarehouseService {
             warehouse.setHeight(warehouseRequest.getHeight());
             warehouse.setDim(dim);
             warehouse.setWeight(warehouseRequest.getWeight());
-            warehouse.setNetWeight(warehouseRequest.getNetWeight());
+            if (dim > warehouse.getWeight()){
+                warehouse.setNetWeight(dim);
+            } else {
+                warehouse.setNetWeight(warehouse.getWeight());
+            }
             warehouse.setImage(warehouseRequest.getImage());
             warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
             warehouse.setCreatedAt(LocalDateTime.now());
@@ -112,6 +113,73 @@ public class WarehouseService {
         ordersService.addProcessLog(order, shipmentCode, ProcessLogAction.DA_NHAP_KHO_NN);
 
         return warehouse;
+    }
+
+    public String createWarehouseEntryByListShipmentCodes(List<String> shipmentCodes) {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        if (staff.getWarehouseLocation() == null) {
+            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+        }
+
+        WarehouseLocation location = new WarehouseLocation();
+        location.setLocationId(staff.getWarehouseLocation().getLocationId());
+
+        for (String shipmentCode : shipmentCodes) {  // Sửa: Loop qua từng shipmentCode
+            List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
+            if (orderLinks.isEmpty()) {
+                throw new IllegalArgumentException("Không tìm thấy mã sản phẩm với mã vận đơn " + shipmentCode + "!");
+            }
+
+            Orders order = orderLinks.get(0).getOrders();
+            if (order == null) {
+                throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến mã vận đơn này!");
+            }
+
+            if (!(order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN) ||
+                    order.getStatus().equals(OrderStatus.CHO_DONG_GOI) ||
+                    order.getStatus().equals(OrderStatus.DANG_XU_LY))) {
+                throw new RuntimeException("Đơn hàng chưa đủ điều kiện để nhập kho!");
+            }
+
+            if (warehouseRepository.existsByTrackingCode(shipmentCode)) {
+                throw new IllegalArgumentException("Mục kho đã tồn tại cho mã vận đơn này!");
+            }
+
+            if (order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN)) {
+                order.setStatus(OrderStatus.CHO_DONG_GOI);
+                ordersRepository.save(order);
+            }
+
+            Warehouse warehouse = new Warehouse();
+                warehouse.setTrackingCode(shipmentCode);
+                warehouse.setLength(null);
+                warehouse.setWidth(null);
+                warehouse.setHeight(null);
+                warehouse.setDim(null);
+                warehouse.setWeight(null);
+                warehouse.setNetWeight(null);
+                warehouse.setImage(null);
+                warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
+                warehouse.setCreatedAt(LocalDateTime.now());
+                warehouse.setStaff(staff);
+                warehouse.setLocation(location);
+                warehouse.setOrders(order);
+                warehouse.setPurchase(orderLinks.get(0).getPurchase());
+                warehouse.setOrderLinks(new HashSet<>(orderLinks));
+                warehouse.setPacking(null);
+
+            orderLinks.forEach(orderLink -> {
+                orderLink.setWarehouse(warehouse);
+                orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO_NN);
+            });
+
+            warehouseRepository.save(warehouse);
+            orderLinksRepository.saveAll(orderLinks);
+
+            ordersService.addProcessLog(order, shipmentCode, ProcessLogAction.DA_NHAP_KHO_NN);
+        }
+
+        return "Thành công nhập kho các mã vận đơn vừa truyền vào!";
     }
 
     public Page<WarehouseSummary> getWarehousesForPacking(Pageable pageable) {
