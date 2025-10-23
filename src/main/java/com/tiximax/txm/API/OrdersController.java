@@ -116,9 +116,10 @@ public class OrdersController {
 
     @GetMapping("/with-links/{page}/{size}")
     public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size, @RequestParam OrderType orderType) {
-        Sort sort = Sort.by("createdAt").descending();
+        Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
+                .and(Sort.by(Sort.Order.desc("createdAt")));
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable,orderType);
+        Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable, orderType);
         return ResponseEntity.ok(ordersPage);
     }
 
@@ -144,6 +145,18 @@ public class OrdersController {
     public ResponseEntity<List<OrderPayment>> getOrdersShippingByCustomer(@PathVariable String customerCode) {
         List<OrderPayment> orders = ordersService.getOrdersShippingByCustomerCode(customerCode);
         return ResponseEntity.ok(orders);
+    }
+
+    @PutMapping("/buy-later/{orderId}/links/{orderLinkId}")
+    public ResponseEntity<Orders> updateOrderLinkToBuyLater(@PathVariable Long orderId, @PathVariable Long orderLinkId) {
+        Orders updatedOrder = ordersService.updateOrderLinkToBuyLater(orderId, orderLinkId);
+        return ResponseEntity.ok(updatedOrder);
+    }
+
+    @PutMapping("/pin/{orderId}")
+    public ResponseEntity<Void> pinOrder(@PathVariable Long orderId, @RequestParam boolean pin) {
+        ordersService.pinOrder(orderId, pin);
+        return ResponseEntity.noContent().build();
     }
 
 }

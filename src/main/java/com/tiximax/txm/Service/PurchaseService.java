@@ -50,7 +50,6 @@ public class PurchaseService {
 
     @Autowired
     private PaymentService paymentService;
-    
 
     @Autowired
     private OrdersService ordersService;
@@ -95,6 +94,7 @@ public class PurchaseService {
         purchase.setOrders(order);
         purchase.setNote(purchaseRequest.getNote());
         purchase.setPurchaseImage(purchaseRequest.getImage());
+        purchase.setFinalPriceOrder(purchaseRequest.getPurchaseTotal());
 
         for (OrderLinks orderLink : orderLinks) {
             orderLink.setPurchase(purchase);
