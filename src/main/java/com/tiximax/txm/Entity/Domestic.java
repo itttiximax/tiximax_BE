@@ -9,6 +9,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -57,9 +58,8 @@ public class Domestic {
 //    @JsonIgnore
 //    Orders orders;
 
-    @ManyToOne
-    @JoinColumn(name="packing_id", nullable = false)
+    @ManyToMany(mappedBy = "domestics")
     @JsonIgnore
-    Packing packing;
+    private Set<Packing> packings;
 
 }
