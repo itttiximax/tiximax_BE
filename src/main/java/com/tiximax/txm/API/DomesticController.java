@@ -41,8 +41,8 @@ public class DomesticController {
     }
 
     @PostMapping("/transfer-to-customer")
-    public ResponseEntity<Domestic> transferToCustomer(){
-        Domestic domestic = domesticService.TransferToCustomer();
+    public ResponseEntity<List<Domestic>> transferToCustomer(){
+        List<Domestic> domestic = domesticService.transferToCustomer();
         return ResponseEntity.ok(domestic);
     }
 }

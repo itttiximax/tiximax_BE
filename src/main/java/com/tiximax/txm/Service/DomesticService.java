@@ -109,53 +109,53 @@ public class DomesticService {
     return domestic;
 }
     
-public List<Domestic> TransferToCustomer() {
-    List<Map<String, Object>> dataList = getReadyForDeliveryOrders(Pageable.unpaged());
-    List<Domestic> results = new ArrayList<>();
+    public List<Domestic>transferToCustomer() {
+        List<Map<String, Object>> dataList = getReadyForDeliveryOrders(Pageable.unpaged());
+        List<Domestic> results = new ArrayList<>();
 
-    if (dataList == null || dataList.isEmpty()) return results;
+        if (dataList == null || dataList.isEmpty()) return results;
 
-    for (Map<String, Object> customerData : dataList) {
-        String customerName = (String) customerData.get("customerName");
-        List<Map<String, Object>> packings = (List<Map<String, Object>>) customerData.get("packings");
+        for (Map<String, Object> customerData : dataList) {
+            String customerName = (String) customerData.get("customerName");
+            List<Map<String, Object>> packings = (List<Map<String, Object>>) customerData.get("packings");
 
-        if (packings == null || packings.isEmpty()) continue;
+            if (packings == null || packings.isEmpty()) continue;
 
-        List<String> shippingList = new ArrayList<>();
-        Set<Packing> packingSet = new HashSet<>();
+            List<String> shippingList = new ArrayList<>();
+            Set<Packing> packingSet = new HashSet<>();
 
-        for (Map<String, Object> packingData : packings) {
-            String packingCode = (String) packingData.get("packingCode");
-            Optional<Packing> optionalPacking = packingRepository.findByPackingCode(packingCode);
-            if (optionalPacking.isPresent()) {
-                Packing packingEntity = optionalPacking.get();
-                packingSet.add(packingEntity);
+            for (Map<String, Object> packingData : packings) {
+                String packingCode = (String) packingData.get("packingCode");
+                Optional<Packing> optionalPacking = packingRepository.findByPackingCode(packingCode);
+                if (optionalPacking.isPresent()) {
+                    Packing packingEntity = optionalPacking.get();
+                    packingSet.add(packingEntity);
 
-                Set<String> trackingCodes = (Set<String>) packingData.get("trackingCodes");
-                if (trackingCodes != null) shippingList.addAll(trackingCodes);
+                    Set<String> trackingCodes = (Set<String>) packingData.get("trackingCodes");
+                    if (trackingCodes != null) shippingList.addAll(trackingCodes);
+                }
             }
+
+            Domestic domestic = new Domestic();
+            domestic.setPackings(packingSet);
+            domestic.setShippingList(shippingList);
+            domestic.setStatus(DomesticStatus.DA_GIAO);
+            domestic.setTimestamp(LocalDateTime.now());
+            domestic.setNote("Giao hàng cho khách hàng: " + customerName);
+
+            Staff currentStaff = (Staff) accountUtils.getAccountCurrent();
+            domestic.setStaff(currentStaff);
+            if (currentStaff != null) {
+                domestic.setLocation(currentStaff.getWarehouseLocation());
+                domestic.setFromLocation(currentStaff.getWarehouseLocation());
+            }
+
+            domestic.setToLocation(null);
+            results.add(domesticRepository.save(domestic));
         }
 
-        Domestic domestic = new Domestic();
-        domestic.setPackings(packingSet);
-        domestic.setShippingList(shippingList);
-        domestic.setStatus(DomesticStatus.DA_GIAO);
-        domestic.setTimestamp(LocalDateTime.now());
-        domestic.setNote("Giao hàng cho khách hàng: " + customerName);
-
-        Staff currentStaff = (Staff) accountUtils.getAccountCurrent();
-        domestic.setStaff(currentStaff);
-        if (currentStaff != null) {
-            domestic.setLocation(currentStaff.getWarehouseLocation());
-            domestic.setFromLocation(currentStaff.getWarehouseLocation());
-        }
-
-        domestic.setToLocation(null);
-        results.add(domesticRepository.save(domestic));
+        return results;
     }
-
-    return results;
-}
 
     private void updateOrderStatusIfAllLinksReady(List<OrderLinks> orderLinks) {
         Map<Orders, List<OrderLinks>> orderToLinksMap = orderLinks.stream()
