@@ -45,4 +45,5 @@ public class DomesticController {
         List<Domestic> domestic = domesticService.transferToCustomer();
         return ResponseEntity.ok(domestic);
     }
+
 }

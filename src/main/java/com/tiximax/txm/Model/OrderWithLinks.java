@@ -25,6 +25,7 @@ public class OrderWithLinks {
     private BigDecimal finalPriceOrder;
     private Boolean checkRequired;
     private List<OrderLinks> orderLinks;
+    private LocalDateTime pinnedAt;
 
     public OrderWithLinks(Orders order) {
         this.orderId = order.getOrderId();
@@ -36,6 +37,7 @@ public class OrderWithLinks {
         this.finalPriceOrder = order.getFinalPriceOrder();
         this.checkRequired = order.getCheckRequired();
         this.orderLinks = new ArrayList<>(order.getOrderLinks());
+        this.pinnedAt = order.getPinnedAt();
     }
 
     public void setOrderLinks(List<OrderLinks> orderLinks) {

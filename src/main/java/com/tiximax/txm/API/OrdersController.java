@@ -116,7 +116,7 @@ public class OrdersController {
 
     @GetMapping("/with-links/{page}/{size}")
     public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size, @RequestParam OrderType orderType) {
-        Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
+        Sort sort = Sort.by(Sort.Order.asc("pinnedAt").nullsLast())
                 .and(Sort.by(Sort.Order.desc("createdAt")));
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable, orderType);
