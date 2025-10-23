@@ -7,7 +7,9 @@ import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import java.io.IOException;
@@ -420,7 +422,11 @@ public class OrdersService {
             return Page.empty(pageable);
         }
 
-        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(routeIds, OrderStatus.CHO_MUA,orderType, pageable);
+        Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
+                .and(Sort.by(Sort.Order.desc("createdAt")));
+        Pageable customPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+
+        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(routeIds, OrderStatus.CHO_MUA, orderType, customPageable);
 
         return ordersPage.map(orders -> {
             OrderWithLinks orderWithLinks = new OrderWithLinks(orders);
@@ -485,9 +491,9 @@ public class OrdersService {
 
         List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_XAC_NHAN);
 
-        if (orders.size() < 2){
-            throw new IllegalStateException("Khách hàng này không đủ đơn để gộp thanh toán!");
-        }
+//        if (orders.size() < 2){
+//            throw new IllegalStateException("Khách hàng này không đủ đơn để gộp thanh toán!");
+//        }
 
         return orders.stream()
                 .map(order -> {
@@ -513,7 +519,6 @@ public class OrdersService {
                 .map(order -> {
                     OrderPayment orderPayment = new OrderPayment(order);
 
-                    // Tính tổng netWeight từ tất cả Warehouse của Order
                     BigDecimal totalNetWeight = order.getWarehouses() != null
                             ? order.getWarehouses().stream()
                             .map(Warehouse::getNetWeight)
@@ -523,7 +528,6 @@ public class OrdersService {
                             : BigDecimal.ZERO;
                     orderPayment.setTotalNetWeight(totalNetWeight);
 
-                    // Tính finalPriceOrder: totalNetWeight * (unitBuyingPrice hoặc unitDepositPrice nếu KY_GUI)
                     Route route = order.getRoute();
                     BigDecimal unitPrice = (order.getOrderType() == OrderType.KY_GUI && route.getUnitDepositPrice() != null)
                             ? route.getUnitDepositPrice()
@@ -534,6 +538,53 @@ public class OrdersService {
                     return orderPayment;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public Orders updateOrderLinkToBuyLater(Long orderId, Long orderLinkId) {
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+
+        OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy link sản phẩm!"));
+
+        if (!orderLink.getStatus().equals(OrderLinkStatus.CHO_MUA)) {
+            throw new IllegalArgumentException("Chỉ có thể chuyển sang MUA SAU nếu trạng thái hiện tại là CHỜ MUA!");
+        }
+
+        orderLink.setStatus(OrderLinkStatus.MUA_SAU);
+        orderLinksRepository.save(orderLink);
+
+        List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
+
+        long countMuaSau = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.MUA_SAU)
+                .count();
+
+        long countDaHuy = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_HUY)
+                .count();
+
+        long countDaMua = allOrderLinks.stream()
+                .filter(link -> link.getStatus() == OrderLinkStatus.DA_MUA)
+                .count();
+
+        if (countMuaSau + countDaHuy == allOrderLinks.size()) {
+            order.setStatus(OrderStatus.CHO_MUA);
+            ordersRepository.save(order);
+        } else if (countDaMua > 0 && (countDaMua + countDaHuy + countMuaSau == allOrderLinks.size())) {
+            order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            ordersRepository.save(order);
+        }
+
+//        addProcessLog(order, order.getOrderCode(), ProcessLogAction.CAP_NHAT_TRANG_THAI_LINK);
+        return order;
+    }
+
+    public void pinOrder(Long orderId, boolean pin) {
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng!"));
+        order.setPinnedAt(pin ? LocalDateTime.now() : null);
+        ordersRepository.save(order);
     }
 
 }
