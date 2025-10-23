@@ -37,7 +37,7 @@ public class DomesticService {
     @Autowired
     private AccountUtils accountUtils;
 
-   public Domestic createDomesticForWarehousing(List<String> packingCodes, String note) {
+    public Domestic createDomesticForWarehousing(List<String> packingCodes, String note) {
     Staff staff = (Staff) accountUtils.getAccountCurrent();
     if (staff == null || staff.getWarehouseLocation() == null) {
         throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
@@ -219,6 +219,5 @@ public class DomesticService {
 
         return result;
     }
-
 
 }

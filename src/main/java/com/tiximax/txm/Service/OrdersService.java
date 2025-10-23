@@ -444,7 +444,7 @@ public class OrdersService {
             ));
 
             orderWithLinks.setOrderLinks(sortedLinks);
-
+            orderWithLinks.setPinnedAt(orders.getPinnedAt());
             return orderWithLinks;
         });
     }
