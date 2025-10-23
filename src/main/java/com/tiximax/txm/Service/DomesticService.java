@@ -37,109 +37,124 @@ public class DomesticService {
     @Autowired
     private AccountUtils accountUtils;
 
-    public Domestic createDomesticForWarehousing(List<String> packingCode, String note) {
-        Staff staff = (Staff) accountUtils.getAccountCurrent();
-        if (staff == null || staff.getWarehouseLocation() == null) {
-            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
-        }
+   public Domestic createDomesticForWarehousing(List<String> packingCodes, String note) {
+    Staff staff = (Staff) accountUtils.getAccountCurrent();
+    if (staff == null || staff.getWarehouseLocation() == null) {
+        throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+    }
 
-        List<Packing> packings = packingRepository.findAllByPackingCodeIn(packingCode);
-        if (packings.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy packing nào trong danh sách cung cấp!");
-        }
+    // 🔹 Tìm danh sách packings theo mã
+    List<Packing> packings = packingRepository.findAllByPackingCodeIn(packingCodes);
+    if (packings.isEmpty()) {
+        throw new IllegalArgumentException("Không tìm thấy packing nào trong danh sách cung cấp!");
+    }
 
-        for (Packing packing : packings) {
-            if (packing.getStatus() != PackingStatus.DA_BAY) {
-                throw new IllegalArgumentException("Packing " + packing.getPackingCode() + " chưa đúng trạng thái nhập kho!");
+    // 🔹 Kiểm tra trạng thái từng packing
+    for (Packing packing : packings) {
+        if (packing.getStatus() != PackingStatus.DA_BAY) {
+            throw new IllegalArgumentException("Packing " + packing.getPackingCode() + " chưa đúng trạng thái nhập kho!");
+        }
+    }
+
+    // 🔹 Lấy kho nước ngoài từ packing đầu tiên
+    Packing firstPacking = packings.get(0);
+    Set<Warehouse> warehouses = firstPacking.getWarehouses();
+    if (warehouses.isEmpty()) {
+        throw new IllegalArgumentException("Packing " + firstPacking.getPackingCode() + " không được liên kết với kho nước ngoài!");
+    }
+
+    Warehouse firstWarehouse = warehouses.iterator().next();
+    WarehouseLocation fromLocation = firstWarehouse.getLocation();
+    if (fromLocation == null) {
+        throw new IllegalArgumentException("Kho nước ngoài của packing " + firstPacking.getPackingCode() + " không được tìm thấy!");
+    }
+
+    // 🔹 Cập nhật trạng thái OrderLinks
+    List<String> shipmentCodes = packings.stream()
+            .flatMap(p -> p.getPackingList().stream())
+            .distinct()
+            .collect(Collectors.toList());
+
+    List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCodeIn(shipmentCodes);
+    for (OrderLinks orderLink : orderLinks) {
+        if (orderLink.getStatus() == OrderLinkStatus.DANG_CHUYEN_VN) {
+            orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO_VN);
+        }
+    }
+    orderLinksRepository.saveAll(orderLinks);
+    updateOrderStatusIfAllLinksReady(orderLinks);
+
+    for (Packing packing : packings) {
+        packing.setStatus(PackingStatus.DA_NHAP_KHO_VN);
+    }
+    packingRepository.saveAll(packings);
+
+    Domestic domestic = new Domestic();
+    domestic.setFromLocation(fromLocation);
+    domestic.setToLocation(staff.getWarehouseLocation());
+    domestic.setStatus(DomesticStatus.NHAN_HANG);
+    domestic.setTimestamp(LocalDateTime.now());
+    domestic.setStaff(staff);
+    domestic.setLocation(staff.getWarehouseLocation());
+    domestic.setNote(note);
+    Set<Packing> packingSet = new HashSet<>(packings);
+    domestic.setPackings(packingSet);
+    domestic.setShippingList(packings.stream()
+            .map(Packing::getPackingCode)
+            .collect(Collectors.toList()));
+    domestic = domesticRepository.save(domestic);
+
+    ordersService.addProcessLog(null, domestic.getDomesticId().toString(), ProcessLogAction.DA_NHAP_KHO_HN);
+
+    return domestic;
+}
+    
+public List<Domestic> TransferToCustomer() {
+    List<Map<String, Object>> dataList = getReadyForDeliveryOrders(Pageable.unpaged());
+    List<Domestic> results = new ArrayList<>();
+
+    if (dataList == null || dataList.isEmpty()) return results;
+
+    for (Map<String, Object> customerData : dataList) {
+        String customerName = (String) customerData.get("customerName");
+        List<Map<String, Object>> packings = (List<Map<String, Object>>) customerData.get("packings");
+
+        if (packings == null || packings.isEmpty()) continue;
+
+        List<String> shippingList = new ArrayList<>();
+        Set<Packing> packingSet = new HashSet<>();
+
+        for (Map<String, Object> packingData : packings) {
+            String packingCode = (String) packingData.get("packingCode");
+            Optional<Packing> optionalPacking = packingRepository.findByPackingCode(packingCode);
+            if (optionalPacking.isPresent()) {
+                Packing packingEntity = optionalPacking.get();
+                packingSet.add(packingEntity);
+
+                Set<String> trackingCodes = (Set<String>) packingData.get("trackingCodes");
+                if (trackingCodes != null) shippingList.addAll(trackingCodes);
             }
         }
-
-        Packing firstPacking = packings.get(0);
-        Set<Warehouse> warehouses = firstPacking.getWarehouses();
-        if (warehouses.isEmpty()) {
-            throw new IllegalArgumentException("Packing " + firstPacking.getPackingCode() + " không được liên kết với kho nước ngoài!");
-        }
-        Warehouse firstWarehouse = warehouses.iterator().next();
-        WarehouseLocation fromLocation = firstWarehouse.getLocation();
-        if (fromLocation == null) {
-            throw new IllegalArgumentException("Kho nước ngoài của packing " + firstPacking.getPackingCode() + " không được tìm thấy!");
-        }
-
-        List<String> shipmentCodes = packings.stream()
-                .flatMap(packing -> packing.getPackingList().stream())
-                .distinct()
-                .collect(Collectors.toList());
-        List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCodeIn(shipmentCodes);
-        for (OrderLinks orderLink : orderLinks) {
-            if (orderLink.getStatus() == OrderLinkStatus.DANG_CHUYEN_VN) {
-                orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO_VN);
-            }
-        }
-        orderLinksRepository.saveAll(orderLinks);
-
-        updateOrderStatusIfAllLinksReady(orderLinks);
-
-        for (Packing packing : packings) {
-            packing.setStatus(PackingStatus.DA_NHAP_KHO_VN);
-        }
-        packingRepository.saveAll(packings);
 
         Domestic domestic = new Domestic();
-        domestic.setFromLocation(fromLocation);
-        domestic.setToLocation(staff.getWarehouseLocation());
-        domestic.setStatus(DomesticStatus.NHAN_HANG);
-        domestic.setTimestamp(LocalDateTime.now());
-        domestic.setStaff(staff);
-        domestic.setLocation(staff.getWarehouseLocation());
-        domestic.setPacking(firstPacking);
-        domestic.setNote(note);
-        domestic.setShippingList(packings.stream()
-                .map(Packing::getPackingCode)
-                .collect(Collectors.toList()));
-
-        domestic = domesticRepository.save(domestic);
-
-        ordersService.addProcessLog(null, domestic.getDomesticId().toString(), ProcessLogAction.DA_NHAP_KHO_HN);
-
-        return domestic;
-    }
-    
-    public Domestic TransferToCustomer(){
-    List<Map<String, Object>> dataList = getReadyForDeliveryOrders(Pageable.unpaged());       
-        List<String> shippingList = new ArrayList<>();
-        var domestic = new Domestic();
-        
-        String lastCustomerName = null;
-       
-
-        for (Map<String, Object> customerData : dataList) {
-        lastCustomerName = (String) customerData.get("customerName");
-
-        List<Map<String, Object>> packings = (List<Map<String, Object>>) customerData.get("packings");
-         if (packings == null || packings.isEmpty()) continue;
-
-    for (Map<String, Object> packingData : packings) {
-        // Lấy packingCode ra từ Map
-        String packingCode = (String) packingData.get("packingCode");
-          Optional<Packing> optionalPacking = packingRepository.findByPackingCode(packingCode);
-        if (optionalPacking.isPresent()) {
-            Packing packingEntity = optionalPacking.get();
-            domestic.setPacking(packingEntity);
-       
-            Set<String> trackingCodes = (Set<String>) packingData.get("trackingCodes");
-            shippingList.addAll(trackingCodes);
-        }
-}
-}
+        domestic.setPackings(packingSet);
         domestic.setShippingList(shippingList);
         domestic.setStatus(DomesticStatus.DA_GIAO);
         domestic.setTimestamp(LocalDateTime.now());
-        domestic.setNote("Giao hàng cho khách hàng: " + lastCustomerName);
-        domestic.setStaff((Staff) accountUtils.getAccountCurrent());
-        domestic.setLocation(((Staff) accountUtils.getAccountCurrent()).getWarehouseLocation());
-        domestic.setFromLocation(((Staff) accountUtils.getAccountCurrent()).getWarehouseLocation());
+        domestic.setNote("Giao hàng cho khách hàng: " + customerName);
+
+        Staff currentStaff = (Staff) accountUtils.getAccountCurrent();
+        domestic.setStaff(currentStaff);
+        if (currentStaff != null) {
+            domestic.setLocation(currentStaff.getWarehouseLocation());
+            domestic.setFromLocation(currentStaff.getWarehouseLocation());
+        }
+
         domestic.setToLocation(null);
-        return domesticRepository.save(domestic); 
+        results.add(domesticRepository.save(domestic));
+    }
+
+    return results;
 }
 
     private void updateOrderStatusIfAllLinksReady(List<OrderLinks> orderLinks) {

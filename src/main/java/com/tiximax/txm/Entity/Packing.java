@@ -48,7 +48,12 @@ public class Packing {
     @JsonIgnore
     Set<Warehouse> warehouses;
 
-    @OneToMany(mappedBy = "packing", cascade = CascadeType.ALL)
+    @ManyToMany
+    @JoinTable(
+        name = "packing_domestic",
+        joinColumns = @JoinColumn(name = "packing_id"),
+        inverseJoinColumns = @JoinColumn(name = "domestic_id")
+    )
     @JsonIgnore
     Set<Domestic> domestics;
 
