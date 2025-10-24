@@ -10,7 +10,6 @@ import com.tiximax.txm.Model.OrderDetail;
 import com.tiximax.txm.Model.OrderPayment;
 import com.tiximax.txm.Model.OrderWithLinks;
 import com.tiximax.txm.Model.OrdersRequest;
-import com.tiximax.txm.Service.DomesticService;
 import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -117,8 +116,8 @@ public class OrdersController {
 
     @GetMapping("/with-links/{page}/{size}")
     public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size, @RequestParam OrderType orderType) {
-        Sort sort = Sort.by(Sort.Order.asc("pinnedAt").nullsLast())
-                .and(Sort.by(Sort.Order.desc("createdAt")));
+        Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
+                .and(Sort.by(Sort.Order.asc("createdAt")));
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable, orderType);
         return ResponseEntity.ok(ordersPage);

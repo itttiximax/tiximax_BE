@@ -423,7 +423,7 @@ public class OrdersService {
         }
 
         Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
-                .and(Sort.by(Sort.Order.desc("createdAt")));
+                .and(Sort.by(Sort.Order.asc("createdAt")));
         Pageable customPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
         Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(routeIds, OrderStatus.CHO_MUA, orderType, customPageable);
@@ -607,13 +607,11 @@ public class OrdersService {
         Page<Orders> ordersPage = ordersRepository.findByStatusIn(statuses, pageable);
 
         return ordersPage.getContent().stream()
-                // 🔹 Lọc chỉ những đơn có ít nhất 1 link đã nhập kho VN
                 .filter(order -> order.getOrderLinks().stream()
                         .anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN))
                 .map(order -> {
                     OrderPayment orderPayment = new OrderPayment(order);
 
-                    // 🔹 CHỈ CỘNG ký từ warehouse của các link có status = DA_NHAP_KHO_VN
                     BigDecimal totalNetWeight = order.getOrderLinks().stream()
                             .filter(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN)
                             .map(OrderLinks::getWarehouse)

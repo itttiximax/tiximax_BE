@@ -191,7 +191,13 @@ public class DomesticService {
             Map<String, Object> customerData = new HashMap<>();
             customerData.put("customerName", customer.getName());
             customerData.put("customerPhone", customer.getPhone());
-            customerData.put("customerAddress", customer.getAddress());
+            List<Long> addressIds = customerEntry.getValue().stream()
+                    .map(Orders::getAddress)
+                    .filter(Objects::nonNull)
+                    .map(Address::getAddressId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            customerData.put("customerAddressIds", addressIds);
 
             Map<Packing, List<Warehouse>> packingToWarehousesMap = customerEntry.getValue().stream()
                     .flatMap(order -> order.getWarehouses().stream())

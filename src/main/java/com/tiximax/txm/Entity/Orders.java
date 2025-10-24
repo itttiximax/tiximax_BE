@@ -109,9 +109,9 @@ public class Orders {
     @JsonIgnore
     private Set<PartialShipment> partialShipments = new HashSet<>();
 
-//    @ManyToOne
-//    @JoinColumn(name = "packing_id", nullable = true)
-//    @JsonIgnore
-//    Packing packing;
-
+    @ManyToOne
+    @JoinColumn(name = "address_id", nullable = false)
+    @JsonIgnore
+    private Address address;
+    
 }
