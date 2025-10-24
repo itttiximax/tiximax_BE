@@ -148,12 +148,19 @@ public List<Domestic> TransferToCustomer() {
         if (currentStaff != null) {
             domestic.setLocation(currentStaff.getWarehouseLocation());
             domestic.setFromLocation(currentStaff.getWarehouseLocation());
-        }
-
+        } 
         domestic.setToLocation(null);
         results.add(domesticRepository.save(domestic));
-    }
 
+            for (String shipmentCode : shippingList) {
+            List<OrderLinks> links = orderLinksRepository.findByShipmentCode(shipmentCode);
+            for (OrderLinks link : links) {
+                link.setStatus(OrderLinkStatus.DA_GIAO); 
+                orderLinksRepository.save(link);        
+            }
+        }
+    }
+    
     return results;
 }
 
