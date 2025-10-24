@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -103,6 +104,10 @@ public class Orders {
     @JoinColumn(name = "voucherAppliedId")
     @JsonIgnore
     private CustomerVoucher voucherApplied;
+
+    @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<PartialShipment> partialShipments = new HashSet<>();
 
 //    @ManyToOne
 //    @JoinColumn(name = "packing_id", nullable = true)

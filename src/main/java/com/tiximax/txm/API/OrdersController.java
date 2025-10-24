@@ -10,6 +10,7 @@ import com.tiximax.txm.Model.OrderDetail;
 import com.tiximax.txm.Model.OrderPayment;
 import com.tiximax.txm.Model.OrderWithLinks;
 import com.tiximax.txm.Model.OrdersRequest;
+import com.tiximax.txm.Service.DomesticService;
 import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -157,6 +158,14 @@ public class OrdersController {
     public ResponseEntity<Void> pinOrder(@PathVariable Long orderId, @RequestParam boolean pin) {
         ordersService.pinOrder(orderId, pin);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/ready-for-partial/{page}/{size}")
+    public ResponseEntity<List<OrderPayment>> getReadyOrdersForPartial(@PathVariable int page, @PathVariable int size) {
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        List<OrderPayment> readyOrders = ordersService.getReadyOrdersForPartial(pageable);
+        return ResponseEntity.ok(readyOrders);
     }
 
 }

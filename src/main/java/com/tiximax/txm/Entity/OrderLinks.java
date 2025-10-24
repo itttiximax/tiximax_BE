@@ -76,4 +76,9 @@ public class OrderLinks {
     @JoinColumn(name="warehouse_id", nullable = true)
     @JsonIgnore
     Warehouse warehouse;
+
+    @ManyToOne
+    @JoinColumn(name = "partial_shipment_id", nullable = true)
+    @JsonIgnore
+    private PartialShipment partialShipment;
 }
