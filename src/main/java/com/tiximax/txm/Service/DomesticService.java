@@ -109,7 +109,7 @@ public class DomesticService {
     return domestic;
 }
     
-    public List<Domestic>transferToCustomer() {
+    public List<Domestic>TransferToCustomer() {
         List<Map<String, Object>> dataList = getReadyForDeliveryOrders(Pageable.unpaged());
         List<Domestic> results = new ArrayList<>();
 
