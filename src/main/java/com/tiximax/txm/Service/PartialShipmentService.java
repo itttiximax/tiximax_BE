@@ -3,12 +3,15 @@ package com.tiximax.txm.Service;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
+import com.tiximax.txm.Enums.PaymentType;
+import com.tiximax.txm.Model.TrackingCodesRequest;
 import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PartialShipmentRepository;
 import com.tiximax.txm.Repository.PaymentRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,9 +24,19 @@ import java.util.stream.Collectors;
 
 public class PartialShipmentService {
 
+    @Value("${bank.name}")
+    private String bankName;
+
+    @Value("${bank.number}")
+    private String bankNumber;
+
+    @Value("${bank.owner}")
+    private String bankOwner;
+
     @Autowired
     private OrdersRepository ordersRepository;
-
+    @Autowired
+    private PaymentService paymentService;
     @Autowired
     private OrderLinksRepository orderLinksRepository;
 
@@ -36,9 +49,12 @@ public class PartialShipmentService {
     @Autowired
     private PartialShipmentRepository partialShipmentRepository;
 
-    public PartialShipment createPartialShipment(Long orderId, List<Long> selectedLinkIds) {
+    public PartialShipment createPartialShipment(Long orderId, TrackingCodesRequest selectedTrackingCodes) {
+        // kiểm tra đơn hàng tồn tại
         Orders order = ordersRepository.findById(orderId).orElseThrow();
-        List<OrderLinks> selectedLinks = orderLinksRepository.findAllById(selectedLinkIds).stream()
+        
+        // kiểm tra các link đã đến kho VN
+        List<OrderLinks> selectedLinks = orderLinksRepository.findByShipmentCodeIn(selectedTrackingCodes.getSelectedTrackingCodes()).stream()
                 .filter(link -> link.getOrders().getOrderId().equals(orderId) && link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN)
                 .collect(Collectors.toList());
 
@@ -51,22 +67,37 @@ public class PartialShipmentService {
         partial.setShipmentDate(LocalDateTime.now());
         partial.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
         partial.setStaff((Staff) accountUtils.getAccountCurrent());
-
-        selectedLinks.forEach(link -> link.setPartialShipment(partial));
+        selectedLinks.forEach(link -> {
+            link.setPartialShipment(partial);
+            partial.getReadyLinks().add(link);
+        });
 
         partialShipmentRepository.save(partial);
         orderLinksRepository.saveAll(selectedLinks);
 
         // Update Order status
         List<OrderLinks> allLinks = orderLinksRepository.findByOrdersOrderId(orderId);
-        if (allLinks.stream().allMatch(link -> link.getPartialShipment() != null || link.getStatus() == OrderLinkStatus.DA_GIAO)) {
-            order.setStatus(OrderStatus.DA_DU_HANG);
-        } else {
-            order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
-        }
-        ordersRepository.save(order);
 
+        boolean allReady = allLinks.stream().filter(link -> link.getStatus() != OrderLinkStatus.DA_HUY)
+            .allMatch(link ->link.getStatus() == OrderLinkStatus.DA_GIAO || link.getPartialShipment() != null );
+        if (allReady) {
+            order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
+        } 
+        ordersRepository.save(order);
         Payment partialPayment = new Payment();
+        partialPayment.setAmount(partial.getPartialAmount());
+        partialPayment.setPartialShipment(partial);
+        partialPayment.setCollectedAmount(partial.getPartialAmount());
+        partialPayment.setPaymentCode(paymentService.generatePaymentCode());
+        partialPayment.setPaymentType(PaymentType.MA_QR);
+        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + partialPayment.getCollectedAmount() + "&addInfo=" + partialPayment.getPaymentCode() + "&accountName=" + bankOwner;
+        partialPayment.setQrCode(qrCodeUrl);
+        partialPayment.setActionAt(LocalDateTime.now());
+        partialPayment.setActionAt(LocalDateTime.now());
+        partialPayment.setCustomer(order.getCustomer());
+        partialPayment.setStaff((Staff) accountUtils.getAccountCurrent());
+        partialPayment.setOrders(order);
+        partialPayment.setIsMergedPayment(false);
         paymentRepository.save(partialPayment);
         partial.setPayment(partialPayment);
 

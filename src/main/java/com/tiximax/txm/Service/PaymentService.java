@@ -6,6 +6,7 @@ import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,9 +18,14 @@ import java.util.*;
 
 public class PaymentService {
 
-    private final String bankName = "sacombank";
-    private final String bankNumber = "070119787309";
-    private final String bankOwner = "TRAN TAN PHAT";
+    @Value("${bank.name}")
+    private String bankName;
+
+    @Value("${bank.number}")
+    private String bankNumber;
+
+    @Value("${bank.owner}")
+    private String bankOwner;
 
     @Autowired
     private PaymentRepository paymentRepository;

@@ -1,6 +1,7 @@
 package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.PartialShipment;
+import com.tiximax.txm.Model.TrackingCodesRequest;
 import com.tiximax.txm.Service.PartialShipmentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,8 @@ public class PartialShipmentController {
     private PartialShipmentService partialShipmentService;
 
     @PostMapping("/partial-shipment/{orderId}")
-    public ResponseEntity<PartialShipment> createPartialShipment(@PathVariable Long orderId, @RequestBody List<Long> selectedLinkIds) {
-        PartialShipment partial = partialShipmentService.createPartialShipment(orderId, selectedLinkIds);
+    public ResponseEntity<PartialShipment> createPartialShipment(@PathVariable Long orderId, @RequestBody TrackingCodesRequest selectedTrackingCodes) {
+        PartialShipment partial = partialShipmentService.createPartialShipment(orderId, selectedTrackingCodes);
         return ResponseEntity.ok(partial);
     }
 }
