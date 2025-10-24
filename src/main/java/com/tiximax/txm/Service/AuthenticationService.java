@@ -134,10 +134,8 @@ public class AuthenticationService implements UserDetailsService {
           throw new AuthenticationServiceException("Tài khoản của bạn chưa được xác minh, vui lòng kiểm tra email để xác minh tài khoản!");
          }
 
-        // Lưu thông tin xác thực vào SecurityContext
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Sinh token JWT
         String token = tokenService.generateToken(account);
 
         if (account instanceof Staff) {
@@ -165,7 +163,7 @@ public class AuthenticationService implements UserDetailsService {
             response.setRole(account.getRole());
             response.setStatus(account.getStatus());
             response.setCustomerCode(((Customer) account).getCustomerCode());
-            response.setAddress(((Customer) account).getAddress());
+            response.setAddresses(((Customer) account).getAddresses());
             response.setSource(((Customer) account).getSource());
             response.setToken(token);
             return response;
@@ -234,7 +232,13 @@ public class AuthenticationService implements UserDetailsService {
         customer.setStatus(AccountStatus.HOAT_DONG);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setCustomerCode(generateCustomerCode());
-        customer.setAddress(registerRequest.getAddress());
+
+        Address address = new Address();
+        address.setAddressName(registerRequest.getAddress().trim());
+        address.setCustomer(customer);
+        customer.setAddresses(new HashSet<>());
+        customer.getAddresses().add(address);
+
         customer.setSource(registerRequest.getSource());
         customer = authenticationRepository.save(customer);
         voucherService.assignOnRegisterVouchers(customer);
@@ -280,6 +284,10 @@ public class AuthenticationService implements UserDetailsService {
             throw new BadCredentialsException("Email bị trùng, vui lòng chọn một email khác!");
         }
 
+        if (registerRequest.getAddress() == null || registerRequest.getAddress().trim().isEmpty()) {
+            throw new IllegalArgumentException("Địa chỉ không được để trống!");
+        }
+
         Customer customer = new Customer();
         customer.setUsername(registerRequest.getPhone());
         customer.setPassword(passwordEncoder.encode("123456"));
@@ -290,9 +298,14 @@ public class AuthenticationService implements UserDetailsService {
         customer.setStatus(AccountStatus.HOAT_DONG);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setCustomerCode(generateCustomerCode());
-        customer.setAddress(registerRequest.getAddress());
         customer.setSource(registerRequest.getSource());
         customer.setStaffId(accountUtils.getAccountCurrent().getAccountId());
+
+        Address address = new Address();
+        address.setAddressName(registerRequest.getAddress().trim());
+        address.setCustomer(customer);
+        customer.setAddresses(new HashSet<>());
+        customer.getAddresses().add(address);
         customer = authenticationRepository.save(customer);
         voucherService.assignOnRegisterVouchers(customer);
         return customer;
@@ -466,14 +479,20 @@ public class AuthenticationService implements UserDetailsService {
             Customer customer = new Customer();
             customer.setUsername(email);
             customer.setName(name);
-            customer.setPassword(""); // Hoặc mã hóa nếu cần
+            customer.setPassword("");
             customer.setRole(AccountRoles.CUSTOMER);
             customer.setStatus(AccountStatus.HOAT_DONG);
             customer.setCreatedAt(LocalDateTime.now());
             customer.setCustomerCode(generateCustomerCode());
-            customer.setAddress("Default Address");
+
+            Address address = new Address();
+            address.setAddressName("Default Address");
+            address.setCustomer(customer);
+            customer.setAddresses(new HashSet<>());
+            customer.getAddresses().add(address);
+
             authenticationRepository.save(customer);
-            System.out.println("New customer saved: " + email); // Log để check DB
+            System.out.println("New customer saved: " + email);
             return customer;
         }
     }
@@ -493,7 +512,13 @@ public class AuthenticationService implements UserDetailsService {
         customer.setStatus(AccountStatus.HOAT_DONG);
         customer.setCreatedAt(LocalDateTime.now());
         customer.setCustomerCode(generateCustomerCode());
-        customer.setAddress(null);
+
+        Address address = new Address();
+        address.setAddressName(null);
+        address.setCustomer(customer);
+        customer.setAddresses(new HashSet<>());
+        customer.getAddresses().add(address);
+
         customer.setSource("Google");
         customer.setVerify(true);
         customer = authenticationRepository.save(customer);
