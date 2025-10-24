@@ -53,4 +53,8 @@ public class Staff extends Account {
     @JsonIgnore
     WarehouseLocation warehouseLocation;
 
+    @OneToMany(mappedBy = "staff", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Set<PartialShipment> partialShipments;
+
 }

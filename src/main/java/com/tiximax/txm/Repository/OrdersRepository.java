@@ -84,4 +84,7 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
     List<Orders> findByStaff_AccountIdAndRoute_RouteIdInAndCreatedAtBetween(Long accountId, Set<Long> routeIds, LocalDateTime startDate, LocalDateTime endDate);
 
     List<Orders> findByStaff_AccountIdAndRoute_RouteIdIn(Long accountId, Set<Long> routeIds);
+
+    Page<Orders> findByStatusIn(List<OrderStatus> statuses, Pageable pageable);
+
 }
