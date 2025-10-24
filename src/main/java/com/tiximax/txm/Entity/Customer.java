@@ -17,8 +17,6 @@ public class Customer extends Account {
     @Column(unique = true, nullable = false)
     private String customerCode;
 
-    private String address;
-
     private String source;
 
     private Long staffId;
@@ -38,5 +36,9 @@ public class Customer extends Account {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private Set<CustomerVoucher> customerVouchers = new HashSet<>();
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Address> addresses = new HashSet<>();
 
 }
