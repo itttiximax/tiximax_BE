@@ -45,4 +45,5 @@ public class DomesticController {
         List<Domestic> domestic = domesticService.TransferToCustomer();
         return ResponseEntity.ok(domestic);
     }
+
 }
