@@ -422,8 +422,8 @@ public class OrdersService {
             return Page.empty(pageable);
         }
 
-        Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
-                .and(Sort.by(Sort.Order.desc("createdAt")));
+        Sort sort = Sort.by(Sort.Order.asc("pinnedAt").nullsLast())
+                .and(Sort.by(Sort.Order.asc("createdAt")));
         Pageable customPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
         Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(routeIds, OrderStatus.CHO_MUA, orderType, customPageable);
