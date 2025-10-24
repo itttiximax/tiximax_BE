@@ -587,4 +587,56 @@ public class OrdersService {
         ordersRepository.save(order);
     }
 
+//    public List<Orders> getReadyOrdersForPartial(Pageable pageable) {
+//        Page<Orders> ordersPage = ordersRepository.findByStatus(OrderStatus.DA_DU_HANG, pageable);
+//        return ordersPage.getContent().stream()
+//                .filter(order -> order.getOrderLinks().stream().anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN))
+//                .collect(Collectors.toList());
+//    }
+
+//    public List<Orders> getReadyOrdersForPartial(Pageable pageable) {
+//        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_DU_HANG, OrderStatus.DANG_XU_LY);
+//        Page<Orders> ordersPage = ordersRepository.findByStatusIn(statuses, pageable);
+//        return ordersPage.getContent().stream()
+//                .filter(order -> order.getOrderLinks().stream().anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN))
+//                .collect(Collectors.toList());
+//    }
+
+    public List<OrderPayment> getReadyOrdersForPartial(Pageable pageable) {
+        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_DU_HANG, OrderStatus.DANG_XU_LY);
+        Page<Orders> ordersPage = ordersRepository.findByStatusIn(statuses, pageable);
+
+        return ordersPage.getContent().stream()
+                // 🔹 Lọc chỉ những đơn có ít nhất 1 link đã nhập kho VN
+                .filter(order -> order.getOrderLinks().stream()
+                        .anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN))
+                .map(order -> {
+                    OrderPayment orderPayment = new OrderPayment(order);
+
+                    // 🔹 CHỈ CỘNG ký từ warehouse của các link có status = DA_NHAP_KHO_VN
+                    BigDecimal totalNetWeight = order.getOrderLinks().stream()
+                            .filter(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN)
+                            .map(OrderLinks::getWarehouse)
+                            .filter(Objects::nonNull)
+                            .map(Warehouse::getNetWeight)
+                            .filter(Objects::nonNull)
+                            .map(BigDecimal::valueOf)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    orderPayment.setTotalNetWeight(totalNetWeight);
+
+                    Route route = order.getRoute();
+                    BigDecimal unitPrice = (order.getOrderType() == OrderType.KY_GUI && route.getUnitDepositPrice() != null)
+                            ? route.getUnitDepositPrice()
+                            : route.getUnitBuyingPrice() != null ? route.getUnitBuyingPrice() : BigDecimal.ZERO;
+
+                    BigDecimal finalPriceOrder = totalNetWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+                    orderPayment.setFinalPriceOrder(finalPriceOrder);
+                    orderPayment.setLeftoverMoney(order.getLeftoverMoney());
+
+                    return orderPayment;
+                })
+                .collect(Collectors.toList());
+    }
+
 }

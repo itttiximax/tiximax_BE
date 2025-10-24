@@ -74,4 +74,9 @@ public class Payment {
     @JsonIgnore
     private Set<Orders> relatedOrders;
 
+    @ManyToOne
+    @JoinColumn(name = "partial_shipment_id", nullable = true)
+    @JsonIgnore
+    private PartialShipment partialShipment;
+
 }

@@ -43,20 +43,17 @@ public class DomesticService {
         throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
     }
 
-    // 🔹 Tìm danh sách packings theo mã
     List<Packing> packings = packingRepository.findAllByPackingCodeIn(packingCodes);
     if (packings.isEmpty()) {
         throw new IllegalArgumentException("Không tìm thấy packing nào trong danh sách cung cấp!");
     }
 
-    // 🔹 Kiểm tra trạng thái từng packing
     for (Packing packing : packings) {
         if (packing.getStatus() != PackingStatus.DA_BAY) {
             throw new IllegalArgumentException("Packing " + packing.getPackingCode() + " chưa đúng trạng thái nhập kho!");
         }
     }
 
-    // 🔹 Lấy kho nước ngoài từ packing đầu tiên
     Packing firstPacking = packings.get(0);
     Set<Warehouse> warehouses = firstPacking.getWarehouses();
     if (warehouses.isEmpty()) {
@@ -69,7 +66,6 @@ public class DomesticService {
         throw new IllegalArgumentException("Kho nước ngoài của packing " + firstPacking.getPackingCode() + " không được tìm thấy!");
     }
 
-    // 🔹 Cập nhật trạng thái OrderLinks
     List<String> shipmentCodes = packings.stream()
             .flatMap(p -> p.getPackingList().stream())
             .distinct()
