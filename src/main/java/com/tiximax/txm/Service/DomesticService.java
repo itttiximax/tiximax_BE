@@ -160,7 +160,7 @@ public List<Domestic> TransferToCustomer() {
             }
         }
     }
-    
+
     return results;
 }
 
