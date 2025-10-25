@@ -9,6 +9,8 @@ import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PartialShipmentRepository;
 import com.tiximax.txm.Repository.PaymentRepository;
+import com.tiximax.txm.Repository.RouteRepository;
+import com.tiximax.txm.Repository.WarehouseRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +46,12 @@ public class PartialShipmentService {
     private AccountUtils accountUtils;
 
     @Autowired
+    private WarehouseRepository warehousereRepository;
+
+    @Autowired
+    private RouteRepository routeRepository;
+
+    @Autowired
     private PaymentRepository paymentRepository;
 
     @Autowired
@@ -71,6 +79,7 @@ public class PartialShipmentService {
             link.setPartialShipment(partial);
             partial.getReadyLinks().add(link);
         });
+        var ShipFee = calculateTotalShippingFee(order.getRoute().getRouteId(), selectedTrackingCodes); 
 
         partialShipmentRepository.save(partial);
         orderLinksRepository.saveAll(selectedLinks);
@@ -85,9 +94,9 @@ public class PartialShipmentService {
         } 
         ordersRepository.save(order);
         Payment partialPayment = new Payment();
-        partialPayment.setAmount(partial.getPartialAmount());
+        partialPayment.setAmount(ShipFee);
         partialPayment.setPartialShipment(partial);
-        partialPayment.setCollectedAmount(partial.getPartialAmount());
+        partialPayment.setCollectedAmount(ShipFee);
         partialPayment.setPaymentCode(paymentService.generatePaymentCode());
         partialPayment.setPaymentType(PaymentType.MA_QR);
         String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + partialPayment.getCollectedAmount() + "&addInfo=" + partialPayment.getPaymentCode() + "&accountName=" + bankOwner;
@@ -103,4 +112,30 @@ public class PartialShipmentService {
 
         return partial;
     }
+
+    private BigDecimal calculateTotalShippingFee(Long routeId,TrackingCodesRequest request) {
+    List<Warehouse> warehouses = warehousereRepository.findByTrackingCodeIn(request.getSelectedTrackingCodes());
+
+    if (warehouses.isEmpty()) {
+        throw new IllegalArgumentException("Không tìm thấy kiện hàng tương ứng với tracking codes");
+    }
+    var Route = routeRepository.findById(routeId).orElseThrow(() -> new IllegalArgumentException("Route không tồn tại"));
+
+    BigDecimal ratePerKg = Route.getUnitBuyingPrice();
+
+    BigDecimal totalFee = warehouses.stream()
+        .map(w -> {
+            Double net = w.getNetWeight();
+            if (net == null) {
+                throw new IllegalArgumentException(
+                    "Thiếu netWeight cho kiện " + w.getTrackingCode()
+                );
+            }
+            return BigDecimal.valueOf(net).multiply(ratePerKg);
+        })
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    return totalFee;
+}
+
 }
