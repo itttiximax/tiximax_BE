@@ -59,7 +59,10 @@ public class OrdersService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) throws IOException {
+    @Autowired
+    private AddressRepository addressRepository;
+
+    public Orders addOrder(String customerCode, Long routeId, Long addressId, OrdersRequest ordersRequest) throws IOException {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
         }
@@ -77,6 +80,12 @@ public class OrdersService {
         if (destination.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy điểm đến!");
         }
+
+        Optional<Address> address = addressRepository.findById(addressId);
+        if (address.isEmpty()){
+            throw new IllegalArgumentException("Địa chỉ giao hàng cho khách không phù hợp!");
+        }
+
         Orders order = new Orders();
         order.setCustomer(customer);
         order.setOrderCode(generateOrderCode(ordersRequest.getOrderType()));
@@ -88,6 +97,7 @@ public class OrdersService {
         order.setCheckRequired(ordersRequest.getCheckRequired());
         order.setRoute(route);
         order.setStaff((Staff) accountUtils.getAccountCurrent());
+        order.setAddress(address.get());
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
         BigDecimal priceBeforeFee = BigDecimal.ZERO;
 
@@ -134,7 +144,7 @@ public class OrdersService {
         return order;
     }
 
-    public Orders addConsignment(String customerCode, Long routeId, ConsignmentRequest consignmentRequest) throws IOException {
+    public Orders addConsignment(String customerCode, Long routeId, Long addressId, ConsignmentRequest consignmentRequest) throws IOException {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
         }
@@ -152,6 +162,12 @@ public class OrdersService {
         if (destination.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy điểm đến!");
         }
+
+        Optional<Address> address = addressRepository.findById(addressId);
+        if (address.isEmpty()){
+            throw new IllegalArgumentException("Địa chỉ giao hàng cho khách không phù hợp!");
+        }
+
         Orders order = new Orders();
         order.setCustomer(customer);
         order.setOrderCode(generateOrderCode(consignmentRequest.getOrderType()));
@@ -162,6 +178,7 @@ public class OrdersService {
         order.setCheckRequired(consignmentRequest.getCheckRequired());
         order.setRoute(route);
         order.setStaff((Staff) accountUtils.getAccountCurrent());
+        order.setAddress(address.get());
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
 
         List<OrderLinks> orderLinksList = new ArrayList<>();

@@ -38,15 +38,21 @@ public class OrdersController {
     @Autowired
     private OrdersService ordersService;
 
-    @PostMapping("/{customerCode}/{routeId}")
-    public ResponseEntity<Orders> createdReview(@PathVariable String customerCode, @PathVariable long routeId, @RequestBody OrdersRequest ordersRequest) throws IOException {
-        Orders orders = ordersService.addOrder(customerCode, routeId, ordersRequest);
+    @PostMapping("/{customerCode}/{routeId}/{addressId}")
+    public ResponseEntity<Orders> createdReview(@PathVariable String customerCode,
+                                                @PathVariable long routeId,
+                                                @PathVariable long addressId,
+                                                @RequestBody OrdersRequest ordersRequest) throws IOException {
+        Orders orders = ordersService.addOrder(customerCode, routeId, addressId,ordersRequest);
         return ResponseEntity.ok(orders);
     }
 
-    @PostMapping("/deposit/{customerCode}/{routeId}")
-    public ResponseEntity<Orders> createdConsignment(@PathVariable String customerCode, @PathVariable long routeId, @RequestBody ConsignmentRequest consignmentRequest) throws IOException {
-        Orders orders = ordersService.addConsignment(customerCode, routeId, consignmentRequest);
+    @PostMapping("/deposit/{customerCode}/{routeId}/{addressId}")
+    public ResponseEntity<Orders> createdConsignment(@PathVariable String customerCode,
+                                                     @PathVariable long routeId,
+                                                     @PathVariable long addressId,
+                                                     @RequestBody ConsignmentRequest consignmentRequest) throws IOException {
+        Orders orders = ordersService.addConsignment(customerCode, routeId, addressId,consignmentRequest);
         return ResponseEntity.ok(orders);
     }
 
