@@ -31,8 +31,9 @@ public class AddressController {
     }
 
     @PutMapping("/{customerCode}/{addressId}")
-    public ResponseEntity<Address> updateAddress(@PathVariable String customerCode, @PathVariable Long addressId,
-                                           @RequestBody String addressName) {
+    public ResponseEntity<Address> updateAddress(@PathVariable String customerCode,
+                                                 @PathVariable Long addressId,
+                                                 @RequestBody String addressName) {
         Address address = addressService.updateAddress(customerCode, addressId, addressName);
         return ResponseEntity.ok(address);
     }
