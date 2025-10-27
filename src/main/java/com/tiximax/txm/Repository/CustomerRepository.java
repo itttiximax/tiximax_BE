@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 
@@ -27,4 +28,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     @Query("SELECT COUNT(c) FROM Customer c WHERE c.staffId = :staffId")
     long countByStaffId(@Param("staffId") Long staffId);
+
+    Optional<Customer> findByCustomerCode(String customerCode);
 }

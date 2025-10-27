@@ -524,4 +524,5 @@ public class AuthenticationService implements UserDetailsService {
         customer = authenticationRepository.save(customer);
         return customer;
 }
+
 }
