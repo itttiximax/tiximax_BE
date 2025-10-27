@@ -8,13 +8,19 @@ import com.tiximax.txm.Repository.AddressRepository;
 import com.tiximax.txm.Repository.CustomerRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 @Service
 
 public class AddressService {
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
     private AccountUtils accountUtils;
@@ -69,7 +75,17 @@ public class AddressService {
         Address address = new Address();
         address.setAddressName(addressName);
         address.setCustomer(customer);
-        return addressRepository.save(address);
+        Address savedAddress = addressRepository.save(address);
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "INSERT",
+                        "address", savedAddress,
+                        "customerCode", customerCode,
+                        "message", "Địa chỉ mới được thêm!"
+                )
+        );
+        return addressRepository.save(savedAddress);
     }
 
     public Address updateAddress(String customerCode, Long addressId, String addressName) {
