@@ -26,4 +26,5 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     @Query("SELECT w FROM Warehouse w WHERE w.trackingCode IN :trackingCodes")
     List<Warehouse> findByTrackingCodeIn(@Param("trackingCodes") List<String> trackingCodes);
 
+    Optional<Warehouse> findByTrackingCode(String trackingCode);
 }
