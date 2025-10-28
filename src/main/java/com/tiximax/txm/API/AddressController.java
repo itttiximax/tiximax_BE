@@ -1,6 +1,7 @@
 package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Address;
+import com.tiximax.txm.Model.AddressRequest;
 import com.tiximax.txm.Service.AddressService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +26,8 @@ public class AddressController {
     }
 
     @PostMapping("/{customerCode}")
-    public ResponseEntity<Address> createAddress(@PathVariable String customerCode, @RequestBody String addressName) {
-        Address address = addressService.createAddress(customerCode, addressName);
+    public ResponseEntity<Address> createAddress(@PathVariable String customerCode, @RequestBody AddressRequest request) {
+        Address address = addressService.createAddress(customerCode, request);
         return ResponseEntity.ok(address);
     }
 

@@ -5,4 +5,5 @@ public enum PaymentStatus {
     DA_THANH_TOAN,
     CHO_THANH_TOAN_SHIP,
     DA_THANH_TOAN_SHIP,
+    DA_HOAN_TIEN
 }

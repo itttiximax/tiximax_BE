@@ -62,6 +62,9 @@ public class OrdersService {
     @Autowired
     private AddressRepository addressRepository;
 
+    @Autowired
+    private PaymentService paymentService;
+
     public Orders addOrder(String customerCode, Long routeId, Long addressId, OrdersRequest ordersRequest) throws IOException {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
@@ -229,15 +232,17 @@ public class OrdersService {
         }
 
         orderLink.setStatus(OrderLinkStatus.DA_HUY);
-        order.setLeftoverMoney(order.getLeftoverMoney().add(orderLink.getFinalPriceVnd()));
+        BigDecimal currentLeftover = order.getLeftoverMoney() != null ? order.getLeftoverMoney() : BigDecimal.ZERO;
+        order.setLeftoverMoney(currentLeftover.subtract(orderLink.getFinalPriceVnd()));
         orderLinksRepository.save(orderLink);
+        ordersRepository.save(order);
 
         List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
        
         long countNhapKhoVN = allOrderLinks.stream()
                 .filter(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN)
                 .count();
-        Long countDamua = allOrderLinks.stream()
+        long countDamua = allOrderLinks.stream()
                 .filter(link -> link.getStatus() == OrderLinkStatus.DA_MUA)
                 .count();
       
@@ -262,7 +267,7 @@ public class OrdersService {
             order.setStatus(OrderStatus.DA_HUY);
             ordersRepository.save(order);
         }
-
+//        addProcessLog(order, order.getOrderCode(), ProcessLogAction.DA_HUY_LINK);
         return order; 
     }
   
@@ -440,7 +445,7 @@ public class OrdersService {
         }
 
         Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
-                .and(Sort.by(Sort.Order.asc("createdAt")));
+                .and(Sort.by(Sort.Order.desc("createdAt")));
         Pageable customPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
         Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(routeIds, OrderStatus.CHO_MUA, orderType, customPageable);
@@ -654,4 +659,70 @@ public class OrdersService {
                 .collect(Collectors.toList());
     }
 
+    public Page<Orders> getOrdersWithNegativeLeftoverMoney(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff)) {
+            throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập danh sách đơn hàng này!");
+        }
+        Staff staff = (Staff) currentAccount;
+        Long staffId = staff.getAccountId();
+
+        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
+
+        AccountRoles role = staff.getRole();
+
+        if (AccountRoles.MANAGER.equals(role)) {
+            return ordersRepository.findByStatusInAndLeftoverMoneyLessThan(statuses, BigDecimal.ZERO, pageable);
+        } else if (AccountRoles.STAFF_SALE.equals(role) || AccountRoles.LEAD_SALE.equals(role)) {
+            return ordersRepository.findByStaffAccountIdAndStatusInAndLeftoverMoneyLessThan(staffId, statuses, BigDecimal.ZERO, pageable);
+        } else {
+            throw new IllegalStateException("Vai trò không hợp lệ!");
+        }
+    }
+
+    public Orders processNegativeLeftoverMoney(Long orderId, boolean refundToCustomer) {
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+
+        if (order.getLeftoverMoney() == null || order.getLeftoverMoney().compareTo(BigDecimal.ZERO) >= 0) {
+            throw new IllegalArgumentException("Đơn hàng này không có tiền hoàn trả!");
+        }
+
+        List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
+        if (!validStatuses.contains(order.getStatus())) {
+            throw new IllegalArgumentException("Chỉ xử lý được đơn hàng trạng thái DA_HUY hoặc DA_GIAO!");
+        }
+
+        BigDecimal amountToProcess = order.getLeftoverMoney().abs();
+        Customer customer = order.getCustomer();
+
+        Payment refundPayment = new Payment();
+        refundPayment.setPaymentCode(paymentService.generatePaymentCode());
+        refundPayment.setPaymentType(PaymentType.MA_QR);
+        refundPayment.setAmount(amountToProcess.negate());
+        refundPayment.setCollectedAmount(BigDecimal.ZERO);
+        refundPayment.setStatus(PaymentStatus.DA_HOAN_TIEN);
+        refundPayment.setActionAt(LocalDateTime.now());
+        refundPayment.setCustomer(customer);
+        refundPayment.setStaff((Staff) accountUtils.getAccountCurrent());
+        refundPayment.setOrders(order);
+        refundPayment.setIsMergedPayment(false);
+
+        if (refundToCustomer) {
+            refundPayment.setContent("Hoàn tiền cho đơn " + order.getOrderCode());
+            paymentRepository.save(refundPayment);
+        } else {
+            customer.setBalance(customer.getBalance().add(amountToProcess));
+            refundPayment.setContent("Chuyển vào số dư cho đơn " + order.getOrderCode());
+            paymentRepository.save(refundPayment);
+        }
+
+        order.setLeftoverMoney(BigDecimal.ZERO);
+
+        authenticationRepository.save(customer);
+        ordersRepository.save(order);
+
+        addProcessLog(order, order.getOrderCode(), ProcessLogAction.HOAN_TIEN);
+        return order;
+    }
 }

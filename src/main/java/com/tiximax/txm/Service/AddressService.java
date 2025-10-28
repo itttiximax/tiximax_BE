@@ -4,13 +4,13 @@ import com.tiximax.txm.Entity.Account;
 import com.tiximax.txm.Entity.Address;
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Staff;
+import com.tiximax.txm.Model.AddressRequest;
 import com.tiximax.txm.Repository.AddressRepository;
 import com.tiximax.txm.Repository.CustomerRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -60,7 +60,7 @@ public class AddressService {
         return customer.getAddresses();
     }
 
-    public Address createAddress(String customerCode, String addressName) {
+    public Address createAddress(String customerCode, AddressRequest request) {
         Account currentAccount = accountUtils.getAccountCurrent();
         Optional<Customer> customerOptional = customerRepository.findByCustomerCode(customerCode);
         if (!customerOptional.isPresent()) {
@@ -68,12 +68,12 @@ public class AddressService {
         }
         Customer customer = customerOptional.get();
 
-        if (addressName == null || addressName.trim().isEmpty()) {
+        if (request.getAddressName() == null || request.getAddressName().trim().isEmpty()) {
             throw new IllegalArgumentException("Tên địa chỉ không được để trống!");
         }
 
         Address address = new Address();
-        address.setAddressName(addressName);
+        address.setAddressName(request.getAddressName());
         address.setCustomer(customer);
         Address savedAddress = addressRepository.save(address);
         messagingTemplate.convertAndSend(
@@ -126,6 +126,5 @@ public class AddressService {
 
         addressRepository.deleteById(addressId);
     }
-
 
 }
