@@ -57,4 +57,17 @@ public class WarehouseController {
         return ResponseEntity.ok(warehouseService.calculateWarehouseTotals());
     }
 
+    @PutMapping("/{trackingCode}")
+    public ResponseEntity<Warehouse> updateWarehouseNetWeight(
+            @PathVariable String trackingCode,
+            @RequestBody  WarehouseRequest request) {
+        Warehouse updatedWarehouse = warehouseService.updateWarehouseNetWeight(trackingCode, request);
+        return ResponseEntity.ok(updatedWarehouse);
+    }
+
+    @GetMapping("/check-netweight/{trackingCode}")
+    public ResponseEntity<Boolean> checkNetWeight(@PathVariable String trackingCode) {
+        return ResponseEntity.ok(warehouseService.hasNetWeight(trackingCode));
+    }
+
 }
