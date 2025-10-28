@@ -68,11 +68,7 @@ public class Orders {
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
     @JsonIgnore
-    Set<Purchases> purchases; 
-    
-//    @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-//    @JsonIgnore
-//    Set<Domestic> domestics;
+    Set<Purchases> purchases;
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
     @JsonIgnore
