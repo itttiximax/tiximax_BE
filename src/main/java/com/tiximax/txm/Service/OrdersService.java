@@ -37,6 +37,9 @@ public class OrdersService {
 
     @Autowired
     private AccountUtils accountUtils;
+    
+    @Autowired
+    private AddressRepository addressRepository;
 
     @Autowired
     private ProcessLogRepository processLogRepository;
@@ -70,7 +73,10 @@ public class OrdersService {
         if (customer == null) {
             throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
         }
-
+        var address = addressRepository.findById(ordersRequest.getAddress());
+        if(address == null){
+            throw new IllegalArgumentException("Địa chỉ nhận hàng không tồn tại, vui lòng thử lại!");
+        }
         Route route = routeRepository.findById(routeId).orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
         Optional<Destination> destination = destinationRepository.findById(ordersRequest.getDestinationId());
 
@@ -79,6 +85,7 @@ public class OrdersService {
         }
         Orders order = new Orders();
         order.setCustomer(customer);
+        order.setAddress(address.get());
         order.setOrderCode(generateOrderCode(ordersRequest.getOrderType()));
         order.setOrderType(ordersRequest.getOrderType());
         order.setStatus(OrderStatus.DA_XAC_NHAN);
@@ -116,7 +123,6 @@ public class OrdersService {
                 orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
                 orderLink.setExtraCharge(linkRequest.getExtraCharge());
                 orderLinksList.add(orderLink);
-
                 BigDecimal finalPrice = orderLink.getFinalPriceVnd();
                 if (finalPrice != null) {
                     totalPriceVnd = totalPriceVnd.add(finalPrice);
