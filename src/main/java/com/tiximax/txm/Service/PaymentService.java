@@ -582,14 +582,15 @@ public class PaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal depositRate = BigDecimal.valueOf(depositPercent / 100.00);
-        BigDecimal totalCollect = totalAmount.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
-
+//        BigDecimal totalCollect = totalAmount.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalCollect = BigDecimal.ZERO;
         for (Orders order : ordersList) {
             BigDecimal orderFinalPrice = order.getFinalPriceOrder();
             BigDecimal orderCollect = orderFinalPrice.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
             BigDecimal orderLeftover = orderFinalPrice.subtract(orderCollect).setScale(2, RoundingMode.HALF_UP);
             order.setLeftoverMoney(orderLeftover);
             ordersRepository.save(order);
+            totalCollect = totalCollect.add(orderCollect);
         }
 
         Payment payment = new Payment();
