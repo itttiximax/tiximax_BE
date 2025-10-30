@@ -6,6 +6,7 @@ import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,12 +18,20 @@ import java.util.*;
 
 public class PaymentService {
 
-    private final String bankName = "sacombank";
-    private final String bankNumber = "070119787309";
-    private final String bankOwner = "TRAN TAN PHAT";
+    @Value("${bank.name}")
+    private String bankName;
+
+    @Value("${bank.number}")
+    private String bankNumber;
+
+    @Value("${bank.owner}")
+    private String bankOwner;
 
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    private PartialShipmentRepository partialShipmentRepository;
 
     @Autowired
     private AccountUtils accountUtils;
@@ -32,6 +41,9 @@ public class PaymentService {
 
     @Autowired
     private OrdersService ordersService;
+
+    @Autowired
+    private OrderLinksRepository orderLinksRepository;
 
     @Autowired
     private ProcessLogRepository processLogRepository;
@@ -376,42 +388,90 @@ public class PaymentService {
         return savedPayment;
     }
 
-    public Payment confirmedPaymentShipment(String paymentCode) {
-        Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
-        if (paymentOptional.isEmpty()) {
-            throw new RuntimeException("Không tìm thấy giao dịch này!");
-        }
-        Payment payment = paymentOptional.get();
-        if (!payment.getStatus().equals(PaymentStatus.CHO_THANH_TOAN_SHIP)) {
-            throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
-        }
-        payment.setStatus(PaymentStatus.DA_THANH_TOAN_SHIP);
-        payment.setCollectedAmount(payment.getAmount());
-        payment.setActionAt(LocalDateTime.now());
-        if (payment.getIsMergedPayment()) {
-            Set<Orders> orders = payment.getRelatedOrders();
-            for (Orders order : orders) {
-                order.setStatus(OrderStatus.CHO_GIAO);
-                Set<OrderLinks> orderLinks = order.getOrderLinks();
-                for (OrderLinks orderLink : orderLinks) {
-                    orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
-                }
-                ordersRepository.save(order);
-                ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
-            }
-        } else {
-            Orders order = payment.getOrders();
+ public Payment confirmedPaymentShipment(String paymentCode) {
+    System.out.println("=== Start confirmedPaymentShipment ===");
+    Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
+
+    if (paymentOptional.isEmpty()) {
+        System.out.println("[STOP] Không tìm thấy giao dịch!");
+        throw new RuntimeException("Không tìm thấy giao dịch này!");
+    }
+
+    Payment payment = paymentOptional.get();
+
+    if (!payment.getStatus().equals(PaymentStatus.CHO_THANH_TOAN_SHIP)) {
+        System.out.println("[STOP] Trạng thái payment KHÔNG PHẢI CHỜ THANH TOÁN SHIP => DỪNG");
+        throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
+    }
+
+    payment.setStatus(PaymentStatus.DA_THANH_TOAN_SHIP);
+    payment.setCollectedAmount(payment.getAmount());
+    payment.setActionAt(LocalDateTime.now());
+
+    if (payment.getIsMergedPayment()) {
+        System.out.println("==> Chạy nhánh [MERGED PAYMENT]");
+        Set<Orders> orders = payment.getRelatedOrders();
+        System.out.println("Số đơn liên quan: " + orders.size());
+
+        for (Orders order : orders) {
             order.setStatus(OrderStatus.CHO_GIAO);
-            Set<OrderLinks> orderLinks = order.getOrderLinks();
-            for (OrderLinks orderLink : orderLinks) {
+            for (OrderLinks orderLink : order.getOrderLinks()) {
                 orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
             }
             ordersRepository.save(order);
             ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
         }
-        return paymentRepository.save(payment);
     }
 
+    else {
+      
+        if (payment.getOrders() != null) {
+        
+            Orders order = payment.getOrders();
+            order.setStatus(OrderStatus.CHO_GIAO);
+            for (OrderLinks orderLink : order.getOrderLinks()) {
+                orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
+            }
+
+            ordersRepository.save(order);
+            ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+        } 
+
+        else {
+            List<PartialShipment> partialShipments = partialShipmentRepository.findByPayment(payment);
+
+            for (PartialShipment shipment : partialShipments) {
+                shipment.setStatus(OrderStatus.CHO_GIAO);
+                shipment.setShipmentDate(LocalDateTime.now());
+
+                Set<OrderLinks> readyLinks = shipment.getReadyLinks();
+
+                for (OrderLinks link : readyLinks) {
+                    link.setStatus(OrderLinkStatus.CHO_GIAO);
+                    link.setPartialShipment(shipment); 
+                    orderLinksRepository.save(link);   
+                
+
+                partialShipmentRepository.save(shipment);
+
+                Orders order = shipment.getOrders();
+                boolean allLinksDone = order.getOrderLinks().stream()
+                    .allMatch(l -> l.getStatus() == OrderLinkStatus.CHO_GIAO || l.getStatus() == OrderLinkStatus.DA_HUY || l.getStatus() == OrderLinkStatus.DA_GIAO);
+
+                if (allLinksDone) {
+                    order.setStatus(OrderStatus.CHO_GIAO);
+                }
+            
+                ordersRepository.save(order);
+                ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+            }
+        }
+        }
+    }
+
+    System.out.println("=== Hoàn tất confirmedPaymentShipment ===");
+    return paymentRepository.save(payment);
+}
     public Optional<Payment> getPaymentsById(Long paymentId) {
         return paymentRepository.findById(paymentId);
     }

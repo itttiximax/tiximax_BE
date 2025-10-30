@@ -105,7 +105,7 @@ public class DomesticService {
     return domestic;
 }
     
-    public List<Domestic>transferToCustomer() {
+    public List<Domestic>TransferToCustomer() {
         List<Map<String, Object>> dataList = getReadyForDeliveryOrders(Pageable.unpaged());
         List<Domestic> results = new ArrayList<>();
 
@@ -139,16 +139,23 @@ public class DomesticService {
             domestic.setTimestamp(LocalDateTime.now());
             domestic.setNote("Giao hàng cho khách hàng: " + customerName);
 
-            Staff currentStaff = (Staff) accountUtils.getAccountCurrent();
-            domestic.setStaff(currentStaff);
-            if (currentStaff != null) {
-                domestic.setLocation(currentStaff.getWarehouseLocation());
-                domestic.setFromLocation(currentStaff.getWarehouseLocation());
-            }
+        Staff currentStaff = (Staff) accountUtils.getAccountCurrent();
+        domestic.setStaff(currentStaff);
+        if (currentStaff != null) {
+            domestic.setLocation(currentStaff.getWarehouseLocation());
+            domestic.setFromLocation(currentStaff.getWarehouseLocation());
+        } 
+        domestic.setToLocation(null);
+        results.add(domesticRepository.save(domestic));
 
-            domestic.setToLocation(null);
-            results.add(domesticRepository.save(domestic));
+            for (String shipmentCode : shippingList) {
+            List<OrderLinks> links = orderLinksRepository.findByShipmentCode(shipmentCode);
+            for (OrderLinks link : links) {
+                link.setStatus(OrderLinkStatus.DA_GIAO); 
+                orderLinksRepository.save(link);        
+            }
         }
+    }
 
         return results;
     }

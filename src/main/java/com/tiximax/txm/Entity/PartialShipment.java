@@ -43,7 +43,9 @@ public class PartialShipment {
     @JsonIgnore
     private Staff staff;
 
-    @OneToOne(mappedBy = "partialShipment", cascade = CascadeType.ALL)
+    @ManyToOne
+    @JoinColumn(name = "payment_id")
     @JsonIgnore
     private Payment payment;
+
 }
