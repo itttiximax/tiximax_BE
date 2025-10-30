@@ -46,15 +46,16 @@ public class Filter extends OncePerRequestFilter {
             "/accounts/login-google",
             "/accounts/callback",
             "/images/upload-image",
-            "/websocket/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
-            "/swagger-resources/**"
+            "/swagger-resources/**",
+            "/websocket/**",
+            "/ws/info"
     );
 
     private boolean isPermitted(String uri) {
         AntPathMatcher pathMatcher = new AntPathMatcher();
-        return AUTH_PERMISSION.stream().anyMatch(pattern -> pathMatcher.match(pattern, uri));
+        return AUTH_PERMISSION.stream().anyMatch(pattern -> pathMatcher.match(pattern, uri) || uri.startsWith("/ws"));
     }
 
 //    @Override

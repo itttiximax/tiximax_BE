@@ -78,7 +78,7 @@ public class WarehouseService {
             ordersRepository.save(order);
         }
 
-        Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 6000;
+        Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 5000;
 
         Warehouse warehouse = new Warehouse();
             warehouse.setTrackingCode(shipmentCode);
@@ -124,7 +124,7 @@ public class WarehouseService {
         WarehouseLocation location = new WarehouseLocation();
         location.setLocationId(staff.getWarehouseLocation().getLocationId());
 
-        for (String shipmentCode : shipmentCodes) {  // Sửa: Loop qua từng shipmentCode
+        for (String shipmentCode : shipmentCodes) {
             List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
             if (orderLinks.isEmpty()) {
                 throw new IllegalArgumentException("Không tìm thấy mã sản phẩm với mã vận đơn " + shipmentCode + "!");
@@ -207,4 +207,41 @@ public class WarehouseService {
         return totals;
     }
 
+    public Warehouse updateWarehouseNetWeight(String trackingCode, WarehouseRequest request) {
+        Optional<Warehouse> warehouseOptional = warehouseRepository.findByTrackingCode(trackingCode);
+        if (warehouseOptional.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy kho với mã tracking: " + trackingCode);
+        }
+        Warehouse warehouse = warehouseOptional.get();
+
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        if (staff.getWarehouseLocation() == null) {
+            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+        }
+
+        if (warehouse.getNetWeight() != null) {
+            throw new IllegalArgumentException("Kho này đã có số cân, không thể cập nhật!");
+        }
+
+        if (request.getLength() == null || request.getWidth() == null || request.getHeight() == null || request.getWeight() == null) {
+            throw new IllegalArgumentException("Vui lòng nhập đầy đủ kích thước và cân nặng!");
+        }
+
+        Double dim = (request.getLength() * request.getWidth() * request.getHeight()) / 5000;
+        warehouse.setLength(request.getLength());
+        warehouse.setWidth(request.getWidth());
+        warehouse.setHeight(request.getHeight());
+        warehouse.setDim(dim);
+        warehouse.setWeight(request.getWeight());
+        warehouse.setNetWeight(dim > request.getWeight() ? dim : request.getWeight());
+        warehouse.setImage(request.getImage());
+
+        return warehouseRepository.save(warehouse);
+    }
+
+    public boolean hasNetWeight(String trackingCode) {
+        return warehouseRepository.findByTrackingCode(trackingCode)
+                .map(w -> w.getNetWeight() != null)
+                .orElse(false);
+    }
 }

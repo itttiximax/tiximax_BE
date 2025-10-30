@@ -14,5 +14,6 @@ public enum ProcessLogAction {
     DA_NHAP_KHO_SG,
     DA_GIAO,
     DA_CHINH_SUA,
-    DA_XOA
+    DA_XOA,
+    HOAN_TIEN
 }

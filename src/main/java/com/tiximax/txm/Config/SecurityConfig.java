@@ -60,13 +60,14 @@ public class SecurityConfig {
                                 "/images/upload-image",
                                 "/accounts/login-google",
                                 "/accounts/callback",
-                                "/websocket/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/auth/**",
                                 "/error",
-                                "/accounts/userinfo"
+                                "/accounts/userinfo",
+                                "/ws/**",
+                                "/websocket/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -84,7 +85,7 @@ public class SecurityConfig {
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174", "https://tiximax-three.vercel.app"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174", "https://tiximax-three.vercel.app", "http://127.0.0.1:5500", "http://localhost:5500"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

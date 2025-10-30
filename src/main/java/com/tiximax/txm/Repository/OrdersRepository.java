@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -41,15 +42,6 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
             "WHERE o.staff.accountId = :staffId AND o.status = :status")
     Page<Orders> findByStaffAccountIdAndStatusForPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
 
-//    @Query("SELECT o FROM Orders o WHERE o.staff.accountId = :staffId AND o.status IN (:statuses) " +
-//            "AND (o.status != :dangXuLyStatus OR EXISTS (SELECT ol FROM o.orderLinks ol WHERE ol.status = :daNhapKhoVnStatus))")
-//    Page<Orders> findByStaffAccountIdAndStatusForPayment(
-//            @Param("staffId") Long staffId,
-//            @Param("statuses") List<OrderStatus> statuses,
-//            @Param("dangXuLyStatus") OrderStatus dangXuLyStatus,
-//            @Param("daNhapKhoVnStatus") OrderLinkStatus daNhapKhoVnStatus,
-//            Pageable pageable);
-
     @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.orderLinks WHERE o.route.routeId IN :routeIds AND o.status = :status")
     Page<Orders> findByRouteRouteIdInAndStatusWithLinks(@Param("routeIds") Set<Long> routeIds, @Param("status") OrderStatus status, Pageable pageable);
 
@@ -62,12 +54,6 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
 
     @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.warehouses w LEFT JOIN FETCH w.orderLinks WHERE o.status = :status")
     Page<Orders> findByStatusWithWarehousesAndLinks(@Param("status") OrderStatus status, Pageable pageable);
-
-//    @Query("SELECT o FROM Orders o JOIN o.warehouses w WHERE o.status = :status AND w.location.locationId = :warehouseLocationId")
-//    Page<Orders> findByStatusWithWarehousesAndLinksAndWarehouseLocation(
-//            @Param("status") List<OrderStatus> status,
-//            @Param("warehouseLocationId") Long warehouseLocationId,
-//            Pageable pageable);
 
     Page<Orders> findByStatusInAndWarehouses_Location_LocationId(List<OrderStatus> statuses, Long locationId, Pageable pageable);
 
@@ -89,4 +75,23 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
 
     Page<Orders> findByStatusIn(List<OrderStatus> statuses, Pageable pageable);
 
+    @Query("SELECT o FROM Orders o WHERE o.status IN :statuses " +
+            "AND o.leftoverMoney IS NOT NULL " +
+            "AND o.leftoverMoney < :threshold")
+    Page<Orders> findByStatusInAndLeftoverMoneyLessThan(
+            @Param("statuses") List<OrderStatus> statuses,
+            @Param("threshold") BigDecimal threshold,
+            Pageable pageable
+    );
+
+    @Query("SELECT o FROM Orders o WHERE o.staff.accountId = :staffId " +
+            "AND o.status IN :statuses " +
+            "AND o.leftoverMoney IS NOT NULL " +
+            "AND o.leftoverMoney < :threshold")
+    Page<Orders> findByStaffAccountIdAndStatusInAndLeftoverMoneyLessThan(
+            @Param("staffId") Long staffId,
+            @Param("statuses") List<OrderStatus> statuses,
+            @Param("threshold") BigDecimal threshold,
+            Pageable pageable
+    );
 }

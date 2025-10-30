@@ -338,7 +338,7 @@ public class PaymentService {
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
-        payment.setContent(String.join(" ", orderCodes));
+        payment.setContent(String.join(", ", orderCodes));
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);
