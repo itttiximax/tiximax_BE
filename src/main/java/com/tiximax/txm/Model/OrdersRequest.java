@@ -22,6 +22,8 @@ public class OrdersRequest {
 
     private Boolean checkRequired;
 
+    private Long address; 
+
     private List<OrderLinkRequest> orderLinkRequests;
 
 }
