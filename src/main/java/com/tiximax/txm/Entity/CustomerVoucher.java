@@ -34,3 +34,4 @@ public class CustomerVoucher {
 
     private boolean isUsed = false;
 }
+    
