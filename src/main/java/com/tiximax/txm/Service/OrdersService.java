@@ -62,7 +62,9 @@ public class OrdersService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    public Orders addOrder(String customerCode, Long routeId, OrdersRequest ordersRequest) throws IOException {
+  
+
+    public Orders addOrder(String customerCode, Long routeId, Long addressId, OrdersRequest ordersRequest) throws IOException {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
         }
@@ -73,16 +75,19 @@ public class OrdersService {
         if (customer == null) {
             throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
         }
-        var address = addressRepository.findById(ordersRequest.getAddress());
-        if(address == null){
-            throw new IllegalArgumentException("Địa chỉ nhận hàng không tồn tại, vui lòng thử lại!");
-        }
+      
         Route route = routeRepository.findById(routeId).orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
         Optional<Destination> destination = destinationRepository.findById(ordersRequest.getDestinationId());
 
         if (destination.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy điểm đến!");
         }
+
+        Optional<Address> address = addressRepository.findById(addressId);
+        if (address.isEmpty()){
+            throw new IllegalArgumentException("Địa chỉ giao hàng cho khách không phù hợp!");
+        }
+
         Orders order = new Orders();
         order.setCustomer(customer);
         order.setAddress(address.get());
@@ -95,6 +100,7 @@ public class OrdersService {
         order.setCheckRequired(ordersRequest.getCheckRequired());
         order.setRoute(route);
         order.setStaff((Staff) accountUtils.getAccountCurrent());
+        order.setAddress(address.get());
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
         BigDecimal priceBeforeFee = BigDecimal.ZERO;
 
@@ -140,7 +146,7 @@ public class OrdersService {
         return order;
     }
 
-    public Orders addConsignment(String customerCode, Long routeId, ConsignmentRequest consignmentRequest) throws IOException {
+    public Orders addConsignment(String customerCode, Long routeId, Long addressId, ConsignmentRequest consignmentRequest) throws IOException {
         if (customerCode == null){
             throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
         }
@@ -158,6 +164,12 @@ public class OrdersService {
         if (destination.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy điểm đến!");
         }
+
+        Optional<Address> address = addressRepository.findById(addressId);
+        if (address.isEmpty()){
+            throw new IllegalArgumentException("Địa chỉ giao hàng cho khách không phù hợp!");
+        }
+
         Orders order = new Orders();
         order.setCustomer(customer);
         order.setOrderCode(generateOrderCode(consignmentRequest.getOrderType()));
@@ -168,6 +180,7 @@ public class OrdersService {
         order.setCheckRequired(consignmentRequest.getCheckRequired());
         order.setRoute(route);
         order.setStaff((Staff) accountUtils.getAccountCurrent());
+        order.setAddress(address.get());
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
 
         List<OrderLinks> orderLinksList = new ArrayList<>();

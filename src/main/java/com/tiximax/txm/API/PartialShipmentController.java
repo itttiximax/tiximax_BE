@@ -20,9 +20,9 @@ public class PartialShipmentController {
     @Autowired
     private PartialShipmentService partialShipmentService;
 
-    @PostMapping("/partial-shipment/{orderId}")
-    public ResponseEntity<PartialShipment> createPartialShipment(@PathVariable Long orderId, @RequestBody TrackingCodesRequest selectedTrackingCodes) {
-        PartialShipment partial = partialShipmentService.createPartialShipment(orderId, selectedTrackingCodes);
+    @PostMapping("/partial-shipment/{customerCode}")
+    public ResponseEntity<List<PartialShipment>> createPartialShipment(@PathVariable String customerCode) {
+        List<PartialShipment> partial = partialShipmentService.createPartialShipment(customerCode);
         return ResponseEntity.ok(partial);
     }
 }
