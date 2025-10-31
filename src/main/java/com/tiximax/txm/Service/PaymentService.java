@@ -266,7 +266,7 @@ public class PaymentService {
 //        return savedPayment;
 //    }
 
-    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance, Long customerVoucherId, long bankId) {
+    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance, long bankId, Long customerVoucherId) {
         if (orderCodes == null || orderCodes.isEmpty()) {
             throw new RuntimeException("Không tìm thấy đơn hàng nào!");
         }
@@ -300,7 +300,7 @@ public class PaymentService {
 
         BigDecimal totalWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
-                .filter(warehouse -> warehouse != null && warehouse.getWeight() != null)
+                .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
                 .map(Warehouse::getNetWeight)
                 .map(BigDecimal::valueOf)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
