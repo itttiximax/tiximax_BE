@@ -70,4 +70,10 @@ public class WarehouseController {
         return ResponseEntity.ok(warehouseService.hasNetWeight(trackingCode));
     }
 
+    @GetMapping("/suggest-shipment")
+    public ResponseEntity<List<String>> suggestShipment(
+            @RequestParam(required = false) String keyword) {
+        return ResponseEntity.ok(warehouseService.suggestShipmentCodes(keyword));
+    }
+
 }

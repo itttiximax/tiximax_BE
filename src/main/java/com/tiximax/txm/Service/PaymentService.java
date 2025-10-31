@@ -388,7 +388,7 @@ public class PaymentService {
         return savedPayment;
     }
 
- public Payment confirmedPaymentShipment(String paymentCode) {
+    public Payment confirmedPaymentShipment(String paymentCode) {
     System.out.println("=== Start confirmedPaymentShipment ===");
     Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
 
@@ -472,6 +472,7 @@ public class PaymentService {
     System.out.println("=== Hoàn tất confirmedPaymentShipment ===");
     return paymentRepository.save(payment);
 }
+
     public Optional<Payment> getPaymentsById(Long paymentId) {
         return paymentRepository.findById(paymentId);
     }

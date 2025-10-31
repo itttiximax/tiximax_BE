@@ -125,6 +125,7 @@ public class OrdersService {
                 orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP)); 
                 orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
                 orderLink.setProductType(productType);
+                orderLink.setClassify(linkRequest.getClassify());
                 orderLink.setStatus(OrderLinkStatus.CHO_MUA);
                 orderLink.setNote(linkRequest.getNote());
                 orderLink.setGroupTag(linkRequest.getGroupTag());

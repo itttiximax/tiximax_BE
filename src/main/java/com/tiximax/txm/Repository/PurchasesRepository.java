@@ -1,5 +1,6 @@
 package com.tiximax.txm.Repository;
 
+import com.tiximax.txm.Entity.OrderLinks;
 import com.tiximax.txm.Entity.Purchases;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
 
 @Repository
 
@@ -17,5 +19,4 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
 
     @Query("SELECT COALESCE(SUM(p.finalPriceOrder), 0) FROM Purchases p WHERE p.orders.orderId = :orderId")
     BigDecimal getTotalFinalPriceByOrderId(@Param("orderId") Long orderId);
-
 }
