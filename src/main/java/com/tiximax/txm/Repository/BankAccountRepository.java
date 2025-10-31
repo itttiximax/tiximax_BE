@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface BankAccountRepository extends JpaRepository<BankAccount, Long> {
     List<BankAccount> findByIsProxyAndIsRevenue(Boolean isProxy, Boolean isRevenue);
+
+    BankAccount findBankAccountById(long id);
 }
