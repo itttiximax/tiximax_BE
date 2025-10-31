@@ -20,7 +20,7 @@ public class Purchases {
     @Column(name = "purchase_id")
     private Long purchaseId;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String purchaseCode;
 
     private String purchaseImage;

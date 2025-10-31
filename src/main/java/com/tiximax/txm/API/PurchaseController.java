@@ -1,6 +1,7 @@
 package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Purchases;
+import com.tiximax.txm.Model.PendingShipmentPurchase;
 import com.tiximax.txm.Model.PurchaseDetail;
 import com.tiximax.txm.Model.PurchaseRequest;
 import com.tiximax.txm.Service.PurchaseService;
@@ -50,16 +51,25 @@ public class PurchaseController {
         return ResponseEntity.ok(purchaseDetail);
     }
 
-//    @PutMapping("/{purchaseId}")
-//    public ResponseEntity<Purchases> updatePurchase(@PathVariable Long id, @RequestBody Purchases purchaseDetails) {
-//        Purchases updatedPurchase = purchaseService.updatePurchase(id, purchaseDetails);
-//        return ResponseEntity.ok(updatedPurchase);
-//    }
+    @PutMapping("/shipment/{purchaseId}")
+    public ResponseEntity<Purchases> updateShipment(
+            @PathVariable Long purchaseId,
+            @RequestBody String shipmentCode) {
+
+        Purchases updated = purchaseService.updateShipmentForPurchase(purchaseId, shipmentCode);
+        return ResponseEntity.ok(updated);
+    }
 
     @DeleteMapping("/{purchaseId}")
     public ResponseEntity<Void> deletePurchase(@PathVariable Long purchaseId) {
         purchaseService.deletePurchase(purchaseId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/pending-shipment")
+    public ResponseEntity<List<PendingShipmentPurchase>> getPurchasesWithPendingShipment() {
+        List<PendingShipmentPurchase> result = purchaseService.getPurchasesWithPendingShipment();
+        return ResponseEntity.ok(result);
     }
 
 }

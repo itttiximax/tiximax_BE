@@ -24,4 +24,22 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
     List<OrderLinks> findByShipmentCode(@Param("shipmentCode") String shipmentCode);
 
     List<OrderLinks> findByShipmentCodeIn(List<String> shipmentCodes);
+
+    // OrderLinksRepository.java
+    @Query("""
+            SELECT ol FROM OrderLinks ol 
+            WHERE ol.status = 'DA_MUA' 
+            AND (ol.shipmentCode IS NULL OR ol.shipmentCode = '')
+            """)
+    List<OrderLinks> findPendingShipmentLinks();
+
+    @Query("""
+    SELECT DISTINCT ol.shipmentCode
+    FROM OrderLinks ol
+    WHERE ol.status = 'DA_MUA'
+      AND ol.shipmentCode IS NOT NULL
+      AND ol.shipmentCode != ''
+      AND (:keyword IS NULL OR ol.shipmentCode LIKE %:keyword%)
+    """)
+    List<String> suggestShipmentCodes(@Param("keyword") String keyword);
 }
