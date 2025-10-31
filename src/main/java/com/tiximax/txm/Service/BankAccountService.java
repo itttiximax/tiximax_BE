@@ -4,7 +4,6 @@ import com.tiximax.txm.Entity.BankAccount;
 import com.tiximax.txm.Repository.BankAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 

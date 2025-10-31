@@ -44,7 +44,7 @@ public class PaymentController {
         return ResponseEntity.ok(createdPayment);
     }
 
-    @PostMapping("/merged-shipping/{isUseBalance}/{customerVoucherId}/{bankId}")
+    @PostMapping("/merged-shipping/{isUseBalance}/{bankId}/{customerVoucherId}")
     public ResponseEntity<Payment> createMergedPaymentShipping(@RequestBody Set<String> orderCodes,
                                                                @PathVariable boolean isUseBalance,
                                                                @PathVariable Long bankId,
