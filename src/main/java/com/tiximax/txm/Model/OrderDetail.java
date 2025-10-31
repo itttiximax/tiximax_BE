@@ -30,14 +30,12 @@ public class OrderDetail {
     private Set<Warehouse> warehouses;
     private Set<Payment> payments;
     private Set<Purchases> purchases;
-//    private Set<Domestic> domestics;
     private Set<OrderProcessLog> orderProcessLogs;
     private Set<OrderLinks> orderLinks;
     private Set<ShipmentTracking> shipmentTrackings;
     private Route route;
     private Destination destination;
     private Feedback feedback;
-//    private Packing packing;
 
     public OrderDetail(Orders order) {
         this.orderId = order.getOrderId();
@@ -53,13 +51,11 @@ public class OrderDetail {
         this.warehouses = order.getWarehouses();
         this.payments = order.getPayments();
         this.purchases = order.getPurchases();
-//        this.domestics = order.getDomestics();
         this.orderProcessLogs = order.getOrderProcessLogs();
         this.orderLinks = order.getOrderLinks();
         this.shipmentTrackings = order.getShipmentTrackings();
         this.route = order.getRoute();
         this.destination = order.getDestination();
         this.feedback = order.getFeedback();
-//        this.packing = order.getPacking();
     }
 }

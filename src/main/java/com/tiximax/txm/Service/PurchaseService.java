@@ -11,6 +11,7 @@ import com.tiximax.txm.Enums.PaymentStatus;
 import com.tiximax.txm.Enums.PaymentType;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Model.OrderPayment;
+import com.tiximax.txm.Model.PendingShipmentPurchase;
 import com.tiximax.txm.Model.PurchaseDetail;
 import com.tiximax.txm.Model.PurchaseRequest;
 import com.tiximax.txm.Repository.OrderLinksRepository;
@@ -25,8 +26,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 
@@ -250,11 +253,7 @@ public class PurchaseService {
     }
 
     private String generatePurchaseCode() {
-        String purchaseCode;
-        do {
-            purchaseCode = "MM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
-        } while (purchasesRepository.existsByPurchaseCode(purchaseCode));
-        return purchaseCode;
+        return null;
     }
 
     public Page<Purchases> getAllPurchases(Pageable pageable) {
@@ -278,4 +277,53 @@ public class PurchaseService {
         purchasesRepository.delete(purchase);
     }
 
+    public List<PendingShipmentPurchase> getPurchasesWithPendingShipment() {
+        List<OrderLinks> pendingLinks = orderLinksRepository.findPendingShipmentLinks();
+
+        return pendingLinks.stream()
+                .filter(link -> link.getPurchase() != null)
+                .collect(Collectors.groupingBy(OrderLinks::getPurchase))
+                .entrySet().stream()
+                .filter(entry -> entry.getKey() != null)
+                .map(entry -> {
+                    Purchases p = entry.getKey();
+                    List<String> trackingCode = entry.getValue().stream()
+                            .map(OrderLinks::getTrackingCode)
+                            .toList();
+
+                    PendingShipmentPurchase dto = new PendingShipmentPurchase();
+                    dto.setPurchaseId(p.getPurchaseId());
+                    dto.setPurchaseCode(p.getPurchaseCode());
+                    dto.setOrderCode(p.getOrders().getOrderCode());
+                    dto.setPurchaseTime(p.getPurchaseTime());
+                    dto.setFinalPriceOrder(p.getFinalPriceOrder());
+                    dto.setNote(p.getNote());
+                    dto.setPurchaseImage(p.getPurchaseImage());
+                    dto.setPendingTrackingCodes(trackingCode);
+                    return dto;
+                })
+                .toList();
+    }
+
+    public Purchases updateShipmentForPurchase(Long purchaseId, String shipmentCode) {
+        if (shipmentCode == null || shipmentCode.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã vận đơn không được để trống!");
+        }
+        shipmentCode = shipmentCode.trim();
+
+        if (orderLinksRepository.existsByShipmentCode(shipmentCode)) {
+            throw new IllegalArgumentException("Mã vận đơn '" + shipmentCode + "' đã tồn tại!");
+        }
+
+        Purchases purchase = purchasesRepository.findById(purchaseId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua!"));
+
+        for (OrderLinks link : purchase.getOrderLinks()) {
+            link.setShipmentCode(shipmentCode);
+        }
+
+        orderLinksRepository.saveAll(purchase.getOrderLinks());
+
+        return purchase;
+    }
 }

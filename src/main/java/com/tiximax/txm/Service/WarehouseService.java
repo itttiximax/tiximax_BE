@@ -244,4 +244,8 @@ public class WarehouseService {
                 .map(w -> w.getNetWeight() != null)
                 .orElse(false);
     }
+
+    public List<String> suggestShipmentCodes(String keyword) {
+        return orderLinksRepository.suggestShipmentCodes(keyword);
+    }
 }

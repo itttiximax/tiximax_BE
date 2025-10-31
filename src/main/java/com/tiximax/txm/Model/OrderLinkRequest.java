@@ -32,6 +32,8 @@ public class OrderLinkRequest {
 
     private String purchaseImage;
 
+    private String classify;
+
     private String website;
 
     private Long productTypeId;

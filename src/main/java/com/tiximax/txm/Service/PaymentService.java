@@ -18,14 +18,14 @@ import java.util.*;
 
 public class PaymentService {
 
-    @Value("${bank.name}")
-    private String bankName;
-
-    @Value("${bank.number}")
-    private String bankNumber;
-
-    @Value("${bank.owner}")
-    private String bankOwner;
+//    @Value("${bank.name}")
+//    private String bankName;
+//
+//    @Value("${bank.number}")
+//    private String bankNumber;
+//
+//    @Value("${bank.owner}")
+//    private String bankOwner;
 
     @Autowired
     private PaymentRepository paymentRepository;
@@ -54,51 +54,60 @@ public class PaymentService {
     @Autowired
     private CustomerVoucherRepository customerVoucherRepository;
 
-    public Payment createPayment(String orderCode, Integer depositPercent, boolean isUseBalance) {
-        Orders orders = ordersRepository.findByOrderCode(orderCode);
+    @Autowired
+    private BankAccountService bankAccountService;
 
-        if (orders == null){
-            throw new RuntimeException("Không tìm thấy đơn hàng này!");
-        }
-
-        if (!orders.getStatus().equals(OrderStatus.DA_XAC_NHAN)){
-            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để thanh toán!");
-        }
-
-        Payment payment = new Payment();
-        payment.setPaymentCode(generatePaymentCode());
-        payment.setContent(orders.getOrderCode());
-        payment.setPaymentType(PaymentType.MA_QR);
-        payment.setAmount(orders.getFinalPriceOrder());
-        payment.setDepositPercent(depositPercent);
-        if (isUseBalance){
-            BigDecimal collect = orders.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal balance = orders.getCustomer().getBalance();
-            if (balance.compareTo(collect) >= 0){
-                orders.setLeftoverMoney(collect.subtract(payment.getAmount()).setScale(2, RoundingMode.HALF_UP));
-                payment.setCollectedAmount(BigDecimal.ZERO);
-                orders.getCustomer().setBalance(balance.subtract(collect));
-            } else {
-                orders.setLeftoverMoney(collect.subtract(payment.getAmount()).setScale(2, RoundingMode.HALF_UP));
-                payment.setCollectedAmount(collect.subtract(balance));
-                orders.getCustomer().setBalance(BigDecimal.ZERO);
-            }
-        } else {
-            payment.setCollectedAmount(orders.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP));
-        }
-        payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + payment.getCollectedAmount() + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
-        payment.setQrCode(qrCodeUrl);
-        payment.setActionAt(LocalDateTime.now());
-        payment.setCustomer(orders.getCustomer());
-        payment.setStaff((Staff) accountUtils.getAccountCurrent());
-        payment.setOrders(orders);
-        payment.setIsMergedPayment(false);
-        ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
-        orders.setStatus(OrderStatus.CHO_THANH_TOAN);
-        ordersRepository.save(orders);
-        return paymentRepository.save(payment);
-    }
+//    public Payment createPayment(String orderCode, Integer depositPercent, boolean isUseBalance) {
+//        Orders orders = ordersRepository.findByOrderCode(orderCode);
+//
+//        if (orders == null){
+//            throw new RuntimeException("Không tìm thấy đơn hàng này!");
+//        }
+//
+//        if (!orders.getStatus().equals(OrderStatus.DA_XAC_NHAN)){
+//            throw new RuntimeException("Đơn hàng chưa đủ điều kiện để thanh toán!");
+//        }
+//
+//        Payment payment = new Payment();
+//        payment.setPaymentCode(generatePaymentCode());
+//        payment.setContent(orders.getOrderCode());
+//        payment.setPaymentType(PaymentType.MA_QR);
+//        payment.setAmount(orders.getFinalPriceOrder());
+//        payment.setDepositPercent(depositPercent);
+//        if (isUseBalance){
+//            BigDecimal collect = orders.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP);
+//            BigDecimal balance = orders.getCustomer().getBalance();
+//            if (balance.compareTo(collect) >= 0){
+//                orders.setLeftoverMoney(collect.subtract(payment.getAmount()).setScale(2, RoundingMode.HALF_UP));
+//                payment.setCollectedAmount(BigDecimal.ZERO);
+//                orders.getCustomer().setBalance(balance.subtract(collect));
+//            } else {
+//                orders.setLeftoverMoney(collect.subtract(payment.getAmount()).setScale(2, RoundingMode.HALF_UP));
+//                payment.setCollectedAmount(collect.subtract(balance));
+//                orders.getCustomer().setBalance(BigDecimal.ZERO);
+//            }
+//        } else {
+//            payment.setCollectedAmount(orders.getFinalPriceOrder().multiply(BigDecimal.valueOf(depositPercent / 100.00)).setScale(2, RoundingMode.HALF_UP));
+//        }
+//        payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+//
+//        BankAccount bankAccount = bankAccountService.getAccountById(bankId);
+//        if (bankAccount == null){
+//            throw new RuntimeException("Thông tin thẻ ngân hàng không được tìm thấy!");
+//        }
+//
+//        String qrCodeUrl = "https://img.vietqr.io/image/" + bankAccount.getBankName() + "-" + bankAccount.getAccountNumber() + "-print.png?amount=" + payment.getCollectedAmount() + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
+//        payment.setQrCode(qrCodeUrl);
+//        payment.setActionAt(LocalDateTime.now());
+//        payment.setCustomer(orders.getCustomer());
+//        payment.setStaff((Staff) accountUtils.getAccountCurrent());
+//        payment.setOrders(orders);
+//        payment.setIsMergedPayment(false);
+//        ordersService.addProcessLog(orders, payment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
+//        orders.setStatus(OrderStatus.CHO_THANH_TOAN);
+//        ordersRepository.save(orders);
+//        return paymentRepository.save(payment);
+//    }
 
     public List<Payment> getPaymentsByOrderCode(String orderCode) {
         List<Payment> payments = paymentRepository.findByOrdersOrderCode(orderCode);
@@ -257,7 +266,7 @@ public class PaymentService {
 //        return savedPayment;
 //    }
 
-    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance, Long customerVoucherId) {
+    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance, Long customerVoucherId, long bankId) {
         if (orderCodes == null || orderCodes.isEmpty()) {
             throw new RuntimeException("Không tìm thấy đơn hàng nào!");
         }
@@ -360,7 +369,12 @@ public class PaymentService {
 
         payment.setCollectedAmount(qrAmount);
 
-        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + qrAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+        BankAccount bankAccount = bankAccountService.getAccountById(bankId);
+        if (bankAccount == null){
+            throw new RuntimeException("Thông tin thẻ ngân hàng không được tìm thấy!");
+        }
+
+        String qrCodeUrl = "https://img.vietqr.io/image/" + bankAccount.getBankName() + "-" + bankAccount.getAccountNumber() + "-print.png?amount=" + qrAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
         payment.setQrCode(qrCodeUrl);
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -388,7 +402,7 @@ public class PaymentService {
         return savedPayment;
     }
 
- public Payment confirmedPaymentShipment(String paymentCode) {
+    public Payment confirmedPaymentShipment(String paymentCode) {
     System.out.println("=== Start confirmedPaymentShipment ===");
     Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
 
@@ -472,6 +486,7 @@ public class PaymentService {
     System.out.println("=== Hoàn tất confirmedPaymentShipment ===");
     return paymentRepository.save(payment);
 }
+
     public Optional<Payment> getPaymentsById(Long paymentId) {
         return paymentRepository.findById(paymentId);
     }
@@ -563,7 +578,7 @@ public class PaymentService {
 //        return savedPayment;
 //    }
 
-    public Payment createMergedPayment(Set<String> orderCodes, Integer depositPercent, boolean isUseBalance) {
+    public Payment createMergedPayment(Set<String> orderCodes, Integer depositPercent, boolean isUseBalance, long bankId) {
         List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
         if (ordersList.size() != orderCodes.size()) {
             throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
@@ -582,14 +597,15 @@ public class PaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal depositRate = BigDecimal.valueOf(depositPercent / 100.00);
-        BigDecimal totalCollect = totalAmount.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
-
+//        BigDecimal totalCollect = totalAmount.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalCollect = BigDecimal.ZERO;
         for (Orders order : ordersList) {
             BigDecimal orderFinalPrice = order.getFinalPriceOrder();
             BigDecimal orderCollect = orderFinalPrice.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
             BigDecimal orderLeftover = orderFinalPrice.subtract(orderCollect).setScale(2, RoundingMode.HALF_UP);
             order.setLeftoverMoney(orderLeftover);
             ordersRepository.save(order);
+            totalCollect = totalCollect.add(orderCollect);
         }
 
         Payment payment = new Payment();
@@ -616,7 +632,11 @@ public class PaymentService {
 
         payment.setCollectedAmount(qrAmount);
 
-        String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + qrAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+        BankAccount bankAccount = bankAccountService.getAccountById(bankId);
+        if (bankAccount == null){
+            throw new RuntimeException("Thông tin thẻ ngân hàng không được tìm thấy!");
+        }
+        String qrCodeUrl = "https://img.vietqr.io/image/" + bankAccount.getBankName() + "-" + bankAccount.getAccountNumber() + "-print.png?amount=" + qrAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
         payment.setQrCode(qrCodeUrl);
 
         Payment savedPayment = paymentRepository.save(payment);

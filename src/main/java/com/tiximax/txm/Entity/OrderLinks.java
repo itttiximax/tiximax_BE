@@ -44,6 +44,8 @@ public class OrderLinks {
     @Column(nullable = false)
     private String trackingCode;
 
+    private String classify;
+
     private String purchaseImage;
 
     private String website;

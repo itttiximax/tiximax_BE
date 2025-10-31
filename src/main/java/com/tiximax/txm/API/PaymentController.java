@@ -35,19 +35,21 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
-    @PostMapping("/merged/{depositPercent}/{isUseBalance}")
+    @PostMapping("/merged/{depositPercent}/{isUseBalance}/{bankId}")
     public ResponseEntity<Payment> createMergedPayment(@RequestBody Set<String> orderCodes,
                                                        @PathVariable Integer depositPercent,
-                                                       @PathVariable boolean isUseBalance) {
-        Payment createdPayment = paymentService.createMergedPayment(orderCodes, depositPercent, isUseBalance);
+                                                       @PathVariable boolean isUseBalance,
+                                                       @PathVariable Long bankId) {
+        Payment createdPayment = paymentService.createMergedPayment(orderCodes, depositPercent, isUseBalance, bankId);
         return ResponseEntity.ok(createdPayment);
     }
 
-    @PostMapping("/merged-shipping/{isUseBalance}/{customerVoucherId}")
+    @PostMapping("/merged-shipping/{isUseBalance}/{customerVoucherId}/{bankId}")
     public ResponseEntity<Payment> createMergedPaymentShipping(@RequestBody Set<String> orderCodes,
                                                                @PathVariable boolean isUseBalance,
+                                                               @PathVariable Long bankId,
                                                                @RequestParam(required = false) Long customerVoucherId) {
-        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes, isUseBalance, customerVoucherId);
+        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes, isUseBalance, bankId, customerVoucherId);
         return ResponseEntity.ok(createdPayment);
     }
 
