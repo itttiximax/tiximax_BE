@@ -32,6 +32,11 @@ public class Domestic {
     @JsonIgnore
     private WarehouseLocation toLocation;
 
+    @ManyToOne
+    @JoinColumn(name = "to_address_id")
+    @JsonIgnore
+    private Address toAddress;
+
     @Enumerated(EnumType.STRING)
     private DomesticStatus status;
 

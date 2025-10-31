@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -29,6 +30,14 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 
     @Query("SELECT o FROM Orders o WHERE :status IS NULL OR o.status = :status")
     Page<Orders> findByStatus(@Param("status") OrderStatus status, Pageable pageable);
+    
+        @Query(value = "SELECT DISTINCT o FROM Orders o " +
+                "LEFT JOIN FETCH o.customer c " +
+                "WHERE o.status IN :statuses",
+        countQuery = "SELECT COUNT(o) FROM Orders o WHERE o.status IN :statuses")
+        Page<Orders> findByStatuses(@Param("statuses") Collection<OrderStatus> statuses, Pageable pageable);
+
+
 
     @Query("SELECT o FROM Orders o WHERE o.staff.accountId = :staffId AND (:status IS NULL OR o.status = :status)")
     Page<Orders> findByStaffAccountIdAndStatus(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);

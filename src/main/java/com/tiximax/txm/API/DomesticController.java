@@ -2,6 +2,7 @@ package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Domestic;
 import com.tiximax.txm.Model.CreateDomesticRequest;
+import com.tiximax.txm.Model.DomesticResponse;
 import com.tiximax.txm.Service.DomesticService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,9 +42,8 @@ public class DomesticController {
     }
 
     @PostMapping("/transfer-to-customer")
-    public ResponseEntity<List<Domestic>> transferToCustomer(){
-        List<Domestic> domestic = domesticService.TransferToCustomer();
+    public ResponseEntity<List<DomesticResponse>> transferToCustomer(){
+        List<DomesticResponse> domestic = domesticService.TransferToCustomer();
         return ResponseEntity.ok(domestic);
     }
-
 }
