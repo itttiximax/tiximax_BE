@@ -88,13 +88,10 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
             partial.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
             partial.setStaff(currentStaff);
 
-            // Gán quan hệ hai chiều
             selectedLinks.forEach(link -> link.setPartialShipment(partial));
-
             partialShipmentRepository.save(partial);
             orderLinksRepository.saveAll(selectedLinks);
 
-            // Kiểm tra xem đơn có thể chuyển trạng thái không
             boolean allReady = orderLinksRepository.findByOrdersOrderId(order.getOrderId()).stream()
                     .filter(link -> link.getStatus() != OrderLinkStatus.DA_HUY)
                     .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_GIAO || link.getPartialShipment() != null);
