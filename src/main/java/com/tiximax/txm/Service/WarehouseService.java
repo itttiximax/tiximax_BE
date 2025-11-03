@@ -29,8 +29,6 @@ public class WarehouseService {
     @Autowired
     private WarehouseRepository warehouseRepository;
 
-    @Autowired
-    private PurchasesRepository purchasesRepository;
 
     @Autowired
     private OrdersRepository ordersRepository;

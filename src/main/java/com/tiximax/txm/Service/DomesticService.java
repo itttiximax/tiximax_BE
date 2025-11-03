@@ -8,6 +8,7 @@ import com.tiximax.txm.Repository.DomesticRepository;
 import com.tiximax.txm.Repository.OrderLinksRepository;
 import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PackingRepository;
+import com.tiximax.txm.Repository.PartialShipmentRepository;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -26,9 +27,13 @@ public class DomesticService {
 
     @Autowired
     private PackingRepository packingRepository;
-
+    @Autowired
+    private PartialShipmentService partialShipmentService;
     @Autowired
     private OrdersRepository ordersRepository;
+
+    @Autowired
+    private PartialShipmentRepository partialShipmentRepository;
 
     @Autowired
     private AddressRepository addressRepository; 
@@ -148,7 +153,6 @@ public class DomesticService {
                     if (trackingCodes != null) shippingList.addAll(trackingCodes);
                 }
             }
-
             if (packingSet.isEmpty()) continue;
 
             Domestic domestic = new Domestic();
@@ -168,41 +172,66 @@ public class DomesticService {
             domestic = domesticRepository.save(domestic);
             domesticList.add(domestic);
 
-            for (String shipmentCode : shippingList) {
-                List<OrderLinks> links = orderLinksRepository.findByShipmentCode(shipmentCode);
-                for (OrderLinks link : links) {
-                    link.setStatus(OrderLinkStatus.DA_GIAO);
-                }
-                orderLinksRepository.saveAll(links);
+           for (String shipmentCode : shippingList) {
+    List<OrderLinks> links = orderLinksRepository.findByShipmentCode(shipmentCode);
+        
+        for (OrderLinks link : links) {
+            link.setStatus(OrderLinkStatus.DA_GIAO);
+        }
+        orderLinksRepository.saveAll(links);
 
-                Set<Orders> relatedOrders = links.stream()
-                        .map(OrderLinks::getOrders)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toSet());
+        Set<Orders> relatedOrders = links.stream()
+                .map(OrderLinks::getOrders)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-                for (Orders order : relatedOrders) {
-                    Set<OrderLinks> allLinks = order.getOrderLinks();
+        Set<PartialShipment> relatedPartials = links.stream()
+                .map(OrderLinks::getPartialShipment)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-                    boolean allDeliveredOrCanceled = allLinks.stream().allMatch(l ->
-                            l.getStatus() == OrderLinkStatus.DA_GIAO ||
-                            l.getStatus() == OrderLinkStatus.DA_HUY
-                    );
+        for (Orders order : relatedOrders) {
+            Set<OrderLinks> allLinks = order.getOrderLinks();
 
-                    if (allDeliveredOrCanceled) {
-                        order.setStatus(OrderStatus.DA_GIAO);
-                        ordersRepository.save(order);
-                        ordersService.addProcessLog(
-                                order,
-                                domestic.getDomesticId().toString(),
-                                ProcessLogAction.DA_GIAO
-                        );
-                    }
+            boolean allDeliveredOrCanceled = allLinks.stream().allMatch(l ->
+                    l.getStatus() == OrderLinkStatus.DA_GIAO ||
+                    l.getStatus() == OrderLinkStatus.DA_HUY
+            );
+
+            if (allDeliveredOrCanceled && order.getStatus() != OrderStatus.DA_GIAO) {
+                order.setStatus(OrderStatus.DA_GIAO);
+                ordersRepository.save(order);
+                ordersService.addProcessLog(
+                        order,
+                        domestic.getDomesticId().toString(),
+                        ProcessLogAction.DA_GIAO
+                );
+            }
+        }
+
+        for (PartialShipment partial : relatedPartials) {
+            Set<OrderLinks> partialLinks = partial.getReadyLinks();
+
+            boolean allLinksDeliveredOrCanceled = partialLinks.stream().allMatch(link ->
+                    link.getStatus() == OrderLinkStatus.DA_GIAO ||
+                    link.getStatus() == OrderLinkStatus.DA_HUY
+            );
+
+            if (allLinksDeliveredOrCanceled && partial.getStatus() != OrderStatus.DA_GIAO) {
+                partial.setStatus(OrderStatus.DA_GIAO);
+                partialShipmentRepository.save(partial); 
+
+                ordersService.addProcessLog(
+                        partial.getOrders(), 
+                        "PartialShipment#" + partial.getId(),
+                        ProcessLogAction.DA_GIAO
+                );
+            }
                 }
             }
         }
     }
 
-    // ✅ Trả về danh sách DomesticResponse
     return domesticList.stream()
             .map(DomesticResponse::fromEntity)
             .collect(Collectors.toList());

@@ -253,8 +253,13 @@ public class PurchaseService {
     }
 
     private String generatePurchaseCode() {
-        return null;
+          String PurchaseCode;
+        do {
+            PurchaseCode = "MM-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
+        } while (purchasesRepository.existsByPurchaseCode(PurchaseCode));
+        return PurchaseCode;
     }
+    
 
     public Page<Purchases> getAllPurchases(Pageable pageable) {
         return purchasesRepository.findAll(pageable);
