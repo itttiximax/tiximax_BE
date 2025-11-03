@@ -62,8 +62,6 @@ public class OrdersService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-  
-
     @Autowired
     private PaymentService paymentService;
 
@@ -146,7 +144,15 @@ public class OrdersService {
         order = ordersRepository.save(order);
         orderLinksRepository.saveAll(orderLinksList);
         addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
-//        messagingTemplate.convertAndSend("/topic/orders", order);
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "INSERT",
+                        "orderCode", order.getOrderCode(),
+                        "customerCode", customerCode,
+                        "message", "Đơn hàng mới được thêm!"
+                )
+        );
         return order;
     }
 
@@ -609,6 +615,15 @@ public class OrdersService {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng!"));
         order.setPinnedAt(pin ? LocalDateTime.now() : null);
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", pin ? "PIN" : "UNPIN",
+                        "orderCode", order.getOrderCode(),
+                        "customerCode", order.getCustomer().getCustomerCode(),
+                        "message", pin ? "Đơn hàng đã được ghim!" : "Đơn hàng đã được bỏ ghim!"
+                )
+        );
         ordersRepository.save(order);
     }
 

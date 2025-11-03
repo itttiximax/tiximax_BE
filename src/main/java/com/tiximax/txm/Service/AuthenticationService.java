@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -88,6 +89,9 @@ public class AuthenticationService implements UserDetailsService {
 
     @Autowired
     private VoucherService voucherService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -244,8 +248,17 @@ public class AuthenticationService implements UserDetailsService {
         voucherService.assignOnRegisterVouchers(customer);
         System.out.println("New customer saved: " + customer.getEmail());
         otpService.sendOtpToEmail(customer.getEmail());
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "INSERT",
+                        "customerCode", customer.getCustomerCode(),
+                        "email", customer.getEmail(),
+                        "message", "Khách hàng mới được đăng ký!"
+                )
+        );
         return customer;
-}
+    }
 
     public String generateCustomerCode() {
         String customerCode;
@@ -308,6 +321,15 @@ public class AuthenticationService implements UserDetailsService {
         customer.getAddresses().add(address);
         customer = authenticationRepository.save(customer);
         voucherService.assignOnRegisterVouchers(customer);
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "INSERT",
+                        "customerCode", customer.getCustomerCode(),
+                        "email", customer.getEmail(),
+                        "message", "Khách hàng mới được đăng ký!"
+                )
+        );
         return customer;
     }
 
