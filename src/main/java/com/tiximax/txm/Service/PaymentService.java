@@ -133,6 +133,8 @@ public class PaymentService {
         return paymentCode;
     }
 
+    
+
     public Payment confirmedPayment(String paymentCode) {
         Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
         if (paymentOptional.isEmpty()) {
@@ -494,6 +496,11 @@ public class PaymentService {
     public List <Payment> getPaymentByStaffandStatus(){
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         return paymentRepository.findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(staff, OrderStatus.CHO_THANH_TOAN_DAU_GIA, PaymentStatus.CHO_THANH_TOAN);
+    }
+
+        public List<Payment> getPaymentsByPartialStatus() {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        return paymentRepository.findPaymentsByStaffAndPartialStatus(staff.getAccountId(), OrderStatus.CHO_THANH_TOAN_SHIP);
     }
 
     public Optional<Payment> getPendingPaymentByOrderId(Long orderId) {

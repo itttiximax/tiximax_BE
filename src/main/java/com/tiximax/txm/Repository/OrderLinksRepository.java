@@ -1,6 +1,8 @@
 package com.tiximax.txm.Repository;
 
 import com.tiximax.txm.Entity.OrderLinks;
+import com.tiximax.txm.Enums.OrderLinkStatus;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,6 +26,18 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
     List<OrderLinks> findByShipmentCode(@Param("shipmentCode") String shipmentCode);
 
     List<OrderLinks> findByShipmentCodeIn(List<String> shipmentCodes);
+
+      @Query("""
+          SELECT ol
+          FROM OrderLinks ol
+          WHERE ol.orders.customer.customerCode = :customerCode
+            AND ol.shipmentCode IS NOT NULL
+            AND ol.status = :status
+      """)
+      List<OrderLinks> findByCustomerCodeAndShipmentCodeNotNullAndStatus(
+              @Param("customerCode") String customerCode,
+              @Param("status") OrderLinkStatus status
+      );
 
     // OrderLinksRepository.java
     @Query("""

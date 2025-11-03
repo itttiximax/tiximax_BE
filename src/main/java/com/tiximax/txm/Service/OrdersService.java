@@ -528,6 +528,23 @@ public class OrdersService {
                 .collect(Collectors.toList());
     }
 
+      public List<OrderLinks> getLinksInWarehouseByCustomer(String customerCode) {
+
+         Customer customer = authenticationRepository.findByCustomerCode(customerCode);
+        if (customer == null) {
+            throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
+        }
+
+        if (!customer.getStaffId().equals(accountUtils.getAccountCurrent().getAccountId())) {
+            throw new IllegalStateException("Bạn không có quyền truy cập đơn hàng của khách hàng này!");
+        }
+        
+        return orderLinksRepository.findByCustomerCodeAndShipmentCodeNotNullAndStatus(
+                customerCode,
+                OrderLinkStatus.DA_NHAP_KHO_VN
+        );
+    }
+
     public List<OrderPayment> getOrdersShippingByCustomerCode(String customerCode) {
         Customer customer = authenticationRepository.findByCustomerCode(customerCode);
         if (customer == null) {
