@@ -7,6 +7,7 @@ import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -56,6 +57,9 @@ public class PaymentService {
 
     @Autowired
     private BankAccountService bankAccountService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
 //    public Payment createPayment(String orderCode, Integer depositPercent, boolean isUseBalance) {
 //        Orders orders = ordersRepository.findByOrderCode(orderCode);
@@ -401,6 +405,15 @@ public class PaymentService {
             customerVoucher.setUsedDate(LocalDateTime.now());
             customerVoucherRepository.save(customerVoucher);
         }
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "UPDATE",
+                        "paymentCode", savedPayment.getPaymentCode(),
+                        "customerCode", commonCustomer.getCustomerCode(),
+                        "message", "Thanh toán gộp mới được tạo!"
+                )
+        );
         return savedPayment;
     }
 
@@ -664,7 +677,15 @@ public class PaymentService {
             savedPayment.setStatus(PaymentStatus.DA_THANH_TOAN);
             savedPayment = paymentRepository.save(savedPayment);
         }
-
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "UPDATE",
+                        "paymentCode", savedPayment.getPaymentCode(),
+                        "customerCode", commonCustomer.getCustomerCode(),
+                        "message", "Thanh toán gộp mới được tạo!"
+                )
+        );
         return savedPayment;
     }
 
