@@ -88,7 +88,7 @@ public class PurchaseService {
         boolean allActive = orderLinks.stream()
                 .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA);
         if (!allActive) {
-            throw new IllegalArgumentException("Tất cả mã phải ở trạng thái HOẠT ĐỘNG!");
+            throw new IllegalArgumentException("Tất cả mã phải ở trạng thái chờ mua!");
         }
         Purchases purchase = new Purchases();
         purchase.setPurchaseCode(generatePurchaseCode());

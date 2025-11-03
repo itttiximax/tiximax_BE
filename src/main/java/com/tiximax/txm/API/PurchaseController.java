@@ -31,6 +31,7 @@ public class PurchaseController {
         Purchases purchase = purchaseService.createPurchase(orderCode, purchaseRequest);
         return ResponseEntity.ok(purchase);
     }
+
     @PostMapping("auction/add")
     public ResponseEntity<Purchases> addAuction(@RequestParam String orderCode, @RequestBody PurchaseRequest purchaseRequest) {
         Purchases purchase = purchaseService.createAuction(orderCode, purchaseRequest);
