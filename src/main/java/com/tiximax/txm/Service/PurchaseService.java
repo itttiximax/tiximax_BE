@@ -259,6 +259,7 @@ public class PurchaseService {
         } while (purchasesRepository.existsByPurchaseCode(PurchaseCode));
         return PurchaseCode;
     }
+    
 
     public Page<Purchases> getAllPurchases(Pageable pageable) {
         return purchasesRepository.findAll(pageable);

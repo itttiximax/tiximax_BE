@@ -20,9 +20,12 @@ public class PartialShipmentController {
     @Autowired
     private PartialShipmentService partialShipmentService;
 
-    @PostMapping("/partial-shipment")
-    public ResponseEntity<List<PartialShipment>> createPartialShipment(@RequestBody TrackingCodesRequest selectedTrackingCode) {
-        List<PartialShipment> partial = partialShipmentService.createPartialShipment(selectedTrackingCode);
+    @PostMapping("/partial-shipment/{isUseBalance}/{bankId}/{customerVoucherId}")
+    public ResponseEntity<List<PartialShipment>> createPartialShipment(@RequestBody TrackingCodesRequest selectedTrackingCode,
+                                                                    @PathVariable boolean isUseBalance,
+                                                                    @PathVariable Long bankId,
+                                                                    @RequestParam(required = false) Long customerVoucherId) {
+        List<PartialShipment> partial = partialShipmentService.createPartialShipment(selectedTrackingCode, isUseBalance, bankId, customerVoucherId);
         return ResponseEntity.ok(partial);
     }
 }
