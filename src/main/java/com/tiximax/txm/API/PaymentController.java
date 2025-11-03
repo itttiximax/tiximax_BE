@@ -1,6 +1,7 @@
 package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Payment;
+import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Service.PaymentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @CrossOrigin
@@ -69,6 +69,12 @@ public class PaymentController {
     public ResponseEntity<List<Payment>> getAuctionPayment() {
         List<Payment> confirmedPayment = paymentService.getPaymentByStaffandStatus();
         return ResponseEntity.ok(confirmedPayment);
+    }
+     @GetMapping("/partial-payment")
+    public ResponseEntity<List<Payment>> getPaymentsByPartialStatus(
+    ) {
+        List<Payment> payments = paymentService.getPaymentsByPartialStatus();
+        return ResponseEntity.ok(payments);
     }
 
     @GetMapping("code/{paymentCode}")

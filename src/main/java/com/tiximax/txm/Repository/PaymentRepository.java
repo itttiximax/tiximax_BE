@@ -40,5 +40,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("orderStatus") OrderStatus orderStatus,
             @Param("paymentStatus") PaymentStatus paymentStatus
     );
+     @Query("""
+        SELECT DISTINCT p
+        FROM Payment p
+        JOIN p.partialShipments ps
+        WHERE p.staff.id = :staffId
+          AND ps.status = :status
+    """)
+    List<Payment> findPaymentsByStaffAndPartialStatus(
+            @Param("staffId") Long staffId,
+            @Param("status") OrderStatus status
+    );
 }
 

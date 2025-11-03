@@ -78,31 +78,27 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
                 .collect(Collectors.toList());
 
         for (Orders order : orders) {
+            List<OrderLinks> orderSpecificLinks = selectedLinks.stream()
+                    .filter(link -> link.getOrders().equals(order))
+                    .collect(Collectors.toList());
+
+            if (orderSpecificLinks.isEmpty()) continue;
+
             PartialShipment partial = new PartialShipment();
             partial.setOrders(order);
-            partial.setReadyLinks(new HashSet<>(selectedLinks));
-            partial.setPartialAmount(selectedLinks.stream()
+            partial.setReadyLinks(new HashSet<>(orderSpecificLinks));
+            partial.setPartialAmount(orderSpecificLinks.stream()
                     .map(OrderLinks::getFinalPriceVnd)
                     .reduce(BigDecimal.ZERO, BigDecimal::add));
             partial.setShipmentDate(LocalDateTime.now());
             partial.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
             partial.setStaff(currentStaff);
 
-            // Gán quan hệ hai chiều
-            selectedLinks.forEach(link -> link.setPartialShipment(partial));
+            // Cập nhật quan hệ
+            orderSpecificLinks.forEach(link -> link.setPartialShipment(partial));
 
             partialShipmentRepository.save(partial);
-            orderLinksRepository.saveAll(selectedLinks);
-
-            // Kiểm tra xem đơn có thể chuyển trạng thái không
-            boolean allReady = orderLinksRepository.findByOrdersOrderId(order.getOrderId()).stream()
-                    .filter(link -> link.getStatus() != OrderLinkStatus.DA_HUY)
-                    .allMatch(link -> link.getStatus() == OrderLinkStatus.DA_GIAO || link.getPartialShipment() != null);
-            if (allReady) {
-                order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
-                ordersRepository.save(order);
-            }
-
+            orderLinksRepository.saveAll(orderSpecificLinks);
             createdPartials.add(partial);
         }
     }
@@ -111,7 +107,6 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
         throw new IllegalArgumentException("Không có link nào hợp lệ để tạo Partial Shipment.");
     }
 
-    // 💳 Tạo Payment chung cho tất cả partials
     Orders firstOrder = createdPartials.get(0).getOrders();
     BigDecimal shipFee = calculateTotalShippingFee(firstOrder.getRoute().getRouteId(), allTrackingCodes);
 
@@ -138,13 +133,11 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
         partial.setPayment(mergedPayment);
         mergedPayment.getPartialShipments().add(partial);
     }
-
     paymentRepository.save(mergedPayment);
     partialShipmentRepository.saveAll(createdPartials);
 
     return createdPartials;
 }
-
 
     private BigDecimal calculateTotalShippingFee(Long routeId, List<String> selectedTrackingCodes) {
     List<Warehouse> warehouses = warehousereRepository.findByTrackingCodeIn(selectedTrackingCodes);

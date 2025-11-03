@@ -152,6 +152,11 @@ public class OrdersController {
         List<OrderPayment> orders = ordersService.getOrdersShippingByCustomerCode(customerCode);
         return ResponseEntity.ok(orders);
     }
+      @GetMapping("/partial-for-customer/{customerCode}")
+    public ResponseEntity<List<OrderLinks>> getLinksByCustomer(@PathVariable String customerCode) {
+        List<OrderLinks> links = ordersService.getLinksInWarehouseByCustomer(customerCode);
+        return ResponseEntity.ok(links);
+    }
 
     @PutMapping("/buy-later/{orderId}/links/{orderLinkId}")
     public ResponseEntity<Orders> updateOrderLinkToBuyLater(@PathVariable Long orderId, @PathVariable Long orderLinkId) {
