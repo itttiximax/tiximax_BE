@@ -83,4 +83,10 @@ public class PackingController {
         return ResponseEntity.ok(updatedPacking);
     }
 
+    @GetMapping("/{packingCode}/list")
+    public ResponseEntity<List<String>> getPackingList(
+            @PathVariable String packingCode) {
+        List<String> packingList = packingService.getPackingListByCode(packingCode);
+        return ResponseEntity.ok(packingList);
+    }
 }

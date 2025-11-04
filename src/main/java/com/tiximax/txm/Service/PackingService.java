@@ -338,4 +338,12 @@ public class PackingService {
 
         return packing;
     }
+
+    public List<String> getPackingListByCode(String packingCode) {
+        List<String> list = packingRepository.findPackingListByCode(packingCode);
+        if (list == null || list.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy packingList cho mã: " + packingCode);
+        }
+        return list;
+    }
 }
