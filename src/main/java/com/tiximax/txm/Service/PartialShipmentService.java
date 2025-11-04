@@ -316,16 +316,15 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
             qrAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
     payment.setQrCode(qrCodeUrl);
 
-    // === Lưu Payment và liên kết ngược ===
     Payment savedPayment = paymentRepository.save(payment);
     createdPartials.forEach(partial -> {
         partial.setPayment(savedPayment);
         partialShipmentRepository.save(partial);
     });
 
-    // === Cập nhật đơn hàng ===
     for (Orders order : ordersList) {
         order.setLeftoverMoney(BigDecimal.ZERO);
+        // Chưa đúng logic update Order status
         order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
         ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
         ordersRepository.save(order);
