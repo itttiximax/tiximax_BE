@@ -455,6 +455,7 @@ public class OrdersService {
 
         Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
                 .and(Sort.by(Sort.Order.desc("createdAt")));
+
         Pageable customPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
         Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(routeIds, OrderStatus.CHO_MUA, orderType, customPageable);
@@ -522,10 +523,6 @@ public class OrdersService {
 
         List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_XAC_NHAN);
 
-//        if (orders.size() < 2){
-//            throw new IllegalStateException("Khách hàng này không đủ đơn để gộp thanh toán!");
-//        }
-
         return orders.stream()
                 .map(order -> {
                     OrderPayment orderPayment = new OrderPayment(order);
@@ -534,7 +531,7 @@ public class OrdersService {
                 .collect(Collectors.toList());
     }
 
-      public List<OrderLinks> getLinksInWarehouseByCustomer(String customerCode) {
+    public List<OrderLinks> getLinksInWarehouseByCustomer(String customerCode) {
 
          Customer customer = authenticationRepository.findByCustomerCode(customerCode);
         if (customer == null) {
@@ -759,5 +756,53 @@ public class OrdersService {
 
         addProcessLog(order, order.getOrderCode(), ProcessLogAction.HOAN_TIEN);
         return order;
+    }
+
+    public Page<OrderWithLinks> getOrdersWithBuyLaterLinks(Pageable pageable, OrderType orderType) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
+            throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
+        }
+
+        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+        Set<Long> routeIds = accountRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Sort sort = Sort.by(
+                Sort.Order.desc("pinnedAt").nullsLast(),
+                Sort.Order.desc("createdAt")
+        );
+
+        Pageable customPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sort
+        );
+
+        Page<Orders> ordersPage = ordersRepository.findProcessingOrdersWithBuyLaterLinks(
+                routeIds, orderType, customPageable
+        );
+
+        return ordersPage.map(orders -> {
+            OrderWithLinks dto = new OrderWithLinks(orders);
+
+            List<OrderLinks> buyLaterLinks = orders.getOrderLinks().stream()
+                    .filter(link -> link.getStatus() == OrderLinkStatus.MUA_SAU)
+                    .sorted(Comparator.comparing(
+                            OrderLinks::getGroupTag,
+                            Comparator.nullsLast(Comparator.naturalOrder())
+                    ))
+                    .collect(Collectors.toList());
+
+            dto.setOrderLinks(buyLaterLinks);
+            return dto;
+        });
     }
 }

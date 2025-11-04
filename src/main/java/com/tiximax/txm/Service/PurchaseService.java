@@ -1,23 +1,13 @@
 package com.tiximax.txm.Service;
 
-import com.tiximax.txm.Entity.OrderLinks;
-import com.tiximax.txm.Entity.Orders;
-import com.tiximax.txm.Entity.Payment;
-import com.tiximax.txm.Entity.Purchases;
-import com.tiximax.txm.Entity.Staff;
+import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.PaymentStatus;
 import com.tiximax.txm.Enums.PaymentType;
 import com.tiximax.txm.Enums.ProcessLogAction;
-import com.tiximax.txm.Model.OrderPayment;
-import com.tiximax.txm.Model.PendingShipmentPurchase;
-import com.tiximax.txm.Model.PurchaseDetail;
-import com.tiximax.txm.Model.PurchaseRequest;
-import com.tiximax.txm.Repository.OrderLinksRepository;
-import com.tiximax.txm.Repository.OrdersRepository;
-import com.tiximax.txm.Repository.PaymentRepository;
-import com.tiximax.txm.Repository.PurchasesRepository;
+import com.tiximax.txm.Model.*;
+import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -56,6 +46,9 @@ public class PurchaseService {
 
     @Autowired
     private OrdersService ordersService;
+
+    @Autowired
+    private AccountRouteRepository accountRouteRepository;
 
     @Autowired
     private AccountUtils accountUtils;
@@ -259,7 +252,6 @@ public class PurchaseService {
         } while (purchasesRepository.existsByPurchaseCode(PurchaseCode));
         return PurchaseCode;
     }
-    
 
     public Page<Purchases> getAllPurchases(Pageable pageable) {
         return purchasesRepository.findAll(pageable);
@@ -330,5 +322,30 @@ public class PurchaseService {
         orderLinksRepository.saveAll(purchase.getOrderLinks());
 
         return purchase;
+    }
+
+    public Page<PurchasePendingShipment> getPendingShipmentPurchases(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
+                .stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Page<Purchases> purchasesPage = purchasesRepository.findPurchasesWithPendingShipmentByRoutes(routeIds, pageable);
+
+        return purchasesPage.map(purchase -> {
+            List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
+                    .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
+                    .map(OrderLinkPending::new)
+                    .collect(Collectors.toList());
+
+            return new PurchasePendingShipment(purchase, pendingLinks);
+        });
     }
 }
