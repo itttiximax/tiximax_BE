@@ -120,4 +120,7 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
             @Param("orderType") OrderType orderType,
             Pageable pageable
     );
+        Page<Orders> findByStaffAccountId(Long accountId, Pageable pageable);
+        Page<Orders> findByRouteRouteIdIn(Set<Long> routeIds, Pageable pageable);
+
 }

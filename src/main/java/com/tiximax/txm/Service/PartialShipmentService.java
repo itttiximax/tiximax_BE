@@ -7,7 +7,7 @@ import com.tiximax.txm.Enums.PaymentStatus;
 import com.tiximax.txm.Enums.PaymentType;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Enums.VoucherType;
-import com.tiximax.txm.Model.TrackingCodesRequest;
+import com.tiximax.txm.Model.ShipmentCodesRequest;
 import com.tiximax.txm.Repository.AuthenticationRepository;
 import com.tiximax.txm.Repository.CustomerVoucherRepository;
 import com.tiximax.txm.Repository.OrderLinksRepository;
@@ -162,13 +162,13 @@ public class PartialShipmentService {
 //     return createdPartials;
 // }
 
-public List<PartialShipment> createPartialShipment(TrackingCodesRequest trackingCodesRequest,
+public List<PartialShipment> createPartialShipment(ShipmentCodesRequest trackingCodesRequest,
                                                    boolean isUseBalance,
                                                    long bankId,
                                                    Long customerVoucherId) {
 
     Staff currentStaff = (Staff) accountUtils.getAccountCurrent();
-    List<String> allTrackingCodes = trackingCodesRequest.getSelectedTrackingCodes();
+    List<String> allTrackingCodes = trackingCodesRequest.getSelectedShipmentCodes();
     if (allTrackingCodes == null || allTrackingCodes.isEmpty()) {
         throw new RuntimeException("Không có mã vận đơn nào được chọn!");
     }

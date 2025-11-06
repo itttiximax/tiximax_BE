@@ -315,9 +315,39 @@ public class OrdersService {
         processLogRepository.save(orderProcessLog);
     }
 
-    public List<Orders> getAllOrders() {
-        return ordersRepository.findAll();
+    public Page<Orders> getAllOrdersPaging(Pageable pageable) {
+    Account currentAccount = accountUtils.getAccountCurrent();
+
+    if (currentAccount.getRole().equals(AccountRoles.ADMIN) 
+            || currentAccount.getRole().equals(AccountRoles.MANAGER)) {
+
+      
+        return ordersRepository.findAll(pageable);
+
+    } else if (currentAccount.getRole().equals(AccountRoles.STAFF_SALE)) {
+
+        return ordersRepository.findByStaffAccountId(currentAccount.getAccountId(), pageable);
+
+    } else if (currentAccount.getRole().equals(AccountRoles.LEAD_SALE)) {
+
+
+        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+        Set<Long> routeIds = accountRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return ordersRepository.findByRouteRouteIdIn(routeIds, pageable);
+
+    } else {
+        throw new IllegalStateException("Vai trò không hợp lệ!");
     }
+}
+
 
     public Page<Orders> getOrdersPaging(Pageable pageable, OrderStatus status) {
         Account currentAccount = accountUtils.getAccountCurrent();
