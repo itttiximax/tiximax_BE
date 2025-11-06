@@ -122,9 +122,7 @@ public class OrdersController {
 
     @GetMapping("/with-links/{page}/{size}")
     public ResponseEntity<Page<OrderWithLinks>> getOrdersWithLinksForPurchaser(@PathVariable int page, @PathVariable int size, @RequestParam OrderType orderType) {
-        Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
-                .and(Sort.by(Sort.Order.asc("createdAt")));
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page, size);
         Page<OrderWithLinks> ordersPage = ordersService.getOrdersWithLinksForPurchaser(pageable, orderType);
         return ResponseEntity.ok(ordersPage);
     }
@@ -152,7 +150,8 @@ public class OrdersController {
         List<OrderPayment> orders = ordersService.getOrdersShippingByCustomerCode(customerCode);
         return ResponseEntity.ok(orders);
     }
-      @GetMapping("/partial-for-customer/{customerCode}")
+
+    @GetMapping("/partial-for-customer/{customerCode}")
     public ResponseEntity<List<OrderLinks>> getLinksByCustomer(@PathVariable String customerCode) {
         List<OrderLinks> links = ordersService.getLinksInWarehouseByCustomer(customerCode);
         return ResponseEntity.ok(links);
@@ -194,5 +193,16 @@ public class OrdersController {
             @RequestParam boolean refundToCustomer) {
         Orders updatedOrder = ordersService.processNegativeLeftoverMoney(orderId, refundToCustomer);
         return ResponseEntity.ok(updatedOrder);
+    }
+
+    @GetMapping("/buy-later/{page}/{size}")
+    public ResponseEntity<Page<OrderWithLinks>> getBuyLaterOrders(
+            @PathVariable int page,
+            @PathVariable int size,
+            @RequestParam OrderType orderType) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<OrderWithLinks> result = ordersService.getOrdersWithBuyLaterLinks(pageable, orderType);
+        return ResponseEntity.ok(result);
     }
 }

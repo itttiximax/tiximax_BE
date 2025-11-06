@@ -103,4 +103,21 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
             @Param("threshold") BigDecimal threshold,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT DISTINCT o FROM Orders o
+    JOIN FETCH o.orderLinks ol
+    WHERE o.route.routeId IN :routeIds
+      AND o.status = 'DANG_XU_LY'
+      AND o.orderType = :orderType
+      AND EXISTS (
+        SELECT 1 FROM OrderLinks link
+        WHERE link.orders = o AND link.status = 'MUA_SAU'
+      )
+    """)
+    Page<Orders> findProcessingOrdersWithBuyLaterLinks(
+            @Param("routeIds") Set<Long> routeIds,
+            @Param("orderType") OrderType orderType,
+            Pageable pageable
+    );
 }

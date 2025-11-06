@@ -34,4 +34,7 @@ public interface PackingRepository extends JpaRepository<Packing, Long> {
     Optional<Packing> findByPackingCode(String packingCode);
 
     Page<Packing> findByStatus(PackingStatus packingStatus, Pageable pageable);
+
+    @Query("SELECT p.packingList FROM Packing p WHERE p.packingCode = :packingCode")
+    List<String> findPackingListByCode(@Param("packingCode") String packingCode);
 }

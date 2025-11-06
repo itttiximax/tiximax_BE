@@ -3,6 +3,7 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Purchases;
 import com.tiximax.txm.Model.PendingShipmentPurchase;
 import com.tiximax.txm.Model.PurchaseDetail;
+import com.tiximax.txm.Model.PurchasePendingShipment;
 import com.tiximax.txm.Model.PurchaseRequest;
 import com.tiximax.txm.Service.PurchaseService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -31,6 +32,7 @@ public class PurchaseController {
         Purchases purchase = purchaseService.createPurchase(orderCode, purchaseRequest);
         return ResponseEntity.ok(purchase);
     }
+
     @PostMapping("auction/add")
     public ResponseEntity<Purchases> addAuction(@RequestParam String orderCode, @RequestBody PurchaseRequest purchaseRequest) {
         Purchases purchase = purchaseService.createAuction(orderCode, purchaseRequest);
@@ -69,6 +71,17 @@ public class PurchaseController {
     @GetMapping("/pending-shipment")
     public ResponseEntity<List<PendingShipmentPurchase>> getPurchasesWithPendingShipment() {
         List<PendingShipmentPurchase> result = purchaseService.getPurchasesWithPendingShipment();
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/lack-shipment-code/{page}/{size}")
+    public ResponseEntity<Page<PurchasePendingShipment>> getPendingShipmentPurchases(
+            @PathVariable int page,
+            @PathVariable int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("purchaseTime").descending());
+        Page<PurchasePendingShipment> result = purchaseService.getPendingShipmentPurchases(pageable);
+
         return ResponseEntity.ok(result);
     }
 

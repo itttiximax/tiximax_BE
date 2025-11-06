@@ -82,4 +82,18 @@ public class PackingController {
         return ResponseEntity.ok(packingsPage);
     }
 
+    @PatchMapping("/packing/{packingCode}/remove-shipments")
+    public ResponseEntity<Packing> removeShipmentsFromPacking(
+            @PathVariable String packingCode,
+            @RequestBody List<String> shipmentCodes) {
+        Packing updatedPacking = packingService.removeShipmentFromPacking(packingCode, shipmentCodes);
+        return ResponseEntity.ok(updatedPacking);
+    }
+
+    @GetMapping("/{packingCode}/list")
+    public ResponseEntity<List<String>> getPackingList(
+            @PathVariable String packingCode) {
+        List<String> packingList = packingService.getPackingListByCode(packingCode);
+        return ResponseEntity.ok(packingList);
+    }
 }

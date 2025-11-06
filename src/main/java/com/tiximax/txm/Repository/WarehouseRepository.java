@@ -27,4 +27,6 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     List<Warehouse> findByTrackingCodeIn(@Param("trackingCodes") List<String> trackingCodes);
 
     Optional<Warehouse> findByTrackingCode(String trackingCode);
+
+    List<Warehouse> findByPackingPackingIdAndTrackingCodeIn(Long packingId, List<String> trackingCodes);
 }

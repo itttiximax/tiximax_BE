@@ -106,12 +106,6 @@ public class PackingService {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng nào liên quan đến các mã vận đơn bạn cung cấp!");
         }
 
-//        for (Orders order : orders) {
-//            if (!order.getStatus().equals(OrderStatus.CHO_DONG_GOI)) {
-//                throw new IllegalArgumentException("Đơn hàng " + order.getOrderCode() + " chưa đủ điều kiện để đóng gói!");
-//            }
-//        }
-
         for (Orders order : orders) {
             if (!(order.getStatus().equals(OrderStatus.CHO_DONG_GOI) || order.getStatus().equals(OrderStatus.DANG_XU_LY))) {
                 throw new IllegalArgumentException("Đơn hàng " + order.getOrderCode() + " chưa đủ điều kiện để đóng gói!");
@@ -166,13 +160,6 @@ public class PackingService {
         }
 
         for (Orders order : orders) {
-//            boolean allPacked = order.getOrderLinks().stream()
-//                    .allMatch(orderLink -> orderLink.getStatus().equals(OrderLinkStatus.DA_DONG_GOI));
-//            if (allPacked) {
-//                order.setStatus(OrderStatus.CHO_CHUYEN_BAY);
-////                order.setPacking(packing);
-//                ordersRepository.save(order);
-//            }
             order.setStatus(OrderStatus.DANG_XU_LY);
         }
         ordersService.addProcessLog(null, packing.getPackingCode(), ProcessLogAction.DA_DONG_GOI);
@@ -289,10 +276,6 @@ public class PackingService {
     }
 
     public Page<Packing> getPackingsWithFlightStatus(Pageable pageable) {
-//        Staff staff = (Staff) accountUtils.getAccountCurrent();
-//        if (staff == null || staff.getWarehouseLocation() == null) {
-//            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
-//        }
         Page<Packing> packings = packingRepository.findByStatus(PackingStatus.DA_BAY, pageable);
         packings.getContent().forEach(packing -> {
             List<String> filteredList = packing.getPackingList().stream()
@@ -301,5 +284,69 @@ public class PackingService {
             packing.setPackingList(filteredList);
         });
         return packings;
+    }
+
+    public Packing removeShipmentFromPacking(String packingCode, List<String> shipmentCodesToRemove) {
+        Packing packing = packingRepository.findByPackingCode(packingCode)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy " + packingCode));
+
+        if (packing.getStatus() == PackingStatus.DA_BAY) {
+            throw new IllegalArgumentException("Không thể gỡ hàng khỏi packing đã bay!");
+        }
+
+        List<Warehouse> warehousesToRemove = warehouseRepository.findByPackingPackingIdAndTrackingCodeIn(
+                packing.getPackingId(), shipmentCodesToRemove);
+
+        if (warehousesToRemove.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy mã vận đơn nào để gỡ!");
+        }
+
+        List<String> currentPackingList = new ArrayList<>(packing.getPackingList());
+        currentPackingList.removeAll(shipmentCodesToRemove);
+        packing.setPackingList(currentPackingList);
+
+        Set<Orders> affectedOrders = new HashSet<>();
+
+        for (Warehouse warehouse : warehousesToRemove) {
+            warehouse.setPacking(null);
+            for (OrderLinks orderLink : warehouse.getOrderLinks()) {
+                orderLink.setStatus(OrderLinkStatus.DA_NHAP_KHO_NN);
+            }
+
+            affectedOrders.add(warehouse.getOrders());
+            warehouseRepository.save(warehouse);
+        }
+        for (Orders order : affectedOrders) {
+            boolean hasPackedItems = order.getWarehouses().stream()
+                    .anyMatch(w -> w.getPacking() != null);
+
+            if (!hasPackedItems) {
+                order.setStatus(OrderStatus.DANG_XU_LY);
+            }
+            ordersRepository.save(order);
+        }
+
+        if (currentPackingList.isEmpty()) {
+            packingRepository.delete(packing);
+            return null;
+        }
+
+        packingRepository.save(packing);
+
+        ordersService.addProcessLog(
+                null,
+                packing.getPackingCode(),
+                ProcessLogAction.DA_CHINH_SUA
+        );
+
+        return packing;
+    }
+
+    public List<String> getPackingListByCode(String packingCode) {
+        List<String> list = packingRepository.findPackingListByCode(packingCode);
+        if (list == null || list.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy packingList cho mã: " + packingCode);
+        }
+        return list;
     }
 }
