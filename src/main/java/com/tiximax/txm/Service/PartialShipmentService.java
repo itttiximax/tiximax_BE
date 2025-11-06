@@ -298,11 +298,11 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
     payment.setPaymentType(PaymentType.MA_QR);
     payment.setAmount(finalAmount);
     payment.setCollectedAmount(qrAmount);
-    payment.setStatus(qrAmount.compareTo(BigDecimal.ZERO) == 0 ? PaymentStatus.DA_THANH_TOAN_SHIP : PaymentStatus.CHO_THANH_TOAN_SHIP);
+    payment.setStatus( PaymentStatus.CHO_THANH_TOAN_SHIP);
     payment.setActionAt(LocalDateTime.now());
     payment.setCustomer(commonCustomer);
     payment.setStaff(currentStaff);
-    payment.setIsMergedPayment(true);
+    payment.setIsMergedPayment(false);
     payment.setPartialShipments(new HashSet<>(createdPartials));
 
     // === Tạo QR ===
@@ -322,13 +322,21 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
         partialShipmentRepository.save(partial);
     });
 
-    for (Orders order : ordersList) {
-        order.setLeftoverMoney(BigDecimal.ZERO);
-        // Chưa đúng logic update Order status
+  for (Orders order : ordersList) {
+    order.setLeftoverMoney(BigDecimal.ZERO);
+
+    // Chỉ chuyển sang CHO_THANH_TOAN_SHIP nếu đơn đã đủ hàng
+    if (order.getStatus() == OrderStatus.DA_DU_HANG) {
         order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
         ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
-        ordersRepository.save(order);
+    } else {
+        // Nếu chưa đủ hàng, chỉ log thông tin nhưng không đổi trạng thái
+        ordersService.addProcessLog(order, savedPayment.getPaymentCode(),
+                ProcessLogAction.TAO_THANH_TOAN_HANG);
     }
+
+    ordersRepository.save(order);
+}
 
     // === Lưu số dư nếu dùng ===
     if (isUseBalance && usedBalance.compareTo(BigDecimal.ZERO) > 0) {
