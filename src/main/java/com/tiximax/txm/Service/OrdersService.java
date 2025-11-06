@@ -572,7 +572,7 @@ public class OrdersService {
             throw new IllegalStateException("Bạn không có quyền truy cập đơn hàng của khách hàng này!");
         }
         
-        return orderLinksRepository.findByCustomerCodeAndShipmentCodeNotNullAndStatus(
+        return orderLinksRepository.findLinksInWarehouseWithoutPartialShipment(
                 customerCode,
                 OrderLinkStatus.DA_NHAP_KHO_VN
         );

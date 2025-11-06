@@ -33,8 +33,9 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
           WHERE ol.orders.customer.customerCode = :customerCode
             AND ol.shipmentCode IS NOT NULL
             AND ol.status = :status
+            AND ol.partialShipment IS NULL
       """)
-      List<OrderLinks> findByCustomerCodeAndShipmentCodeNotNullAndStatus(
+      List<OrderLinks> findLinksInWarehouseWithoutPartialShipment(
               @Param("customerCode") String customerCode,
               @Param("status") OrderLinkStatus status
       );
