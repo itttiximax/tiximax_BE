@@ -36,7 +36,6 @@ public class PartialShipmentController {
     @GetMapping("/{id}")
     public ResponseEntity<PartialShipment> getPartialShipmentById(@PathVariable Long id) {
     Optional<PartialShipment> partialShipment = partialShipmentService.getById(id);
-
     return partialShipment.map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
 }
