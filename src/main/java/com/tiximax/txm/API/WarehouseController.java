@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @CrossOrigin
@@ -38,7 +39,12 @@ public class WarehouseController {
         Warehouse warehouse = warehouseService.createWarehouseEntryByShipmentCode(shipmentCode, warehouseRequest);
         return ResponseEntity.ok(warehouse);
     }
-
+        @GetMapping("/{id}")
+    public ResponseEntity<Warehouse> getWarehouseById(@PathVariable Long id) {
+        Optional<Warehouse> warehouseOptional = warehouseService.getWarehouseById(id);
+        return warehouseOptional.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
     @PostMapping("/list-shipment")
     public ResponseEntity<String> createWarehouseEntryByListShipmentCode(@RequestBody List<String> shipmentCodes) {
         return ResponseEntity.ok(warehouseService.createWarehouseEntryByListShipmentCodes(shipmentCodes));

@@ -1,6 +1,8 @@
 package com.tiximax.txm.API;
 
+import com.tiximax.txm.Entity.Packing;
 import com.tiximax.txm.Entity.PartialShipment;
+import com.tiximax.txm.Entity.Payment;
 import com.tiximax.txm.Model.TrackingCodesRequest;
 import com.tiximax.txm.Service.PartialShipmentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -9,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
+
 
 @RestController
 @CrossOrigin
@@ -21,11 +25,20 @@ public class PartialShipmentController {
     private PartialShipmentService partialShipmentService;
 
     @PostMapping("/partial-shipment/{isUseBalance}/{bankId}/{customerVoucherId}")
-    public ResponseEntity<List<PartialShipment>> createPartialShipment(@RequestBody TrackingCodesRequest selectedTrackingCode,
+    public ResponseEntity<Payment> createPartialShipment(@RequestBody TrackingCodesRequest selectedTrackingCode,
                                                                     @PathVariable boolean isUseBalance,
                                                                     @PathVariable Long bankId,
                                                                     @RequestParam(required = false) Long customerVoucherId) {
         List<PartialShipment> partial = partialShipmentService.createPartialShipment(selectedTrackingCode, isUseBalance, bankId, customerVoucherId);
-        return ResponseEntity.ok(partial);
+        Payment payment = partial.get(0).getPayment();                                                             
+        return ResponseEntity.ok(payment);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PartialShipment> getPartialShipmentById(@PathVariable Long id) {
+    Optional<PartialShipment> partialShipment = partialShipmentService.getById(id);
+
+    return partialShipment.map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+}
 }

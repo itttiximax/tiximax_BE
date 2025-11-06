@@ -321,4 +321,7 @@ public List<Map<String, Object>> getReadyForDeliveryOrders(Pageable pageable) {
 
     return result;
 }
+    public Optional<Domestic> getDomesticById(Long id) {
+        return domesticRepository.findById(id);
+    }
 }

@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @CrossOrigin
@@ -46,4 +47,10 @@ public class DomesticController {
         List<DomesticResponse> domestic = domesticService.TransferToCustomer();
         return ResponseEntity.ok(domestic);
     }
+     @GetMapping("/{id}")
+    public ResponseEntity<Domestic> getDomesticById(@PathVariable Long id) {
+    Optional<Domestic> domestic = domesticService.getDomesticById(id);
+    return domestic.map(ResponseEntity::ok)
+                   .orElseGet(() -> ResponseEntity.notFound().build());
+}
 }

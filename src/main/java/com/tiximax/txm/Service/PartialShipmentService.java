@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -174,13 +175,11 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
 
     List<PartialShipment> createdPartials = new ArrayList<>();
 
-    // Lấy tất cả OrderLinks theo tracking codes
     List<OrderLinks> allLinks = orderLinksRepository.findByShipmentCodeIn(allTrackingCodes);
     if (allLinks.isEmpty()) {
         throw new RuntimeException("Không tìm thấy link nào cho các mã vận đơn đã chọn!");
     }
 
-    // Gom nhóm theo đơn hàng (Orders)
     Map<Orders, List<OrderLinks>> orderToLinksMap = allLinks.stream()
             .collect(Collectors.groupingBy(OrderLinks::getOrders));
 
@@ -325,12 +324,10 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
   for (Orders order : ordersList) {
     order.setLeftoverMoney(BigDecimal.ZERO);
 
-    // Chỉ chuyển sang CHO_THANH_TOAN_SHIP nếu đơn đã đủ hàng
     if (order.getStatus() == OrderStatus.DA_DU_HANG) {
         order.setStatus(OrderStatus.CHO_THANH_TOAN_SHIP);
         ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
     } else {
-        // Nếu chưa đủ hàng, chỉ log thông tin nhưng không đổi trạng thái
         ordersService.addProcessLog(order, savedPayment.getPaymentCode(),
                 ProcessLogAction.TAO_THANH_TOAN_HANG);
     }
@@ -338,12 +335,10 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
     ordersRepository.save(order);
 }
 
-    // === Lưu số dư nếu dùng ===
     if (isUseBalance && usedBalance.compareTo(BigDecimal.ZERO) > 0) {
         authenticationRepository.save(commonCustomer);
     }
 
-    // === Đánh dấu voucher đã dùng ===
     if (customerVoucher != null) {
         customerVoucher.setUsed(true);
         customerVoucher.setUsedDate(LocalDateTime.now());
@@ -360,10 +355,11 @@ public List<PartialShipment> createPartialShipment(TrackingCodesRequest tracking
                     "message", "Thanh toán phí ship gộp đã được tạo!"
             )
     );
-
     return createdPartials;
 }
-
+ public Optional<PartialShipment> getById(Long id) {
+        return partialShipmentRepository.findById(id);
+    }
     private BigDecimal calculateTotalShippingFee(Long routeId, List<String> selectedTrackingCodes) {
     List<Warehouse> warehouses = warehousereRepository.findByTrackingCodeIn(selectedTrackingCodes);
 
