@@ -3,7 +3,7 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Packing;
 import com.tiximax.txm.Entity.PartialShipment;
 import com.tiximax.txm.Entity.Payment;
-import com.tiximax.txm.Model.TrackingCodesRequest;
+import com.tiximax.txm.Model.ShipmentCodesRequest;
 import com.tiximax.txm.Service.PartialShipmentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class PartialShipmentController {
     private PartialShipmentService partialShipmentService;
 
     @PostMapping("/partial-shipment/{isUseBalance}/{bankId}/{customerVoucherId}")
-    public ResponseEntity<Payment> createPartialShipment(@RequestBody TrackingCodesRequest selectedTrackingCode,
+    public ResponseEntity<Payment> createPartialShipment(@RequestBody ShipmentCodesRequest selectedTrackingCode,
                                                                     @PathVariable boolean isUseBalance,
                                                                     @PathVariable Long bankId,
                                                                     @RequestParam(required = false) Long customerVoucherId) {
@@ -33,7 +33,6 @@ public class PartialShipmentController {
         Payment payment = partial.get(0).getPayment();                                                             
         return ResponseEntity.ok(payment);
     }
-
     @GetMapping("/{id}")
     public ResponseEntity<PartialShipment> getPartialShipmentById(@PathVariable Long id) {
     Optional<PartialShipment> partialShipment = partialShipmentService.getById(id);
