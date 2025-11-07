@@ -122,4 +122,7 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
     );
 
     List<Orders> findByStaff_AccountIdAndCreatedAtBetween(Long accountId, LocalDateTime startDate, LocalDateTime endDate);
+        Page<Orders> findByStaffAccountId(Long accountId, Pageable pageable);
+        Page<Orders> findByRouteRouteIdIn(Set<Long> routeIds, Pageable pageable);
+
 }

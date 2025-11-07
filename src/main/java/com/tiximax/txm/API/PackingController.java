@@ -39,7 +39,14 @@ public class PackingController {
         Packing packing = packingService.createPacking(request);
         return ResponseEntity.ok(packing);
     }
-
+    @GetMapping("/{id}")
+    public ResponseEntity<Packing> getPackingById(@PathVariable Long id) {
+        Packing packing = packingService.getPackingById(id);
+        if (packing == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(packing);
+    }
     @GetMapping("/in-warehouse/{page}/{size}")
     public ResponseEntity<Page<PackingInWarehouse>> getPackingsInWarehouse(@PathVariable int page, @PathVariable int size) {
         Sort sort = Sort.by("packedDate").descending();
@@ -47,7 +54,6 @@ public class PackingController {
         Page<PackingInWarehouse> packingsPage = packingService.getPackingsInWarehouse(pageable);
         return ResponseEntity.ok(packingsPage);
     }
-
     @GetMapping("/awaiting-flight/{page}/{size}")
     public ResponseEntity<Page<Packing>> getPackingsAwaitingFlight(@PathVariable int page, @PathVariable int size) {
         Sort sort = Sort.by("packedDate").descending();

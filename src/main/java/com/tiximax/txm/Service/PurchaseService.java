@@ -75,9 +75,10 @@ public class PurchaseService {
             throw new IllegalArgumentException("Tất cả mã phải thuộc cùng đơn hàng " + orderCode);
         }
       
-        if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
-            throw new IllegalArgumentException("Một hoặc nhiều mã đã có mã vận đơn, không thể mua lại!");
-        }
+        // if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
+        //     throw new IllegalArgumentException("Một hoặc nhiều mã đã có mã vận đơn, không thể mua lại!");
+        // }
+
         boolean allActive = orderLinks.stream()
                 .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA);
         if (!allActive) {
@@ -151,9 +152,9 @@ public class PurchaseService {
         if (!allBelongToOrder) {
             throw new IllegalArgumentException("Tất cả mã phải thuộc cùng đơn hàng " + orderCode);
         }
-          if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
-            throw new IllegalArgumentException("Mã vận đơn đã tồn tại trong hệ thống, không thể xử lý!");
-        }
+        //   if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
+        //     throw new IllegalArgumentException("Mã vận đơn đã tồn tại trong hệ thống, không thể xử lý!");
+        // }
 
         boolean allActive = orderLinks.stream()
                 .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA ||link.getStatus() == OrderLinkStatus.DAU_GIA_THANH_CONG) ;

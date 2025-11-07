@@ -112,6 +112,10 @@ public class WarehouseService {
 
         return warehouse;
     }
+    public Optional<Warehouse> getWarehouseById(Long id) {
+    return warehouseRepository.findById(id);
+}
+    
 
     public String createWarehouseEntryByListShipmentCodes(List<String> shipmentCodes) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();

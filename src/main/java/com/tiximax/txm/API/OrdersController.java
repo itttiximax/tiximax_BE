@@ -86,10 +86,12 @@ public class OrdersController {
         return ResponseEntity.ok(orderType);
     }
 
-    @GetMapping
-    public ResponseEntity<List<Orders>> getAllOrders() {
-        List<Orders> orders = ordersService.getAllOrders();
-        return ResponseEntity.ok(orders);
+    @GetMapping("/{page}/{size}")
+    public ResponseEntity<Page<Orders>> getAllOrders(@PathVariable int page,@PathVariable int size) {
+         Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Orders> ordersPage = ordersService.getAllOrdersPaging(pageable);
+        return ResponseEntity.ok(ordersPage);
     }
 
     @GetMapping("/{page}/{size}/{status}/paging")
@@ -105,7 +107,6 @@ public class OrdersController {
         List<Orders> orders = ordersService.getOrdersForCurrentStaff();
         return ResponseEntity.ok(orders);
     }
-
     @GetMapping("/for-payment/{page}/{size}/{status}")
     public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
         Sort sort = Sort.by("createdAt").descending();

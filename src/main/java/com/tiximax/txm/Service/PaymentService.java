@@ -490,7 +490,6 @@ public class PaymentService {
                 if (allLinksDone) {
                     order.setStatus(OrderStatus.CHO_GIAO);
                 }
-            
                 ordersRepository.save(order);
                 ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
             }
@@ -498,7 +497,6 @@ public class PaymentService {
         }
     }
 
-    System.out.println("=== Hoàn tất confirmedPaymentShipment ===");
     return paymentRepository.save(payment);
 }
 
