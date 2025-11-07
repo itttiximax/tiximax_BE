@@ -295,4 +295,10 @@ public class AuthenticationController {
         }
     }
 
+    @GetMapping("/my-performance/current-month")
+    public ResponseEntity<Map<String, StaffPerformance>> getMyCurrentMonthPerformance() {
+        Map<String, StaffPerformance> performanceMap =
+                authenticationService.getMyCurrentMonthPerformanceMap();
+        return ResponseEntity.ok(performanceMap);
+    }
 }

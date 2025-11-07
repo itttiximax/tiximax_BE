@@ -120,4 +120,6 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
             @Param("orderType") OrderType orderType,
             Pageable pageable
     );
+
+    List<Orders> findByStaff_AccountIdAndCreatedAtBetween(Long accountId, LocalDateTime startDate, LocalDateTime endDate);
 }

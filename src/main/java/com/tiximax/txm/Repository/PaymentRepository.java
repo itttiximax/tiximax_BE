@@ -1,5 +1,6 @@
 package com.tiximax.txm.Repository;
 
+import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Entity.Payment;
 import com.tiximax.txm.Entity.Staff;
 import com.tiximax.txm.Enums.OrderStatus;
@@ -8,6 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,6 +54,15 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findPaymentsByStaffAndPartialStatus(
             @Param("staffId") Long staffId,
             @Param("status") OrderStatus status
+    );
+
+    long countByStaff_AccountIdAndOrdersIn(Long accountId, List<Orders> orders);
+
+    List<Payment> findByStaff_AccountIdAndStatusAndActionAtBetween(
+            Long staffId,
+            PaymentStatus status,
+            LocalDateTime start,
+            LocalDateTime end
     );
 }
 
