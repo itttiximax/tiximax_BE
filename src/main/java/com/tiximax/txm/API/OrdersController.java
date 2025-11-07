@@ -107,7 +107,6 @@ public class OrdersController {
         List<Orders> orders = ordersService.getOrdersForCurrentStaff();
         return ResponseEntity.ok(orders);
     }
-
     @GetMapping("/for-payment/{page}/{size}/{status}")
     public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
         Sort sort = Sort.by("createdAt").descending();
