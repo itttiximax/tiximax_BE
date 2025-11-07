@@ -5,9 +5,11 @@ import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.AccountRoles;
 import com.tiximax.txm.Enums.AccountStatus;
 import com.tiximax.txm.Enums.OrderStatus;
+import com.tiximax.txm.Enums.PaymentStatus;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
@@ -92,6 +94,9 @@ public class AuthenticationService implements UserDetailsService {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -547,4 +552,77 @@ public class AuthenticationService implements UserDetailsService {
         return customer;
 }
 
+    public Map<String, StaffPerformance> getMyCurrentMonthPerformanceMap() {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        if (!(currentAccount instanceof Staff staff) ||
+                (staff.getRole() != AccountRoles.STAFF_SALE && staff.getRole() != AccountRoles.LEAD_SALE)) {
+            throw new SecurityException("Bạn không có quyền xem hiệu suất cá nhân!");
+        }
+
+        LocalDate now = LocalDate.now();
+        LocalDateTime startDate = now.withDayOfMonth(1).atStartOfDay();
+        LocalDateTime endDate = LocalDateTime.now();
+
+        StaffPerformance perf = new StaffPerformance();
+        perf.setStaffCode(staff.getStaffCode());
+        perf.setName(staff.getName());
+        perf.setDepartment(staff.getDepartment());
+
+        List<Orders> orders = ordersRepository.findByStaff_AccountIdAndCreatedAtBetween(
+                staff.getAccountId(), startDate, endDate);
+
+        long totalOrders = orders.size();
+        perf.setTotalOrders(totalOrders);
+
+        BigDecimal totalGoods = orders.stream()
+                .map(Orders::getFinalPriceOrder)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        perf.setTotalGoods(totalGoods);
+
+        BigDecimal totalShip = paymentRepository.findByStaff_AccountIdAndStatusAndActionAtBetween(
+                        staff.getAccountId(),
+                        PaymentStatus.DA_THANH_TOAN_SHIP,
+                        startDate,
+                        endDate
+                ).stream()
+                .map(Payment::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        perf.setTotalShip(totalShip);
+
+        long totalParcels = orders.stream()
+                .flatMap(o -> o.getOrderLinks().stream())
+                .count();
+        perf.setTotalParcels(totalParcels);
+
+        Double totalNetWeight = orders.stream()
+                .flatMap(o -> o.getWarehouses().stream())
+                .map(Warehouse::getNetWeight)
+                .filter(Objects::nonNull)
+                .mapToDouble(Double::doubleValue)
+                .sum();
+
+        perf.setTotalNetWeight(Math.round(totalNetWeight * 100.0) / 100.0);
+
+        long completedOrders = orders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.DA_GIAO)
+                .count();
+        double completionRate = totalOrders > 0 ? (completedOrders * 100.0 / totalOrders) : 0.0;
+        perf.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
+
+        long badFeedback = orders.stream()
+                .map(Orders::getFeedback)
+                .filter(Objects::nonNull)
+                .filter(f -> f.getRating() < 3)
+                .count();
+        perf.setBadFeedbackCount(badFeedback);
+
+        Map<String, StaffPerformance> result = new HashMap<>();
+        result.put(staff.getStaffCode(), perf);
+
+        return result;
+    }
 }
