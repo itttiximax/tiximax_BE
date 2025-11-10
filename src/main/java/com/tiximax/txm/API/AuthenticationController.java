@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -299,6 +301,30 @@ public class AuthenticationController {
     public ResponseEntity<Map<String, StaffPerformance>> getMyCurrentMonthPerformance() {
         Map<String, StaffPerformance> performanceMap =
                 authenticationService.getMyCurrentMonthPerformanceMap();
+        return ResponseEntity.ok(performanceMap);
+    }
+
+    @GetMapping("/my-performance")
+    public ResponseEntity<Map<String, StaffPerformance>> getMyPerformance(
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+
+        LocalDate start;
+        LocalDate end;
+        try {
+            start = LocalDate.parse(startDate);
+            end = LocalDate.parse(endDate);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("startDate và endDate phải đúng định dạng YYYY-MM-DD");
+        }
+
+        if (end.isBefore(start)) {
+            throw new IllegalArgumentException("endDate phải sau hoặc bằng startDate");
+        }
+
+        Map<String, StaffPerformance> performanceMap =
+                authenticationService.getMyPerformanceByDateRange(start, end);
+
         return ResponseEntity.ok(performanceMap);
     }
 }
