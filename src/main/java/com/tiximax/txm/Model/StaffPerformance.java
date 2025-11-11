@@ -32,4 +32,6 @@ public class StaffPerformance {
 
     private Double totalNetWeight;
 
+    private long newCustomersInPeriod;
+
 }
