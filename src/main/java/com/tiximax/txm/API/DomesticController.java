@@ -4,6 +4,8 @@ import com.tiximax.txm.Entity.Domestic;
 import com.tiximax.txm.Model.CreateDomesticRequest;
 import com.tiximax.txm.Model.DomesticResponse;
 import com.tiximax.txm.Service.DomesticService;
+
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -11,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,5 +56,27 @@ public class DomesticController {
     Optional<Domestic> domestic = domesticService.getDomesticById(id);
     return domestic.map(ResponseEntity::ok)
                    .orElseGet(() -> ResponseEntity.notFound().build());
+}
+    @GetMapping("/delivered-today")
+    public ResponseEntity<List<DomesticResponse>> getDomesticDeliveredOnDaily() {
+        List<DomesticResponse> delivered = domesticService.getDomesticDeliveredOnDaily();
+        return ResponseEntity.ok(delivered);
+    }
+    @GetMapping("/ready-by-customer/{customerCode}")
+    public ResponseEntity<List<Map<String, Object>>> getReadyByCustomerCode(
+        @PathVariable String customerCode) {
+        List<Map<String, Object>> result = domesticService.getReadyForDeliveryOrdersByCustomerCode(customerCode);
+        return ResponseEntity.ok(result);
+    }
+    @PostMapping("/transfer-by-customer/{customerCode}")
+    public ResponseEntity<List<DomesticResponse>> transferByCustomerCode(@PathVariable String customerCode) {
+    if (customerCode == null || customerCode.trim().isEmpty()) {
+        return ResponseEntity.badRequest().build();
+    }
+
+    String code = customerCode.trim().toUpperCase();
+    List<DomesticResponse> result = domesticService.transferByCustomerCode(code);
+
+    return ResponseEntity.ok(result);
 }
 }

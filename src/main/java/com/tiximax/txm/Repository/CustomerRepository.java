@@ -30,4 +30,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     long countByStaffId(@Param("staffId") Long staffId);
 
     Optional<Customer> findByCustomerCode(String customerCode);
+    
+     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

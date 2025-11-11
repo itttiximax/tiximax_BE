@@ -10,11 +10,20 @@ import com.tiximax.txm.Repository.OrdersRepository;
 import com.tiximax.txm.Repository.PackingRepository;
 import com.tiximax.txm.Repository.PartialShipmentRepository;
 import com.tiximax.txm.Utils.AccountUtils;
+
+import io.swagger.v3.oas.annotations.Operation;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -113,7 +122,125 @@ public class DomesticService {
 
     return domestic;
 }
+    public List<Map<String, Object>> getReadyForDeliveryOrdersByCustomerCode(String customerCode) {
+    // 1. Lấy toàn bộ dữ liệu sẵn sàng giao
+    List<Map<String, Object>> allReadyData = getReadyForDeliveryOrders(Pageable.unpaged());
+    if (allReadyData.isEmpty()) {
+        return Collections.emptyList();
+    }
+
+    // 2. Lọc theo customerCode
+    return allReadyData.stream()
+            .filter(customerData -> {
+                String name = (String) customerData.get("customerName");
+                List<Map<String, Object>> addresses = (List<Map<String, Object>>) customerData.get("addresses");
+                if (addresses == null || addresses.isEmpty()) return false;
+
+                // Lấy 1 packing đầu tiên để truy vết customer
+                List<Map<String, Object>> packings = (List<Map<String, Object>>) addresses.get(0).get("packings");
+                if (packings == null || packings.isEmpty()) return false;
+
+                String firstPackingCode = (String) packings.get(0).get("packingCode");
+
+                return packingRepository.findByPackingCode(firstPackingCode)
+                        .flatMap(packing -> packing.getWarehouses().stream().findFirst())
+                        .map(Warehouse::getOrders)
+                        .map(Orders::getCustomer)
+                        .map(Customer::getCustomerCode)
+                        .map(code -> code.equalsIgnoreCase(customerCode))
+                        .orElse(false);
+            })
+            .collect(Collectors.toList());
+}
     
+public List<DomesticResponse> transferByCustomerCode(String customerCode) {
+
+    List<Map<String, Object>> readyData = getReadyForDeliveryOrders(Pageable.unpaged());
+    if (readyData.isEmpty()) {
+        return Collections.emptyList();
+    }
+
+    Optional<Map<String, Object>> customerDataOpt = readyData.stream()
+            .filter(data -> {
+                String name = (String) data.get("customerName");
+                List<Map<String, Object>> addresses = (List<Map<String, Object>>) data.get("addresses");
+                if (addresses == null || addresses.isEmpty()) return false;
+
+                List<Map<String, Object>> packings = (List<Map<String, Object>>) addresses.get(0).get("packings");
+                if (packings == null || packings.isEmpty()) return false;
+
+                String firstPackingCode = (String) packings.get(0).get("packingCode");
+                return packingRepository.findByPackingCode(firstPackingCode)
+                        .map(p -> p.getWarehouses())
+                        .flatMap(warehouses -> warehouses.stream().findFirst())
+                        .map(Warehouse::getOrders)
+                        .map(Orders::getCustomer)
+                        .map(Customer::getCustomerCode)
+                        .map(code -> code.equalsIgnoreCase(customerCode))
+                        .orElse(false);
+            })
+            .findFirst();
+
+    if (customerDataOpt.isEmpty()) {
+        return Collections.emptyList();
+    }
+
+    Map<String, Object> customerData = customerDataOpt.get();
+    String customerName = (String) customerData.get("customerName");
+    List<Map<String, Object>> addresses = (List<Map<String, Object>>) customerData.get("addresses");
+
+    Staff currentStaff = (Staff) accountUtils.getAccountCurrent();
+    WarehouseLocation currentLocation = currentStaff != null ? currentStaff.getWarehouseLocation() : null;
+    List<Domestic> createdDomestics = new ArrayList<>();
+
+    for (Map<String, Object> addressData : addresses) {
+        Long addressId = ((Number) addressData.get("addressId")).longValue();
+        Address address = addressRepository.findById(addressId).orElse(null);
+        if (address == null) continue;
+
+        List<Map<String, Object>> packingsData = (List<Map<String, Object>>) addressData.get("packings");
+        if (packingsData == null || packingsData.isEmpty()) continue;
+
+        Set<Packing> packingSet = new HashSet<>();
+        List<String> shippingList = new ArrayList<>();
+
+        for (Map<String, Object> packingData : packingsData) {
+            String packingCode = (String) packingData.get("packingCode");
+            Packing packing = packingRepository.findByPackingCode(packingCode).orElse(null);
+            if (packing == null) continue;
+
+            packingSet.add(packing);
+            Set<String> trackingCodes = (Set<String>) packingData.get("trackingCodes");
+            if (trackingCodes != null) {
+                shippingList.addAll(trackingCodes);
+            }
+        }
+
+        if (packingSet.isEmpty()) continue;
+
+        Domestic domestic = new Domestic();
+        domestic.setPackings(packingSet);
+        domestic.setShippingList(shippingList);
+        domestic.setStatus(DomesticStatus.DA_GIAO);
+        domestic.setTimestamp(LocalDateTime.now());
+        domestic.setNote("Giao hàng tự động cho khách: " + customerName + " (Mã: " + customerCode + ")");
+        domestic.setToAddress(address);
+        domestic.setStaff(currentStaff);
+        domestic.setFromLocation(currentLocation);
+        domestic.setLocation(currentLocation);
+        domestic.setToLocation(null);
+
+        domestic = domesticRepository.save(domestic);
+        createdDomestics.add(domestic);
+
+        updateOrderLinksAndOrders(shippingList, domestic);
+    }
+
+    return createdDomestics.stream()
+            .map(DomesticResponse::fromEntity)
+            .collect(Collectors.toList());
+}
+
  public List<DomesticResponse> TransferToCustomer() {
     List<Map<String, Object>> dataList = getReadyForDeliveryOrders(Pageable.unpaged());
     List<Domestic> domesticList = new ArrayList<>();
@@ -324,4 +451,60 @@ public List<Map<String, Object>> getReadyForDeliveryOrders(Pageable pageable) {
     public Optional<Domestic> getDomesticById(Long id) {
         return domesticRepository.findById(id);
     }
+   public List<DomesticResponse> getDomesticDeliveredOnDaily() {
+    LocalDate today = LocalDate.now();
+    LocalDateTime startOfDay = today.atStartOfDay();
+    LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+
+    List<Domestic> domestics = domesticRepository.findDeliveredToday(
+        DomesticStatus.DA_GIAO, startOfDay, endOfDay
+    );
+
+    return domestics.stream()
+            .map(DomesticResponse::fromEntity)
+            .collect(Collectors.toList());
+}
+
+
+private void updateOrderLinksAndOrders(List<String> shipmentCodes, Domestic domestic) {
+    for (String shipmentCode : shipmentCodes) {
+        List<OrderLinks> links = orderLinksRepository.findByShipmentCode(shipmentCode);
+        for (OrderLinks link : links) {
+            link.setStatus(OrderLinkStatus.DA_GIAO);
+        }
+        orderLinksRepository.saveAll(links);
+
+        Set<Orders> orders = links.stream()
+                .map(OrderLinks::getOrders)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        for (Orders order : orders) {
+            boolean allDelivered = order.getOrderLinks().stream()
+                    .allMatch(l -> l.getStatus() == OrderLinkStatus.DA_GIAO || l.getStatus() == OrderLinkStatus.DA_HUY);
+
+            if (allDelivered && order.getStatus() != OrderStatus.DA_GIAO) {
+                order.setStatus(OrderStatus.DA_GIAO);
+                ordersRepository.save(order);
+                ordersService.addProcessLog(order, domestic.getDomesticId().toString(), ProcessLogAction.DA_GIAO);
+            }
+        }
+
+        // Xử lý PartialShipment tương tự
+        Set<PartialShipment> partials = links.stream()
+                .map(OrderLinks::getPartialShipment)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        for (PartialShipment partial : partials) {
+            boolean allDone = partial.getReadyLinks().stream()
+                    .allMatch(l -> l.getStatus() == OrderLinkStatus.DA_GIAO || l.getStatus() == OrderLinkStatus.DA_HUY);
+            if (allDone && partial.getStatus() != OrderStatus.DA_GIAO) {
+                partial.setStatus(OrderStatus.DA_GIAO);
+                partialShipmentRepository.save(partial);
+                ordersService.addProcessLog(partial.getOrders(), "PS#" + partial.getId(), ProcessLogAction.DA_GIAO);
+            }
+        }
+    }
+}
 }

@@ -231,6 +231,14 @@ public class OrdersService {
         return order;
     }
 
+    public Orders updateShipFee(Long orderId, BigDecimal shipFee) {
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+   //     order.setShipFee(shipFee);
+        ordersRepository.save(order);
+        return order;
+    }
+
     public Orders updateStatusOrderLink(Long OrderId,Long orderLinkId) {
         Orders order = ordersRepository.findById(OrderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
@@ -245,7 +253,6 @@ public class OrdersService {
         order.setLeftoverMoney(currentLeftover.subtract(orderLink.getFinalPriceVnd()));
         orderLinksRepository.save(orderLink);
         ordersRepository.save(order);
-
         List<OrderLinks> allOrderLinks = orderLinksRepository.findByOrdersOrderId(order.getOrderId());
        
         long countNhapKhoVN = allOrderLinks.stream()
@@ -577,7 +584,6 @@ public class OrdersService {
                 OrderLinkStatus.DA_NHAP_KHO_VN
         );
     }
-
     public List<OrderPayment> getOrdersShippingByCustomerCode(String customerCode) {
         Customer customer = authenticationRepository.findByCustomerCode(customerCode);
         if (customer == null) {

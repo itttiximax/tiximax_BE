@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 public class OrderLinkRequest {
 
     private String productLink;
-
+ 
     private Integer quantity;
 
     private BigDecimal priceWeb;

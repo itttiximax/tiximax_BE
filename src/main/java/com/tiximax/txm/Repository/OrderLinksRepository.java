@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -57,4 +58,8 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
       AND (:keyword IS NULL OR ol.shipmentCode LIKE %:keyword%)
     """)
     List<String> suggestShipmentCodes(@Param("keyword") String keyword);
+    
+    @Query("SELECT COUNT(ol) FROM OrderLinks ol WHERE ol.orders.createdAt BETWEEN :start AND :end")
+    long countByOrdersCreatedAtBetween(@Param("start") LocalDateTime start,
+                                       @Param("end") LocalDateTime end);
 }

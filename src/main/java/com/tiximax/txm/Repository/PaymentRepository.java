@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -64,5 +65,30 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             LocalDateTime start,
             LocalDateTime end
     );
+    @Query("""
+    SELECT COALESCE(SUM(p.collectedAmount), 0)
+    FROM Payment p
+    WHERE p.status IN (
+        com.tiximax.txm.Enums.PaymentStatus.DA_THANH_TOAN,
+        com.tiximax.txm.Enums.PaymentStatus.DA_THANH_TOAN_SHIP
+    )
+      AND p.actionAt BETWEEN :start AND :end """)
+        BigDecimal sumCollectedAmountBetween(@Param("start") LocalDateTime start,
+                                     @Param("end") LocalDateTime end);
+     @Query("""
+    SELECT COALESCE(SUM(p.collectedAmount), 0)
+    FROM Payment p
+    WHERE p.status = com.tiximax.txm.Enums.PaymentStatus.DA_THANH_TOAN_SHIP
+      AND p.actionAt BETWEEN :start AND :end """)
+        BigDecimal sumShipRevenueBetween(@Param("start") LocalDateTime start,
+                                        @Param("end") LocalDateTime end);
+
+        @Query("""
+    SELECT COALESCE(SUM(p.collectedAmount), 0)
+    FROM Payment p
+    WHERE p.status = com.tiximax.txm.Enums.PaymentStatus.DA_THANH_TOAN
+      AND p.actionAt BETWEEN :start AND :end """)
+        BigDecimal sumPurchaseBetween(@Param("start") LocalDateTime start,
+                                        @Param("end") LocalDateTime end);
 }
 
