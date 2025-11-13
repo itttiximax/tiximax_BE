@@ -291,7 +291,7 @@ public class PaymentService {
         }
 
         BigDecimal unitPrice;
-        if (ordersList.get(0).getOrderType() == OrderType.DAU_GIA) {
+        if (ordersList.get(0).getOrderType() == OrderType.KY_GUI) {
             unitPrice = ordersList.get(0).getRoute().getUnitDepositPrice();
         } else {
             unitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
