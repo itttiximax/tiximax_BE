@@ -58,10 +58,19 @@ public class PurchaseController {
     @PutMapping("/shipment/{purchaseId}")
     public ResponseEntity<Purchases> updateShipment(
             @PathVariable Long purchaseId,
+            @RequestBody String shipmentCode) {
+
+        Purchases updated = purchaseService.updateShipmentForPurchase(purchaseId, shipmentCode);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PutMapping("/shipment-ship-fee/{purchaseId}")
+    public ResponseEntity<Purchases> updateShipmentAnd(
+            @PathVariable Long purchaseId,
             @RequestBody UpdateShipmentRequest request)
             {
 
-        Purchases updated = purchaseService.updateShipmentForPurchase(purchaseId, request.getShipmentCode() , request.getShipFee());
+        Purchases updated = purchaseService.updateShipmentForPurchaseAndShipFee(purchaseId, request.getShipmentCode() , request.getShipFee());
         return ResponseEntity.ok(updated);
 }
 
@@ -88,4 +97,13 @@ public class PurchaseController {
         return ResponseEntity.ok(result);
     }
 
+      @GetMapping("/shipment-code/{page}/{size}")
+    public ResponseEntity<Page<PurchasePendingShipment>> getPendingShipmentFullPurchases(
+            @PathVariable int page,
+            @PathVariable int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PurchasePendingShipment> result = purchaseService.getPendingShipmentFullPurchases(pageable);
+        return ResponseEntity.ok(result);
+    }
 }
