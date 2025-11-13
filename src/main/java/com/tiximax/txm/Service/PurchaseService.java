@@ -303,7 +303,7 @@ public class PurchaseService {
                 .toList();
     }
 
-    public Purchases updateShipmentForPurchase(Long purchaseId, String shipmentCode) {
+    public Purchases updateShipmentForPurchase(Long purchaseId, String shipmentCode, BigDecimal shipFee) {
         if (shipmentCode == null || shipmentCode.trim().isEmpty()) {
             throw new IllegalArgumentException("Mã vận đơn không được để trống!");
         }
@@ -316,8 +316,19 @@ public class PurchaseService {
         Purchases purchase = purchasesRepository.findById(purchaseId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua!"));
 
+        var exchangeRate = purchase.getOrders().getExchangeRate();
+        var fee = shipFee.multiply(exchangeRate);
+
+        var order = purchase.getOrders();
+        order.setLeftoverMoney(
+        (order.getLeftoverMoney() == null ? BigDecimal.ZERO : order.getLeftoverMoney())
+            .add(fee)
+        );
+        
+
         for (OrderLinks link : purchase.getOrderLinks()) {
             link.setShipmentCode(shipmentCode);
+            link.setShipWeb(shipFee);
         }
 
         orderLinksRepository.saveAll(purchase.getOrderLinks());

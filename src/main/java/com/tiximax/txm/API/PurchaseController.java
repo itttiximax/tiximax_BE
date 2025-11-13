@@ -5,6 +5,7 @@ import com.tiximax.txm.Model.PendingShipmentPurchase;
 import com.tiximax.txm.Model.PurchaseDetail;
 import com.tiximax.txm.Model.PurchasePendingShipment;
 import com.tiximax.txm.Model.PurchaseRequest;
+import com.tiximax.txm.Model.UpdateShipmentRequest;
 import com.tiximax.txm.Service.PurchaseService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -56,11 +58,12 @@ public class PurchaseController {
     @PutMapping("/shipment/{purchaseId}")
     public ResponseEntity<Purchases> updateShipment(
             @PathVariable Long purchaseId,
-            @RequestBody String shipmentCode) {
+            @RequestBody UpdateShipmentRequest request)
+            {
 
-        Purchases updated = purchaseService.updateShipmentForPurchase(purchaseId, shipmentCode);
+        Purchases updated = purchaseService.updateShipmentForPurchase(purchaseId, request.getShipmentCode() , request.getShipFee());
         return ResponseEntity.ok(updated);
-    }
+}
 
     @DeleteMapping("/{purchaseId}")
     public ResponseEntity<Void> deletePurchase(@PathVariable Long purchaseId) {
