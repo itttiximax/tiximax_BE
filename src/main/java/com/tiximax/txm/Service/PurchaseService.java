@@ -303,7 +303,29 @@ public class PurchaseService {
                 .toList();
     }
 
-    public Purchases updateShipmentForPurchase(Long purchaseId, String shipmentCode, BigDecimal shipFee) {
+  public Purchases updateShipmentForPurchase(Long purchaseId, String shipmentCode) {
+        if (shipmentCode == null || shipmentCode.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã vận đơn không được để trống!");
+        }
+        shipmentCode = shipmentCode.trim();
+
+        if (orderLinksRepository.existsByShipmentCode(shipmentCode)) {
+            throw new IllegalArgumentException("Mã vận đơn '" + shipmentCode + "' đã tồn tại!");
+        }
+
+        Purchases purchase = purchasesRepository.findById(purchaseId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua!"));
+
+        for (OrderLinks link : purchase.getOrderLinks()) {
+            link.setShipmentCode(shipmentCode);
+        }
+
+        orderLinksRepository.saveAll(purchase.getOrderLinks());
+
+        return purchase;
+    }
+
+     public Purchases updateShipmentForPurchaseAndShipFee(Long purchaseId, String shipmentCode, BigDecimal shipFee) {
         if (shipmentCode == null || shipmentCode.trim().isEmpty()) {
             throw new IllegalArgumentException("Mã vận đơn không được để trống!");
         }
@@ -336,6 +358,7 @@ public class PurchaseService {
         return purchase;
     }
 
+
     public Page<PurchasePendingShipment> getPendingShipmentPurchases(Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
 
@@ -354,6 +377,31 @@ public class PurchaseService {
         return purchasesPage.map(purchase -> {
             List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
                     .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
+                    .map(OrderLinkPending::new)
+                    .collect(Collectors.toList());
+
+            return new PurchasePendingShipment(purchase, pendingLinks);
+        });
+    }
+        public Page<PurchasePendingShipment> getPendingShipmentFullPurchases(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
+                .stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Page<Purchases> purchasesPage =
+                purchasesRepository.findPurchasesSortedByPendingShipment(routeIds, pageable);
+
+        return purchasesPage.map(purchase -> {
+            List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
+        //       .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
                     .map(OrderLinkPending::new)
                     .collect(Collectors.toList());
 
