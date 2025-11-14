@@ -49,6 +49,7 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
                           FROM order_links ol
                           WHERE ol.purchase_id = p.purchase_id
                             AND (ol.shipment_code IS NULL OR TRIM(ol.shipment_code) = '')
+                            AND ol.status IN ('DA_MUA')
                       ) THEN 0
                       ELSE 1
                   END AS sort_value
@@ -70,4 +71,38 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
           @Param("routeIds") Set<Long> routeIds,
           Pageable pageable
   );
+
+  @Query(
+    value = """
+        SELECT * FROM (
+            SELECT p.*,
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM order_links ol
+                        WHERE ol.purchase_id = p.purchase_id
+                          AND (ol.shipment_code IS NULL OR TRIM(ol.shipment_code) = '')
+                          AND ol.status IN ('DA_NHAP_KHO_NN', 'DA_MUA')
+                    ) THEN 0
+                    ELSE 1
+                END AS sort_value
+            FROM purchases p
+            JOIN orders o ON o.order_id = p.order_id
+            WHERE o.route_id IN :routeIds
+        ) AS t
+        ORDER BY t.sort_value ASC, t.purchase_id DESC
+        """,
+    countQuery = """
+        SELECT COUNT(DISTINCT p.purchase_id)
+        FROM purchases p
+        JOIN orders o ON o.order_id = p.order_id
+        WHERE o.route_id IN :routeIds
+        """,
+    nativeQuery = true
+)
+Page<Purchases> findPurchasesSortedByPendingShipmentFixedStatus(
+        @Param("routeIds") Set<Long> routeIds,
+        Pageable pageable
+);
+
 }

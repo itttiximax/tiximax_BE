@@ -44,6 +44,9 @@ public class Orders {
 
     @Column(nullable = false)
     private Boolean checkRequired;
+    
+    @Column(nullable = true)
+    private String imageCheck ;
 
     @Column(nullable = true)
     private LocalDateTime pinnedAt;

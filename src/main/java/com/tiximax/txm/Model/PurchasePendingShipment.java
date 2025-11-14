@@ -16,6 +16,7 @@ public class PurchasePendingShipment {
     private String purchaseCode;
     private LocalDateTime purchaseTime;
     private String orderCode;
+    private Long orderId;
     private String staffName;
     private List<OrderLinkPending> pendingLinks;
 
@@ -24,6 +25,7 @@ public class PurchasePendingShipment {
         this.purchaseCode = purchase.getPurchaseCode();
         this.purchaseTime = purchase.getPurchaseTime();
         this.orderCode = purchase.getOrders().getOrderCode();
+        this.orderId = purchase.getOrders().getOrderId();
         this.staffName = purchase.getStaff().getName();
         this.pendingLinks = links;
     }

@@ -87,6 +87,8 @@ public class PurchaseController {
         return ResponseEntity.ok(result);
     }
 
+    
+
     @GetMapping("/lack-shipment-code/{page}/{size}")
     public ResponseEntity<Page<PurchasePendingShipment>> getPendingShipmentPurchases(
             @PathVariable int page,
@@ -95,6 +97,18 @@ public class PurchaseController {
         Pageable pageable = PageRequest.of(page, size, Sort.by("purchaseTime").descending());
         Page<PurchasePendingShipment> result = purchaseService.getPendingShipmentPurchases(pageable);
 
+        return ResponseEntity.ok(result);
+    }
+
+    
+    
+      @GetMapping("/all-purchase/{page}/{size}")
+    public ResponseEntity<Page<PurchasePendingShipment>> getFullPurchases(
+            @PathVariable int page,
+            @PathVariable int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PurchasePendingShipment> result = purchaseService.getALLFullPurchases(pageable);
         return ResponseEntity.ok(result);
     }
 
