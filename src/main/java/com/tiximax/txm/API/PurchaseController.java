@@ -5,6 +5,7 @@ import com.tiximax.txm.Model.PendingShipmentPurchase;
 import com.tiximax.txm.Model.PurchaseDetail;
 import com.tiximax.txm.Model.PurchasePendingShipment;
 import com.tiximax.txm.Model.PurchaseRequest;
+import com.tiximax.txm.Model.ShipmentCode;
 import com.tiximax.txm.Model.UpdateShipmentRequest;
 import com.tiximax.txm.Service.PurchaseService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -58,9 +59,9 @@ public class PurchaseController {
     @PutMapping("/shipment/{purchaseId}")
     public ResponseEntity<Purchases> updateShipment(
             @PathVariable Long purchaseId,
-            @RequestBody String shipmentCode) {
+            @RequestBody ShipmentCode shipmentCode) {
 
-        Purchases updated = purchaseService.updateShipmentForPurchase(purchaseId, shipmentCode);
+        Purchases updated = purchaseService.updateShipmentForPurchase(purchaseId, shipmentCode.getShipmentCode());
         return ResponseEntity.ok(updated);
     }
 
