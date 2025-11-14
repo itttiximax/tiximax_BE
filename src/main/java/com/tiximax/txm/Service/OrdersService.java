@@ -244,9 +244,7 @@ public class OrdersService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
         OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng link"));
-        if (orderLink.getStatus().equals(OrderLinkStatus.DA_MUA)){
-            throw new IllegalArgumentException("Sản phẩm đã được mua, không thể hủy được!");
-        }
+        
 
         orderLink.setStatus(OrderLinkStatus.DA_HUY);
         BigDecimal currentLeftover = order.getLeftoverMoney() != null ? order.getLeftoverMoney() : BigDecimal.ZERO;
@@ -451,6 +449,7 @@ public class OrdersService {
                         .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN || p.getStatus() == PaymentStatus.CHO_THANH_TOAN_SHIP)
                         .findFirst();
 
+                
                 if (payment.isPresent()) {
                     orderPayment.setPaymentCode(payment.get().getPaymentCode());
                 } else {

@@ -74,10 +74,11 @@ public class PurchaseService {
         if (!allBelongToOrder) {
             throw new IllegalArgumentException("Tất cả mã phải thuộc cùng đơn hàng " + orderCode);
         }
-      
-        // if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
-        //     throw new IllegalArgumentException("Một hoặc nhiều mã đã có mã vận đơn, không thể mua lại!");
-        // }
+        if(purchaseRequest.getShipmentCode() != ""){
+         if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
+            throw new IllegalArgumentException("Một hoặc nhiều mã đã có mã vận đơn, không thể mua lại!");
+        }
+        }
 
         boolean allActive = orderLinks.stream()
                 .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA);
@@ -122,7 +123,9 @@ public class PurchaseService {
             order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
             ordersRepository.save(order);
         }
+    
         return purchase;
+    
     }
     
     public Purchases createAuction(String orderCode, PurchaseRequest purchaseRequest) {
@@ -304,14 +307,18 @@ public class PurchaseService {
     }
 
   public Purchases updateShipmentForPurchase(Long purchaseId, String shipmentCode) {
+         System.out.println("=== METHOD CALLED ===");
         if (shipmentCode == null || shipmentCode.trim().isEmpty()) {
             throw new IllegalArgumentException("Mã vận đơn không được để trống!");
         }
         shipmentCode = shipmentCode.trim();
 
+        System.out.println("Checking for existing shipment code: " + shipmentCode);
+
         if (orderLinksRepository.existsByShipmentCode(shipmentCode)) {
             throw new IllegalArgumentException("Mã vận đơn '" + shipmentCode + "' đã tồn tại!");
         }
+        
 
         Purchases purchase = purchasesRepository.findById(purchaseId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua!"));
@@ -330,6 +337,8 @@ public class PurchaseService {
             throw new IllegalArgumentException("Mã vận đơn không được để trống!");
         }
         shipmentCode = shipmentCode.trim();
+
+         System.out.println("Checking for existing shipment code: " + shipmentCode);
 
         if (orderLinksRepository.existsByShipmentCode(shipmentCode)) {
             throw new IllegalArgumentException("Mã vận đơn '" + shipmentCode + "' đã tồn tại!");

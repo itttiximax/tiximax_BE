@@ -27,6 +27,7 @@ public class OrderPayment {
     private String paymentCode;
     private BigDecimal totalNetWeight;
     private BigDecimal leftoverMoney;
+    private String QRCode;
 
     public OrderPayment(Orders order) {
         this.orderId = order.getOrderId();
