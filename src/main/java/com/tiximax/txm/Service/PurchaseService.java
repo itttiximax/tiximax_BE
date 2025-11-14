@@ -417,4 +417,55 @@ public class PurchaseService {
             return new PurchasePendingShipment(purchase, pendingLinks);
         });
     }
+    public Page<PurchasePendingShipment> getFullPurchases(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
+                .stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Page<Purchases> purchasesPage =
+                purchasesRepository.findPurchasesSortedByPendingShipment(routeIds, pageable);
+
+        return purchasesPage.map(purchase -> {
+            List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
+        //       .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
+                    .map(OrderLinkPending::new)
+                    .collect(Collectors.toList());
+
+            return new PurchasePendingShipment(purchase, pendingLinks);
+        });
+    }
+
+     public Page<PurchasePendingShipment> getALLFullPurchases(Pageable pageable) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
+                .stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Page<Purchases> purchasesPage =
+                purchasesRepository.findPurchasesSortedByPendingShipmentFixedStatus(routeIds, pageable);
+
+        return purchasesPage.map(purchase -> {
+            List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
+        //       .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
+                    .map(OrderLinkPending::new)
+                    .collect(Collectors.toList());
+
+            return new PurchasePendingShipment(purchase, pendingLinks);
+        });
+    }
 }
