@@ -1,6 +1,7 @@
 package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Purchases;
+import com.tiximax.txm.Enums.PurchaseFilter;
 import com.tiximax.txm.Model.PendingShipmentPurchase;
 import com.tiximax.txm.Model.PurchaseDetail;
 import com.tiximax.txm.Model.PurchasePendingShipment;
@@ -105,10 +106,11 @@ public class PurchaseController {
       @GetMapping("/all-purchase/{page}/{size}")
     public ResponseEntity<Page<PurchasePendingShipment>> getFullPurchases(
             @PathVariable int page,
-            @PathVariable int size) {
+            @PathVariable int size,
+            @RequestParam(required = false) PurchaseFilter filter) {
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<PurchasePendingShipment> result = purchaseService.getALLFullPurchases(pageable);
+        Page<PurchasePendingShipment> result = purchaseService.getALLFullPurchases(filter,pageable);
         return ResponseEntity.ok(result);
     }
 
