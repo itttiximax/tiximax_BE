@@ -1,6 +1,8 @@
 package com.tiximax.txm.Model;
 
 import com.tiximax.txm.Entity.OrderLinks;
+import com.tiximax.txm.Enums.OrderLinkStatus;
+
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,11 +20,15 @@ public class OrderLinkPending {
     private String classify;
     private String purchaseImage;
     private String trackingCode;
+    private OrderLinkStatus status;
+
+
 
 
     public OrderLinkPending(OrderLinks link) {
         this.linkId = link.getLinkId();
         this.productName = link.getProductName();
+        this.status = link.getStatus();
         this.quantity = link.getQuantity();
         this.shipmentCode = link.getShipmentCode();
         this.website = link.getWebsite();

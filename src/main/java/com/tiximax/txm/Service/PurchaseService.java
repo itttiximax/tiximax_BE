@@ -6,6 +6,7 @@ import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.PaymentStatus;
 import com.tiximax.txm.Enums.PaymentType;
 import com.tiximax.txm.Enums.ProcessLogAction;
+import com.tiximax.txm.Enums.PurchaseFilter;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
@@ -443,7 +444,7 @@ public class PurchaseService {
         });
     }
 
-     public Page<PurchasePendingShipment> getALLFullPurchases(Pageable pageable) {
+     public Page<PurchasePendingShipment> getALLFullPurchases(PurchaseFilter status,Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
 
         Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
@@ -456,8 +457,10 @@ public class PurchaseService {
             return Page.empty(pageable);
         }
 
+        String statusValue = (status == null ? null : status.name());
+
         Page<Purchases> purchasesPage =
-                purchasesRepository.findPurchasesSortedByPendingShipmentFixedStatus(routeIds, pageable);
+                purchasesRepository.findPurchasesWithFilteredOrderLinks(routeIds, statusValue,pageable);
 
         return purchasesPage.map(purchase -> {
             List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()

@@ -245,7 +245,9 @@ public class OrdersService {
         OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng link"));
         
-
+        if(orderLink.getStatus() == OrderLinkStatus.DA_HUY){
+            throw new IllegalArgumentException("Đơn hàng link đã bị hủy, không thể hủy lại!");
+        }
         orderLink.setStatus(OrderLinkStatus.DA_HUY);
         BigDecimal currentLeftover = order.getLeftoverMoney() != null ? order.getLeftoverMoney() : BigDecimal.ZERO;
         order.setLeftoverMoney(currentLeftover.subtract(orderLink.getFinalPriceVnd()));
