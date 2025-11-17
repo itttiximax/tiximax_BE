@@ -83,5 +83,4 @@ public class WarehouseController {
             @RequestParam(required = false) String keyword) {
         return ResponseEntity.ok(warehouseService.suggestShipmentCodes(keyword));
     }
-
 }

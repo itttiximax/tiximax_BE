@@ -9,6 +9,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -46,8 +47,8 @@ public class Orders {
     private Boolean checkRequired;
     
     @Column(nullable = true)
-    private String imageCheck ;
-
+    private List<String> imageCheck ;
+    
     @Column(nullable = true)
     private LocalDateTime pinnedAt;
 

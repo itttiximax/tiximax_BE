@@ -52,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/accounts/login",
                                 "/accounts/verify",
+                                "/accounts/forgot-password/send-otp",
+                                "/accounts/forgot-password/reset",
                                 "/otp/send",
                                 "/accounts/verify-account",
                                 "/accounts/register/staff",
