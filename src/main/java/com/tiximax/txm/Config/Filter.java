@@ -39,6 +39,8 @@ public class Filter extends OncePerRequestFilter {
             "/accounts/login",
             "/otp/send",
             "/accounts/verify-account",
+            "/accounts/forgot-password/send-otp",
+            "/accounts/forgot-password/reset",
             "/accounts/verify",
             "/accounts/register/staff",
             "/accounts/register/customer",
