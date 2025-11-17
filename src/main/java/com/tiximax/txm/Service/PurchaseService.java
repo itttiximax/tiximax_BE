@@ -65,6 +65,15 @@ public class PurchaseService {
         if (orderLinks.size() != purchaseRequest.getTrackingCode().size()) {
             throw new IllegalArgumentException("Một hoặc nhiều mã không được tìm thấy!");
         }
+        BigDecimal priceLinks = BigDecimal.ZERO;
+
+        for (OrderLinks ol : orderLinks){
+            priceLinks.add(ol.getTotalWeb());
+        }
+
+        if (purchaseRequest.getPurchaseTotal().compareTo(priceLinks) > 0){
+            throw new IllegalStateException("Giá mua đang cao hơn giá tiền thu khách!");
+        }
 
         if (!order.getStatus().equals(OrderStatus.CHO_MUA)){
             throw new RuntimeException("Đơn hàng chưa đủ điều kiện để mua hàng!");
@@ -75,10 +84,11 @@ public class PurchaseService {
         if (!allBelongToOrder) {
             throw new IllegalArgumentException("Tất cả mã phải thuộc cùng đơn hàng " + orderCode);
         }
+
         if(purchaseRequest.getShipmentCode() != ""){
-         if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
-            throw new IllegalArgumentException("Một hoặc nhiều mã đã có mã vận đơn, không thể mua lại!");
-        }
+            if (orderLinksRepository.existsByShipmentCode(purchaseRequest.getShipmentCode())) {
+                throw new IllegalArgumentException("Một hoặc nhiều mã đã có mã vận đơn, không thể mua lại!");
+            }
         }
 
         boolean allActive = orderLinks.stream()
