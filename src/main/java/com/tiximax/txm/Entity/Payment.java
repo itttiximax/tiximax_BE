@@ -78,6 +78,6 @@ public class Payment {
    @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<PartialShipment> partialShipments = new HashSet<>();
-
+    
 
 }

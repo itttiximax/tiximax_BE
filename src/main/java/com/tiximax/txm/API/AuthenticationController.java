@@ -25,8 +25,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -328,11 +326,5 @@ public class AuthenticationController {
                 authenticationService.getMyPerformanceByDateRange(start, end);
 
         return ResponseEntity.ok(performanceMap);
-    }
-
-    @GetMapping("/loginSuccess")
-    public String loginSuccess(@AuthenticationPrincipal OAuth2User user) {
-        System.out.println(user.getAttributes()); // email, name, ...
-        return "redirect:/home";
     }
 }

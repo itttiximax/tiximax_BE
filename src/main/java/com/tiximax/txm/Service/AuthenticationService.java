@@ -89,6 +89,8 @@ public class AuthenticationService implements UserDetailsService {
 
     @Autowired
     private OtpService otpService;
+    @Autowired
+    private OtpRepository otpRepository;
 
     @Autowired
     private VoucherService voucherService;
@@ -248,7 +250,6 @@ public class AuthenticationService implements UserDetailsService {
         address.setCustomer(customer);
         customer.setAddresses(new HashSet<>());
         customer.getAddresses().add(address);
-
         customer.setSource(registerRequest.getSource());
         customer = authenticationRepository.save(customer);
         voucherService.assignOnRegisterVouchers(customer);
@@ -813,4 +814,55 @@ public class AuthenticationService implements UserDetailsService {
 
         return result;
     }
+     public void changePassword(ChangePasswordRequest request) {
+    Account currentAccount = accountUtils.getAccountCurrent();
+
+    if (!passwordEncoder.matches(request.getOldPassword(), currentAccount.getPassword())) {
+        throw new IllegalArgumentException("Mật khẩu cũ không chính xác!");
+    }
+
+    if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
+        throw new IllegalArgumentException("Mật khẩu xác nhận không khớp!");
+    }
+
+    if (request.getNewPassword().length() < 6) {
+        throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự!");
+    }
+
+
+    if (passwordEncoder.matches(request.getNewPassword(), currentAccount.getPassword())) {
+        throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu cũ!");
+    }
+    currentAccount.setPassword(passwordEncoder.encode(request.getNewPassword()));
+    authenticationRepository.save(currentAccount); 
+}
+    public void sendForgotPasswordOtp(String email) throws Exception {
+        Account account = authenticationRepository.findByEmail(email);
+        if (account == null) {
+            throw new BadCredentialsException("Email không tồn tại trong hệ thống!");
+        }
+
+        otpService.sendOtpToEmail(email);
+    
+    }
+
+    public void resetPasswordWithOtp(String email, String otpCode, String newPassword) {
+        Account account = authenticationRepository.findByEmail(email);
+        if (account == null) {
+            throw new BadCredentialsException("Email không tồn tại trong hệ thống!");
+        }
+
+        Otp otp = otpRepository.findByAccountAndCode(account, otpCode)
+                .orElseThrow(() -> new BadCredentialsException("OTP không hợp lệ!"));
+
+        if (otp.isExpired()) {
+            throw new BadCredentialsException("OTP đã hết hạn!");
+        }
+
+        account.setPassword(passwordEncoder.encode(newPassword));
+        authenticationRepository.save(account);
+
+        otpRepository.delete(otp);
+    }
+
 }

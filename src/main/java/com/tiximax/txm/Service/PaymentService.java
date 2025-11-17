@@ -2,6 +2,7 @@ package com.tiximax.txm.Service;
 
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
+import com.tiximax.txm.Model.PaymentAuctionResponse;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.query.Order;
@@ -504,10 +505,20 @@ public class PaymentService {
         return paymentRepository.findById(paymentId);
     }
 
-    public List <Payment> getPaymentByStaffandStatus(){
-        Staff staff = (Staff) accountUtils.getAccountCurrent();
-        return paymentRepository.findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(staff, OrderStatus.CHO_THANH_TOAN_DAU_GIA, PaymentStatus.CHO_THANH_TOAN);
-    }
+   public List<PaymentAuctionResponse> getPaymentByStaffandStatus() {
+    Staff staff = (Staff) accountUtils.getAccountCurrent();
+
+    List<Payment> payments = paymentRepository
+            .findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(
+                    staff,
+                    OrderStatus.CHO_THANH_TOAN_DAU_GIA,
+                    PaymentStatus.CHO_THANH_TOAN
+            );
+
+    return payments.stream()
+            .map(PaymentAuctionResponse::new)  
+            .toList();
+}
 
         public List<Payment> getPaymentsByPartialStatus() {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
