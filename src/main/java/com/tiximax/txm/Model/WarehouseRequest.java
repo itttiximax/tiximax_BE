@@ -20,4 +20,5 @@ public class WarehouseRequest {
 
         private String image;
 
+        private String imageCheck;
 }

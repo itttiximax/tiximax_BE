@@ -59,6 +59,10 @@ public class WarehouseService {
             throw new RuntimeException("Đơn hàng chưa đủ điều kiện để nhập kho!");
         }
 
+        if (order.getCheckRequired() && warehouseRequest.getImageCheck().isEmpty()){
+            throw new RuntimeException("Đơn hàng này cần được kiểm tra trước khi nhập kho!");
+        }
+
         if (warehouseRepository.existsByTrackingCode(shipmentCode)) {
             throw new IllegalArgumentException("Mục kho đã tồn tại cho mã vận đơn này!");
         }
@@ -91,6 +95,7 @@ public class WarehouseService {
                 warehouse.setNetWeight(warehouse.getWeight());
             }
             warehouse.setImage(warehouseRequest.getImage());
+            warehouse.setImageCheck(warehouseRequest.getImageCheck());
             warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
             warehouse.setCreatedAt(LocalDateTime.now());
             warehouse.setStaff(staff);
@@ -112,10 +117,10 @@ public class WarehouseService {
 
         return warehouse;
     }
+
     public Optional<Warehouse> getWarehouseById(Long id) {
     return warehouseRepository.findById(id);
 }
-    
 
     public String createWarehouseEntryByListShipmentCodes(List<String> shipmentCodes) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();

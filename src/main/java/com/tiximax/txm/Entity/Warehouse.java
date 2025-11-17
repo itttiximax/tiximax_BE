@@ -34,6 +34,8 @@ public class Warehouse {
 
     private String image;
 
+    private String imageCheck;
+
     @Column(nullable = true)
     private Double weight;
 

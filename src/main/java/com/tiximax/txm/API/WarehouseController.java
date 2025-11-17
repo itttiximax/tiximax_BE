@@ -39,12 +39,14 @@ public class WarehouseController {
         Warehouse warehouse = warehouseService.createWarehouseEntryByShipmentCode(shipmentCode, warehouseRequest);
         return ResponseEntity.ok(warehouse);
     }
-        @GetMapping("/{id}")
+
+    @GetMapping("/{id}")
     public ResponseEntity<Warehouse> getWarehouseById(@PathVariable Long id) {
         Optional<Warehouse> warehouseOptional = warehouseService.getWarehouseById(id);
         return warehouseOptional.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
     @PostMapping("/list-shipment")
     public ResponseEntity<String> createWarehouseEntryByListShipmentCode(@RequestBody List<String> shipmentCodes) {
         return ResponseEntity.ok(warehouseService.createWarehouseEntryByListShipmentCodes(shipmentCodes));
