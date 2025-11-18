@@ -71,9 +71,9 @@ public class PurchaseService {
             priceLinks.add(ol.getTotalWeb());
         }
 
-        if (purchaseRequest.getPurchaseTotal().compareTo(priceLinks) > 0){
-            throw new IllegalStateException("Giá mua đang cao hơn giá tiền thu khách!");
-        }
+        // if (purchaseRequest.getPurchaseTotal().compareTo(priceLinks) > 0){
+        //     throw new IllegalStateException("Giá mua đang cao hơn giá tiền thu khách!");
+        // }
 
         if (!order.getStatus().equals(OrderStatus.CHO_MUA)){
             throw new RuntimeException("Đơn hàng chưa đủ điều kiện để mua hàng!");
