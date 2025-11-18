@@ -41,36 +41,21 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
             Pageable pageable
     );
 
-    @Query(
-        value = """
-            SELECT * FROM (
-                SELECT DISTINCT
-                    p.*,
-                    CASE
-                        WHEN EXISTS (
-                            SELECT 1
-                            FROM order_links ol2
-                            WHERE ol2.purchase_id = p.purchase_id
-                            AND (ol2.shipment_code IS NULL OR TRIM(ol2.shipment_code) = '')
-                            AND ol2.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')                   -- chỉ xét DA_MUA là "chưa có vận đơn"
-                        ) THEN 0
-                        ELSE 1
-                    END AS sort_value
-                FROM purchases p
-                JOIN orders o ON o.order_id = p.order_id
-                JOIN order_links ol ON ol.purchase_id = p.purchase_id
-                WHERE o.route_id IN :routeIds
-                AND (
-                        :status IS NULL 
-                        AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
-                        OR :status IS NOT NULL 
-                        AND ol.status = :status
-                    )
-            ) AS t
-            ORDER BY t.sort_value ASC, t.purchase_id DESC
-            """,
-        countQuery = """
-            SELECT COUNT(DISTINCT p.purchase_id)
+  @Query(
+    value = """
+        SELECT * FROM (
+            SELECT DISTINCT
+                p.*,
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM order_links ol2
+                        WHERE ol2.purchase_id = p.purchase_id
+                        AND (ol2.shipment_code IS NULL OR TRIM(ol2.shipment_code) = '')
+                        AND ol2.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
+                    ) THEN 0
+                    ELSE 1
+                END AS sort_value
             FROM purchases p
             JOIN orders o ON o.order_id = p.order_id
             JOIN order_links ol ON ol.purchase_id = p.purchase_id
@@ -81,14 +66,46 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
                     OR :status IS NOT NULL 
                     AND ol.status = :status
                 )
-            """,
-        nativeQuery = true
-    )
-    Page<Purchases> findPurchasesSortedByPendingShipment(
-            @Param("routeIds") Set<Long> routeIds,
-            @Param("status") String status,     // có thể null
-            Pageable pageable
-    );
+
+          
+            AND NOT EXISTS (
+                SELECT 1 
+                FROM order_links olx
+                WHERE olx.purchase_id = p.purchase_id
+                AND olx.shipment_code IS NOT NULL
+                AND TRIM(olx.shipment_code) <> ''
+            )
+        ) AS t
+        ORDER BY t.sort_value ASC, t.purchase_id DESC
+        """,
+    countQuery = """
+        SELECT COUNT(DISTINCT p.purchase_id)
+        FROM purchases p
+        JOIN orders o ON o.order_id = p.order_id
+        JOIN order_links ol ON ol.purchase_id = p.purchase_id
+        WHERE o.route_id IN :routeIds
+        AND (
+                :status IS NULL 
+                AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
+                OR :status IS NOT NULL 
+                AND ol.status = :status
+            )
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM order_links olx
+            WHERE olx.purchase_id = p.purchase_id
+            AND olx.shipment_code IS NOT NULL
+            AND TRIM(olx.shipment_code) <> ''
+        )
+        """,
+    nativeQuery = true
+)
+Page<Purchases> findPurchasesSortedByPendingShipment(
+        @Param("routeIds") Set<Long> routeIds,
+        @Param("status") String status,
+        Pageable pageable
+);
+
 
  @Query(
     value = """
