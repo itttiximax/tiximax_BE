@@ -25,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -62,6 +63,8 @@ public class AuthenticationController {
 
     @Autowired
     private EmailService emailService;
+    
+   
 
     @Autowired
     private TokenService tokenService;
@@ -327,4 +330,32 @@ public class AuthenticationController {
 
         return ResponseEntity.ok(performanceMap);
     }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        try {
+            authenticationService.changePassword(request);
+            return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công!"));
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+                    
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Đã có lỗi xảy ra, vui lòng thử lại sau"));
+        }
+    }
+    @PostMapping("/forgot-password/send-otp")
+    public ResponseEntity<?> sendOtp(@RequestBody ForgotPasswordRequest request) throws Exception {
+        authenticationService.sendForgotPasswordOtp(request.getEmail());
+        return ResponseEntity.ok("OTP đã được gửi vào email!");
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest dto) {
+        authenticationService.resetPasswordWithOtp(dto.getEmail(), dto.getOtp(), dto.getNewPassword());
+        return ResponseEntity.ok("Mật khẩu đã được đặt lại thành công!");
+    }
+   
 }

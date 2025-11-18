@@ -25,6 +25,7 @@ public class OrderPayment {
     private String note;
     private Customer customer;
     private String paymentCode;
+    private Long paymentId;
     private BigDecimal totalNetWeight;
     private BigDecimal leftoverMoney;
     private String QRCode;
