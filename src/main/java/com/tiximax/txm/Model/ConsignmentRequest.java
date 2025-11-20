@@ -20,6 +20,8 @@ public class ConsignmentRequest {
 
     private Boolean checkRequired;
 
+    private BigDecimal priceShip;
+
     private List<ConsignmentLinkRequest> consignmentLinkRequests;
 
 }

@@ -89,6 +89,13 @@ public class OrdersService {
             throw new IllegalArgumentException("Địa chỉ giao hàng cho khách không phù hợp!");
         }
 
+        if (ordersRequest.getPriceShip().compareTo(route.getUnitBuyingPrice()) < 0){
+            throw new IllegalArgumentException("Giá cước không được nhỏ hơn giá cố định, liên hệ quản lý để được hỗ trợ thay đổi giá cước!");
+        }
+
+        if (ordersRequest.getExchangeRate().compareTo(route.getExchangeRate()) < 0){
+            throw new IllegalArgumentException("Tỉ giá không được nhỏ hơn giá cố định, liên hệ quản lý để được hỗ trợ thay đổi tỉ giá!");
+        }
         Orders order = new Orders();
         order.setCustomer(customer);
         order.setAddress(address.get());
@@ -99,6 +106,7 @@ public class OrdersService {
         order.setExchangeRate(ordersRequest.getExchangeRate());
         order.setDestination(destination.get());
         order.setCheckRequired(ordersRequest.getCheckRequired());
+        order.setPriceShip(ordersRequest.getPriceShip());
         order.setRoute(route);
         order.setStaff((Staff) accountUtils.getAccountCurrent());
         order.setAddress(address.get());
@@ -114,13 +122,14 @@ public class OrdersService {
                 orderLink.setQuantity(linkRequest.getQuantity());
                 orderLink.setPriceWeb(linkRequest.getPriceWeb());
                 orderLink.setShipWeb(linkRequest.getShipWeb());
-                orderLink.setTotalWeb((linkRequest.getPriceWeb().add(linkRequest.getShipWeb())).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP).add(linkRequest.getPurchaseFee()));
+//                orderLink.setTotalWeb((linkRequest.getPriceWeb().add(linkRequest.getShipWeb())).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP).add(linkRequest.getPurchaseFee()));
+                orderLink.setTotalWeb(linkRequest.getPriceWeb().multiply(new BigDecimal(linkRequest.getQuantity())).add(linkRequest.getShipWeb()).setScale(2, RoundingMode.HALF_UP));
                 orderLink.setPurchaseFee(linkRequest.getPurchaseFee());
                 orderLink.setProductName(linkRequest.getProductName());
                 ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
-                        .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
+                        .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy!"));
 
-                orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge()).multiply(new BigDecimal(linkRequest.getQuantity())).setScale(2, RoundingMode.HALF_UP)); 
+                orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge().multiply(new BigDecimal(linkRequest.getQuantity()))).add((linkRequest.getPurchaseFee().multiply(new BigDecimal(0.01))).multiply(orderLink.getTotalWeb())).setScale(2, RoundingMode.HALF_UP));
                 orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
                 orderLink.setProductType(productType);
                 orderLink.setClassify(linkRequest.getClassify());
@@ -171,6 +180,11 @@ public class OrdersService {
         Route route = routeRepository.findById(routeId).orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
         Optional<Destination> destination = destinationRepository.findById(consignmentRequest.getDestinationId());
 
+//        if (ordersRequest.getPriceShip().compareTo(route.getUnitBuyingPrice()) < 0){
+        if (consignmentRequest.getPriceShip().compareTo(route.getUnitDepositPrice()) < 0){
+            throw new IllegalArgumentException("Giá cước không được nhỏ hơn giá cố định, liên hệ quản lý để được hỗ trợ thay đổi giá cước!");
+        }
+
         if (destination.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy điểm đến!");
         }
@@ -204,6 +218,7 @@ public class OrdersService {
                         .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
                 orderLink.setProductType(productType);
                 orderLink.setStatus(OrderLinkStatus.DA_MUA);
+                orderLink.setShipmentCode(linkRequest.getShipmentCode());
                 orderLink.setFinalPriceVnd(
                     linkRequest.getExtraCharge()
                         .add(linkRequest.getDifferentFee())
