@@ -181,9 +181,8 @@ public class AuthenticationService implements UserDetailsService {
             return response;
         }
 
-    } catch (AuthenticationException e) {
-         e.printStackTrace(); 
-        throw e;
+    } catch (AuthenticationException e) {     
+            throw new BadCredentialsException("Tên đăng nhập hoặc mật khẩu không đúng!");      
     }
 
     return null;
