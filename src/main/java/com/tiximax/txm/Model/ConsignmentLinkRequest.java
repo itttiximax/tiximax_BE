@@ -20,6 +20,8 @@ public class ConsignmentLinkRequest {
     
     private BigDecimal extraCharge;
 
+    private String shipmentCode;
+
     private String purchaseImage;
 
     private Long productTypeId;

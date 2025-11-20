@@ -39,6 +39,8 @@ public class Orders {
 
     private BigDecimal finalPriceOrder;
 
+    private BigDecimal priceShip;
+
     private BigDecimal priceBeforeFee;
 
     private BigDecimal leftoverMoney;
