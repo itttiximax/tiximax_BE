@@ -24,4 +24,8 @@ public class RouteRequest {
 
     private String note;
 
+    private BigDecimal differenceRate;
+
+    private boolean isUpdateAuto = true;
+
 }
