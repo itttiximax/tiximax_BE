@@ -71,9 +71,9 @@ public class PurchaseService {
             priceLinks.add(ol.getTotalWeb());
         }
 
-        if (purchaseRequest.getPurchaseTotal().compareTo(priceLinks) > 0){
-            throw new IllegalStateException("Giá mua đang cao hơn giá tiền thu khách!");
-        }
+        // if (purchaseRequest.getPurchaseTotal().compareTo(priceLinks) > 0){
+        //     throw new IllegalStateException("Giá mua đang cao hơn giá tiền thu khách!");
+        // }
 
         if (!order.getStatus().equals(OrderStatus.CHO_MUA)){
             throw new RuntimeException("Đơn hàng chưa đủ điều kiện để mua hàng!");
@@ -407,13 +407,11 @@ public class PurchaseService {
 
     public Page<PurchasePendingShipment> getFullPurchases(PurchaseFilter status ,Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
-
         Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
                 .stream()
                 .map(AccountRoute::getRoute)
                 .map(Route::getRouteId)
                 .collect(Collectors.toSet());
-
         if (routeIds.isEmpty()) {
             return Page.empty(pageable);
         }
@@ -424,7 +422,7 @@ public class PurchaseService {
 
         return purchasesPage.map(purchase -> {
             List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
-               .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
+            //   .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
                     .map(OrderLinkPending::new)
                     .collect(Collectors.toList());
 

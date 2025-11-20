@@ -119,7 +119,6 @@ public class PurchaseController {
             @PathVariable int page,
             @PathVariable int size,
             @RequestParam(required = false) PurchaseFilter status) {
-
         Pageable pageable = PageRequest.of(page, size);
         Page<PurchasePendingShipment> result = purchaseService.getFullPurchases(status,pageable);
         return ResponseEntity.ok(result);
