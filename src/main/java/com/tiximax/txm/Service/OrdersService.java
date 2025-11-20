@@ -416,20 +416,31 @@ public class OrdersService {
     }
 
     public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status ) {
-        Long staffId = accountUtils.getAccountCurrent().getAccountId();
+    Account current = accountUtils.getAccountCurrent();
+    Long staffId = current.getAccountId();
+    AccountRoles role = current.getRole(); // 👈 lấy role
 
-        List<OrderStatus> validStatuses = Arrays.asList(
-                OrderStatus.DA_XAC_NHAN,
-                OrderStatus.CHO_THANH_TOAN,
-                OrderStatus.DA_DU_HANG,
-                OrderStatus.CHO_THANH_TOAN_DAU_GIA,
-                OrderStatus.CHO_THANH_TOAN_SHIP);
+    List<OrderStatus> validStatuses = Arrays.asList(
+            OrderStatus.DA_XAC_NHAN,
+            OrderStatus.CHO_THANH_TOAN,
+            OrderStatus.DA_DU_HANG,
+            OrderStatus.CHO_THANH_TOAN_DAU_GIA,
+            OrderStatus.CHO_THANH_TOAN_SHIP
+    );
 
-        if (status == null || !validStatuses.contains(status)) {
-            throw new IllegalArgumentException("Trạng thái không hợp lệ!");
-        }
+    if (status == null || !validStatuses.contains(status)) {
+        throw new IllegalArgumentException("Trạng thái không hợp lệ!");
+    }
 
-        Page<Orders> ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+    Page<Orders> ordersPage;
+
+    if (role == AccountRoles.MANAGER) {
+        // 👇 Manager xem tất cả
+        ordersPage = ordersRepository.findByStatusForPayment(status, pageable);
+    } else {
+        // 👇 Staff chỉ thấy đơn của chính họ
+        ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
+    }
         
         return ordersPage.map(order -> {
             OrderPayment orderPayment = new OrderPayment(order);
