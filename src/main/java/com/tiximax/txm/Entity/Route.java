@@ -30,6 +30,11 @@ public class Route {
 
     private BigDecimal exchangeRate;
 
+    private BigDecimal differenceRate;
+
+    @Column(nullable = false)
+    private boolean isUpdateAuto;
+
     private String note;
 
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL)

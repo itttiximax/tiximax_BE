@@ -37,6 +37,8 @@ public class RouteService {
         route.setUnitBuyingPrice(routeRequest.getUnitBuyingPrice());
         route.setUnitDepositPrice(routeRequest.getUnitDepositPrice());
         route.setExchangeRate(routeRequest.getExchangeRate());
+        route.setDifferenceRate(routeRequest.getDifferenceRate());
+        route.setUpdateAuto(routeRequest.isUpdateAuto());
         route.setNote(routeRequest.getNote());
 
         return routeRepository.save(route);
@@ -112,17 +114,12 @@ public class RouteService {
 
         for (Route route : routes) {
             String routeName = route.getName();
-            if (routeName != null) {
+            if (routeName != null && route.isUpdateAuto()) {
                 for (ExchangeRateList.Exrate exrate : exrates) {
                     if (routeName.equals(exrate.getCurrencyCode())) {
                         String sellValue = exrate.getSell().replaceAll(",", "");
                         BigDecimal baseRate = new BigDecimal(sellValue);
-                        BigDecimal newRate;
-                        if ("USD".equals(routeName)) {
-                            newRate = baseRate.add(BigDecimal.valueOf(1000.00)).setScale(2, RoundingMode.HALF_UP);
-                        } else {
-                            newRate = baseRate.setScale(2, RoundingMode.HALF_UP);
-                        }
+                        BigDecimal newRate = baseRate.add(route.getDifferenceRate()).setScale(2, RoundingMode.HALF_UP);
                         route.setExchangeRate(newRate);
                         routeRepository.save(route);
                         break;
