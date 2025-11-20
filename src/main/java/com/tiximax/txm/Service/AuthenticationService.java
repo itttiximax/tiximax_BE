@@ -124,8 +124,6 @@ public class AuthenticationService implements UserDetailsService {
             throw new BadCredentialsException("Vui lòng điền đầy đủ thông tin đăng nhập!");
         }
 
-        System.out.println("Attempting to authenticate user: " + loginRequest.getUsername());
-        System.out.println("Password: " + loginRequest.getPassword());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),

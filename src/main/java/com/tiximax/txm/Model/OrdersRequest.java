@@ -20,6 +20,8 @@ public class OrdersRequest {
 
     private BigDecimal exchangeRate;
 
+    private BigDecimal priceShip;
+
     private Boolean checkRequired;
 
     private Long address; 
