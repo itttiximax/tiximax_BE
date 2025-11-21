@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -32,4 +33,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Optional<Customer> findByCustomerCode(String customerCode);
     
      long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT c FROM Customer c WHERE c.accountId = :accountId")
+    Customer getCustomerById(@Param("accountId") Long accountId);
+
 }

@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -251,7 +252,6 @@ public class AuthenticationService implements UserDetailsService {
         customer.setSource(registerRequest.getSource());
         customer = authenticationRepository.save(customer);
         voucherService.assignOnRegisterVouchers(customer);
-        System.out.println("New customer saved: " + customer.getEmail());
         otpService.sendOtpToEmail(customer.getEmail());
         messagingTemplate.convertAndSend(
                 "/topic/Tiximax",
@@ -626,119 +626,6 @@ public class AuthenticationService implements UserDetailsService {
         return result;
     }
 
-//    public Map<String, StaffPerformance> getMyPerformanceByPeriod(
-//            String timeFrame, LocalDate start, LocalDate end) {
-//
-//        Account currentAccount = accountUtils.getAccountCurrent();
-//        if (!(currentAccount instanceof Staff staff) ||
-//                (staff.getRole() != AccountRoles.STAFF_SALE && staff.getRole() != AccountRoles.LEAD_SALE)) {
-//            throw new SecurityException("Bạn không có quyền xem hiệu suất cá nhân!");
-//        }
-//
-//        LocalDate today = LocalDate.now();
-//        LocalDateTime startDateTime;
-//        LocalDateTime endDateTime;
-//
-//        switch (timeFrame) {
-//            case "DAY":
-//                if (start == null) {
-//                    start = today;
-//                }
-//                startDateTime = start.atStartOfDay();
-//                endDateTime = start.plusDays(1).atStartOfDay();
-//                break;
-//
-//            case "MONTH":
-//                if (start == null) {
-//                    start = today;
-//                }
-//
-//                LocalDate firstDayOfMonth = start.withDayOfMonth(1);
-//                LocalDate lastDayOfMonth = firstDayOfMonth.with(TemporalAdjusters.lastDayOfMonth());
-//                startDateTime = firstDayOfMonth.atStartOfDay();
-//                endDateTime = lastDayOfMonth.plusDays(1).atStartOfDay();
-//                break;
-//
-//            case "WEEK":
-//                if (start == null || end == null) {
-//                    throw new IllegalArgumentException("WEEK yêu cầu cả startDate và endDate");
-//                }
-//                if (end.isBefore(start)) {
-//                    throw new IllegalArgumentException("endDate phải sau startDate");
-//                }
-//                startDateTime = start.atStartOfDay();
-//                endDateTime = end.plusDays(1).atStartOfDay();
-//                break;
-//
-//            default:
-//                throw new IllegalArgumentException("timeFrame không hợp lệ: " + timeFrame);
-//        }
-//
-//        StaffPerformance perf = new StaffPerformance();
-//        perf.setStaffCode(staff.getStaffCode());
-//        perf.setName(staff.getName());
-//        perf.setDepartment(staff.getDepartment());
-//
-//        List<Orders> orders = ordersRepository.findByStaff_AccountIdAndCreatedAtBetween(
-//                staff.getAccountId(), startDateTime, endDateTime);
-//
-//        long totalOrders = orders.size();
-//        perf.setTotalOrders(totalOrders);
-//
-//        BigDecimal totalGoods = orders.stream()
-//                .map(Orders::getFinalPriceOrder)
-//                .filter(Objects::nonNull)
-//                .reduce(BigDecimal.ZERO, BigDecimal::add);
-//        perf.setTotalGoods(totalGoods);
-//
-//        BigDecimal totalShip = paymentRepository.findByStaff_AccountIdAndStatusAndActionAtBetween(
-//                        staff.getAccountId(),
-//                        PaymentStatus.DA_THANH_TOAN_SHIP,
-//                        startDateTime,
-//                        endDateTime)
-//                .stream()
-//                .map(Payment::getAmount)
-//                .filter(Objects::nonNull)
-//                .reduce(BigDecimal.ZERO, BigDecimal::add);
-//        perf.setTotalShip(totalShip);
-//
-//        long totalParcels = orders.stream()
-//                .flatMap(o -> o.getOrderLinks().stream())
-//                .count();
-//        perf.setTotalParcels(totalParcels);
-//
-//        Double totalNetWeight = orders.stream()
-//                .flatMap(o -> o.getWarehouses().stream())
-//                .map(Warehouse::getNetWeight)
-//                .filter(Objects::nonNull)
-//                .mapToDouble(Double::doubleValue)
-//                .sum();
-//        perf.setTotalNetWeight(Math.round(totalNetWeight * 100.0) / 100.0);
-//
-//        long completedOrders = orders.stream()
-//                .filter(o -> o.getStatus() == OrderStatus.DA_GIAO)
-//                .count();
-//        double completionRate = totalOrders > 0 ? (completedOrders * 100.0 / totalOrders) : 0.0;
-//        perf.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
-//
-//        long newCustomersInPeriod = customerRepository.countByStaffIdAndCreatedAtBetween(
-//                currentAccount.getAccountId(), startDateTime, endDateTime);
-//
-//        perf.setNewCustomersInPeriod(newCustomersInPeriod);
-//
-//        long badFeedback = orders.stream()
-//                .map(Orders::getFeedback)
-//                .filter(Objects::nonNull)
-//                .filter(f -> f.getRating() < 3)
-//                .count();
-//        perf.setBadFeedbackCount(badFeedback);
-//
-//        Map<String, StaffPerformance> result = new HashMap<>();
-//        result.put(staff.getStaffCode(), perf);
-//
-//        return result;
-//    }
-
     public Map<String, StaffPerformance> getMyPerformanceByDateRange(LocalDate start, LocalDate end) {
         Account currentAccount = accountUtils.getAccountCurrent();
         if (!(currentAccount instanceof Staff staff) ||
@@ -863,4 +750,7 @@ public class AuthenticationService implements UserDetailsService {
         otpRepository.delete(otp);
     }
 
+    public Customer getCustomerById(Long customerId) {
+        return customerRepository.getCustomerById(customerId);
+    }
 }
