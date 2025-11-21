@@ -208,35 +208,47 @@ public class OrdersService {
         BigDecimal totalPriceVnd = BigDecimal.ZERO;
 
         List<OrderLinks> orderLinksList = new ArrayList<>();
-        if (consignmentRequest.getConsignmentLinkRequests() != null) {
-            for (ConsignmentLinkRequest linkRequest : consignmentRequest. getConsignmentLinkRequests()) {
-                OrderLinks orderLink = new OrderLinks();
-                orderLink.setOrders(order);
-                orderLink.setQuantity(linkRequest.getQuantity());
-                orderLink.setProductName(linkRequest.getProductName());
-                ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
-                        .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
-                orderLink.setProductType(productType);
-                orderLink.setStatus(OrderLinkStatus.DA_MUA);
-                orderLink.setShipmentCode(linkRequest.getShipmentCode());
-                orderLink.setFinalPriceVnd(
-                    linkRequest.getExtraCharge()
+if (consignmentRequest.getConsignmentLinkRequests() != null) {
+    for (ConsignmentLinkRequest linkRequest : consignmentRequest.getConsignmentLinkRequests()) {
+
+        OrderLinks orderLink = new OrderLinks();
+        orderLink.setOrders(order);
+        orderLink.setQuantity(linkRequest.getQuantity());
+        orderLink.setProductName(linkRequest.getProductName());
+
+        ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
+                .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy"));
+        orderLink.setProductType(productType);
+
+        orderLink.setStatus(OrderLinkStatus.DA_MUA);
+
+        String trackingCode = generateOrderLinkCode();
+        orderLink.setTrackingCode(trackingCode);
+
+        String shipmentCode = linkRequest.getShipmentCode();
+        if (shipmentCode == null || shipmentCode.trim().isEmpty()) {
+            shipmentCode = trackingCode;
+        }
+        orderLink.setShipmentCode(shipmentCode);
+
+        orderLink.setFinalPriceVnd(
+                linkRequest.getExtraCharge()
                         .add(linkRequest.getDifferentFee())
                         .setScale(2, RoundingMode.HALF_UP)
-                );     
-           orderLink.setNote(linkRequest.getNote());
+        );
 
-                String trackingCode = generateOrderLinkCode();
-                orderLink.setTrackingCode(trackingCode);
-                orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
-                orderLink.setShipmentCode(trackingCode);
-                orderLinksList.add(orderLink);
-                BigDecimal finalPrice = orderLink.getFinalPriceVnd();
-                if (finalPrice != null) {
-                    totalPriceVnd = totalPriceVnd.add(finalPrice);
-                }
-            }
+        orderLink.setNote(linkRequest.getNote());
+        orderLink.setPurchaseImage(linkRequest.getPurchaseImage());
+
+        orderLinksList.add(orderLink);
+
+        BigDecimal finalPrice = orderLink.getFinalPriceVnd();
+        if (finalPrice != null) {
+            totalPriceVnd = totalPriceVnd.add(finalPrice);
         }
+    }
+}
+
         order.setOrderLinks(new HashSet<>(orderLinksList));
         order.setFinalPriceOrder(totalPriceVnd);
         order = ordersRepository.save(order);
@@ -431,14 +443,12 @@ public class OrdersService {
     if (status == null || !validStatuses.contains(status)) {
         throw new IllegalArgumentException("Trạng thái không hợp lệ!");
     }
-
     Page<Orders> ordersPage;
-
     if (role == AccountRoles.MANAGER) {
-        // 👇 Manager xem tất cả
+      
         ordersPage = ordersRepository.findByStatusForPayment(status, pageable);
     } else {
-        // 👇 Staff chỉ thấy đơn của chính họ
+       
         ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
     }
         
