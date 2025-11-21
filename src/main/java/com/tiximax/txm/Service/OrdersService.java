@@ -129,7 +129,20 @@ public class OrdersService {
                 ProductType productType = productTypeRepository.findById(linkRequest.getProductTypeId())
                         .orElseThrow(() -> new IllegalArgumentException("Kiểu sản phẩm không được tìm thấy!"));
 
-                orderLink.setFinalPriceVnd(orderLink.getTotalWeb().multiply(order.getExchangeRate()).add(linkRequest.getExtraCharge().multiply(new BigDecimal(linkRequest.getQuantity()))).add((linkRequest.getPurchaseFee().multiply(new BigDecimal(0.01))).multiply(orderLink.getTotalWeb())).setScale(2, RoundingMode.HALF_UP));
+        orderLink.setFinalPriceVnd(
+        orderLink.getTotalWeb().multiply(order.getExchangeRate())
+        .add(
+            linkRequest.getExtraCharge()
+                .multiply(new BigDecimal(linkRequest.getQuantity())) 
+        )
+        .add(
+            linkRequest.getPurchaseFee()
+                .multiply(new BigDecimal("0.01"))     
+                .multiply(orderLink.getTotalWeb())      
+                .multiply(order.getExchangeRate())      
+                .setScale(2, RoundingMode.HALF_UP)
+        )
+);
                 orderLink.setWebsite(String.valueOf(linkRequest.getWebsite()));
                 orderLink.setProductType(productType);
                 orderLink.setClassify(linkRequest.getClassify());
