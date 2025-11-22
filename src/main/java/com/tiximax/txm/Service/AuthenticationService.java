@@ -524,32 +524,32 @@ public class AuthenticationService implements UserDetailsService {
     }
 
     public Account verifyAndSaveUser(String email, String name) {
-    Account existingAccount = authenticationRepository.findByEmail(email);
-    if (existingAccount != null) {
-        return existingAccount;
+        Account existingAccount = authenticationRepository.findByEmail(email);
+        if (existingAccount != null) {
+            return existingAccount;
+        }
+            Customer customer = new Customer();
+            customer.setUsername(email);
+            customer.setPassword(email);
+            customer.setEmail(email);
+            customer.setPhone("00000000000");
+            customer.setName(name);
+            customer.setRole(AccountRoles.CUSTOMER);
+            customer.setStatus(AccountStatus.HOAT_DONG);
+            customer.setCreatedAt(LocalDateTime.now());
+            customer.setCustomerCode(generateCustomerCode());
+
+            Address address = new Address();
+            address.setAddressName(null);
+            address.setCustomer(customer);
+            customer.setAddresses(new HashSet<>());
+            customer.getAddresses().add(address);
+
+            customer.setSource("Google");
+            customer.setVerify(true);
+            customer = authenticationRepository.save(customer);
+            return customer;
     }
-       Customer customer = new Customer();
-        customer.setUsername(email);
-        customer.setPassword(email);
-        customer.setEmail(email);
-        customer.setPhone("00000000000");
-        customer.setName(name);
-        customer.setRole(AccountRoles.CUSTOMER);
-        customer.setStatus(AccountStatus.HOAT_DONG);
-        customer.setCreatedAt(LocalDateTime.now());
-        customer.setCustomerCode(generateCustomerCode());
-
-        Address address = new Address();
-        address.setAddressName(null);
-        address.setCustomer(customer);
-        customer.setAddresses(new HashSet<>());
-        customer.getAddresses().add(address);
-
-        customer.setSource("Google");
-        customer.setVerify(true);
-        customer = authenticationRepository.save(customer);
-        return customer;
-}
 
     public Map<String, StaffPerformance> getMyCurrentMonthPerformanceMap() {
         Account currentAccount = accountUtils.getAccountCurrent();
@@ -698,28 +698,30 @@ public class AuthenticationService implements UserDetailsService {
 
         return result;
     }
-     public void changePassword(ChangePasswordRequest request) {
-    Account currentAccount = accountUtils.getAccountCurrent();
 
-    if (!passwordEncoder.matches(request.getOldPassword(), currentAccount.getPassword())) {
-        throw new IllegalArgumentException("Mật khẩu cũ không chính xác!");
+    public void changePassword(ChangePasswordRequest request) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+
+        if (!passwordEncoder.matches(request.getOldPassword(), currentAccount.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu cũ không chính xác!");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
+            throw new IllegalArgumentException("Mật khẩu xác nhận không khớp!");
+        }
+
+        if (request.getNewPassword().length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự!");
+        }
+
+
+        if (passwordEncoder.matches(request.getNewPassword(), currentAccount.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu cũ!");
+        }
+        currentAccount.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        authenticationRepository.save(currentAccount);
     }
 
-    if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
-        throw new IllegalArgumentException("Mật khẩu xác nhận không khớp!");
-    }
-
-    if (request.getNewPassword().length() < 6) {
-        throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự!");
-    }
-
-
-    if (passwordEncoder.matches(request.getNewPassword(), currentAccount.getPassword())) {
-        throw new IllegalArgumentException("Mật khẩu mới không được trùng với mật khẩu cũ!");
-    }
-    currentAccount.setPassword(passwordEncoder.encode(request.getNewPassword()));
-    authenticationRepository.save(currentAccount); 
-}
     public void sendForgotPasswordOtp(String email) throws Exception {
         Account account = authenticationRepository.findByEmail(email);
         if (account == null) {
@@ -752,4 +754,5 @@ public class AuthenticationService implements UserDetailsService {
     public Customer getCustomerById(Long customerId) {
         return customerRepository.getCustomerById(customerId);
     }
+
 }

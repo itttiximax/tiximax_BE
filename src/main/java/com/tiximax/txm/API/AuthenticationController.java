@@ -349,6 +349,7 @@ public class AuthenticationController {
                     .body(Map.of("error", "Đã có lỗi xảy ra, vui lòng thử lại sau"));
         }
     }
+
     @PostMapping("/forgot-password/send-otp")
     public ResponseEntity<?> sendOtp(@RequestBody ForgotPasswordRequest request) throws Exception {
         authenticationService.sendForgotPasswordOtp(request.getEmail());

@@ -503,22 +503,22 @@ public class PaymentService {
         return paymentRepository.findById(paymentId);
     }
 
-   public List<PaymentAuctionResponse> getPaymentByStaffandStatus() {
-    Staff staff = (Staff) accountUtils.getAccountCurrent();
+    public List<PaymentAuctionResponse> getPaymentByStaffandStatus() {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
 
-    List<Payment> payments = paymentRepository
-            .findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(
-                    staff,
-                    OrderStatus.CHO_THANH_TOAN_DAU_GIA,
-                    PaymentStatus.CHO_THANH_TOAN
-            );
+        List<Payment> payments = paymentRepository
+                .findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(
+                        staff,
+                        OrderStatus.CHO_THANH_TOAN_DAU_GIA,
+                        PaymentStatus.CHO_THANH_TOAN
+                );
 
-    return payments.stream()
-            .map(PaymentAuctionResponse::new)  
-            .toList();
+        return payments.stream()
+                .map(PaymentAuctionResponse::new)
+                .toList();
 }
 
-        public List<Payment> getPaymentsByPartialStatus() {
+    public List<Payment> getPaymentsByPartialStatus() {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         return paymentRepository.findPaymentsByStaffAndPartialStatus(staff.getAccountId(), OrderStatus.CHO_THANH_TOAN_SHIP);
     }
