@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 
 public class PurchaseService {
 
-    private final String bankName = "sacombank";
-    private final String bankNumber = "070119787309";
-    private final String bankOwner = "TRAN TAN PHAT";
+//    private final String bankName = "sacombank";
+//    private final String bankNumber = "070119787309";
+//    private final String bankOwner = "TRAN TAN PHAT";
 
     @Autowired
     private OrderLinksRepository orderLinksRepository;
@@ -50,6 +50,9 @@ public class PurchaseService {
 
     @Autowired
     private AccountRouteRepository accountRouteRepository;
+
+    @Autowired
+    private BankAccountService bankAccountService;
 
     @Autowired
     private AccountUtils accountUtils;
@@ -218,6 +221,7 @@ public class PurchaseService {
 
 
             if (totalFinalPrice.compareTo(order.getPriceBeforeFee()) > 0){
+                BankAccount bankAccount = bankAccountService.getAccountById(3);
                 Payment payment = new Payment();
                 payment.setOrders(order);
                 payment.setContent(order.getOrderCode());
@@ -226,7 +230,7 @@ public class PurchaseService {
                 payment.setPaymentType(PaymentType.MA_QR);
                 payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
                 payment.setPaymentCode(paymentService.generatePaymentCode());
-                String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+                String qrCodeUrl = "https://img.vietqr.io/image/" + bankAccount.getBankName() + "-" + bankAccount.getAccountNumber() + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
                 payment.setActionAt(LocalDateTime.now());
                 payment.setQrCode(qrCodeUrl);
                 payment.setCustomer(order.getCustomer());

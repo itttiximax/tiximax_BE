@@ -395,7 +395,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     }
 }
 
-
     public Page<Orders> getOrdersPaging(Pageable pageable, OrderStatus status) {
         Account currentAccount = accountUtils.getAccountCurrent();
         if (currentAccount.getRole().equals(AccountRoles.ADMIN) || currentAccount.getRole().equals(AccountRoles.MANAGER)) {
@@ -634,6 +633,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 OrderLinkStatus.DA_NHAP_KHO_VN
         );
     }
+
     public List<OrderPayment> getOrdersShippingByCustomerCode(String customerCode) {
         Customer customer = authenticationRepository.findByCustomerCode(customerCode);
         if (customer == null) {
@@ -726,21 +726,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         );
         ordersRepository.save(order);
     }
-
-//    public List<Orders> getReadyOrdersForPartial(Pageable pageable) {
-//        Page<Orders> ordersPage = ordersRepository.findByStatus(OrderStatus.DA_DU_HANG, pageable);
-//        return ordersPage.getContent().stream()
-//                .filter(order -> order.getOrderLinks().stream().anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN))
-//                .collect(Collectors.toList());
-//    }
-
-//    public List<Orders> getReadyOrdersForPartial(Pageable pageable) {
-//        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_DU_HANG, OrderStatus.DANG_XU_LY);
-//        Page<Orders> ordersPage = ordersRepository.findByStatusIn(statuses, pageable);
-//        return ordersPage.getContent().stream()
-//                .filter(order -> order.getOrderLinks().stream().anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN))
-//                .collect(Collectors.toList());
-//    }
 
     public List<OrderPayment> getReadyOrdersForPartial(Pageable pageable) {
         List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_DU_HANG, OrderStatus.DANG_XU_LY);
