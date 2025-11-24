@@ -203,4 +203,10 @@ public class OrdersController {
         Page<OrderWithLinks> result = ordersService.getOrdersWithBuyLaterLinks(pageable, orderType);
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/info-shipment/{shipmentCode}")
+    public ResponseEntity<InfoShipmentCode> inforShipmentCode(
+            @PathVariable String shipmentCode) {
+        return ResponseEntity.ok(ordersService.inforShipmentCode(shipmentCode));
+    }
 }

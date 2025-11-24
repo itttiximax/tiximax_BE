@@ -891,5 +891,16 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             return dto;
         });
     }
-    
+
+    public InfoShipmentCode inforShipmentCode(String shipmentCode) {
+        List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
+        InfoShipmentCode infoShipmentCode = new InfoShipmentCode();
+        if (!orderLinks.isEmpty()){
+            infoShipmentCode.setOrders(orderLinks.get(0).getOrders());
+            infoShipmentCode.setCustomer(orderLinks.get(0).getOrders().getCustomer());
+        } else {
+            throw new IllegalStateException("Không tìm thấy mã vận đơn này, vui lòng thử lại!");
+        }
+        return infoShipmentCode;
+    }
 }
