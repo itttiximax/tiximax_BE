@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.tiximax.txm.Entity.Customer;
+import com.tiximax.txm.Enums.AccountStatus;
 import com.tiximax.txm.Entity.Address;
 
 @Data
@@ -18,9 +19,8 @@ public class CustomerResponseDTO {
     private Long staffId;
     private Double totalWeight;
     private BigDecimal balance;
+    private AccountStatus status; 
     private List<AddressDTO> addresses;
-
-    // ✅ Mapper static method nằm trong chính DTO này
     public static CustomerResponseDTO fromEntity(Customer customer) {
         CustomerResponseDTO dto = new CustomerResponseDTO();
 
@@ -33,8 +33,8 @@ public class CustomerResponseDTO {
         dto.setStaffId(customer.getStaffId());
         dto.setTotalWeight(customer.getTotalWeight());
         dto.setBalance(customer.getBalance());
+        dto.setStatus(customer.getStatus()); // ✅ Map thêm status
 
-        // Map danh sách Address -> AddressDTO
         dto.setAddresses(
             customer.getAddresses().stream()
                 .map(addr -> {
