@@ -5,11 +5,7 @@ import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
-import com.tiximax.txm.Model.ConsignmentRequest;
-import com.tiximax.txm.Model.OrderDetail;
-import com.tiximax.txm.Model.OrderPayment;
-import com.tiximax.txm.Model.OrderWithLinks;
-import com.tiximax.txm.Model.OrdersRequest;
+import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -130,8 +126,8 @@ public class OrdersController {
     }
 
     @GetMapping("/orderLink/{orderLinkId}")
-    public ResponseEntity<OrderLinks> getOrderLinkById(@PathVariable Long orderLinkId) {
-        OrderLinks orderLink = ordersService.getOrderLinkById(orderLinkId);
+    public ResponseEntity<OrderLinkWithStaff> getOrderLinkById(@PathVariable Long orderLinkId) {
+        OrderLinkWithStaff orderLink = ordersService.getOrderLinkById(orderLinkId);
         return ResponseEntity.ok(orderLink);
     }
 

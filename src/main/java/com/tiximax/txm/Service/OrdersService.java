@@ -567,10 +567,25 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         });
     }
 
-    public OrderLinks getOrderLinkById(Long orderLinkId) {
+    public OrderLinkWithStaff getOrderLinkById(Long orderLinkId) {
+//        OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
+//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
+//        return orderLink;
         OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
-        return orderLink;
+
+        Staff staff = orderLink.getOrders().getStaff();
+
+        Customer customer = orderLink.getOrders().getCustomer();
+
+        if (staff == null) {
+            throw new IllegalArgumentException("Không tìm thấy thông tin nhân viên liên quan!");
+        }
+        OrderLinkWithStaff orderLinkWithStaff = new OrderLinkWithStaff();
+        orderLinkWithStaff.setOrderLink(orderLink);
+        orderLinkWithStaff.setStaff(staff);
+        orderLinkWithStaff.setCustomer(customer);
+        return orderLinkWithStaff;
     }
     
     public Map<String, Long> getOrderStatusStatistics() {

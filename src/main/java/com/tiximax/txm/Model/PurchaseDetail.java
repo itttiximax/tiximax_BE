@@ -21,6 +21,8 @@ public class PurchaseDetail {
     private Orders orders;
     private Set<OrderLinks> orderLinks;
     private Set<Warehouse> warehouses;
+    private Staff staff;
+    private Customer customer;
 
     public PurchaseDetail(Purchases purchases) {
 
@@ -32,6 +34,8 @@ public class PurchaseDetail {
         this.orders = purchases.getOrders();
         this.orderLinks = purchases.getOrderLinks();
         this.warehouses = purchases.getWarehouses();
+        this.staff = purchases.getOrders().getStaff();
+        this.customer = purchases.getOrders().getCustomer();
 
     }
 }
