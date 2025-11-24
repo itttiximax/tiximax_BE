@@ -2,12 +2,7 @@ package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Purchases;
 import com.tiximax.txm.Enums.PurchaseFilter;
-import com.tiximax.txm.Model.PendingShipmentPurchase;
-import com.tiximax.txm.Model.PurchaseDetail;
-import com.tiximax.txm.Model.PurchasePendingShipment;
-import com.tiximax.txm.Model.PurchaseRequest;
-import com.tiximax.txm.Model.ShipmentCode;
-import com.tiximax.txm.Model.UpdateShipmentRequest;
+import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Service.PurchaseService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,5 +117,13 @@ public class PurchaseController {
         Pageable pageable = PageRequest.of(page, size);
         Page<PurchasePendingShipment> result = purchaseService.getFullPurchases(status,pageable);
         return ResponseEntity.ok(result);
+    }
+
+    @PatchMapping("/{purchaseId}")
+    public ResponseEntity<Purchases> updatePurchase(
+            @PathVariable Long purchaseId,
+            @RequestBody UpdatePurchaseRequest request) {
+        Purchases updated = purchaseService.updatePurchase(purchaseId, request);
+        return ResponseEntity.ok(updated);
     }
 }

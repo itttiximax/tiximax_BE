@@ -289,9 +289,9 @@ public class AuthenticationService implements UserDetailsService {
     }
 
     public Customer registerCustomerByStaff(RegisterCustomerRequest registerRequest) {
-        if (authenticationRepository.findByUsername(registerRequest.getUsername()) != null){
-            throw new BadCredentialsException("Tên đăng nhập bị trùng, vui lòng chọn một tên khác!");
-        }
+//        if (authenticationRepository.findByUsername(registerRequest.getUsername()) != null){
+//            throw new BadCredentialsException("Tên đăng nhập bị trùng, vui lòng chọn một tên khác!");
+//        }
 
         if (authenticationRepository.findByPhone(registerRequest.getPhone()) != null){
             throw new BadCredentialsException("Số điện thoại bị trùng, vui lòng chọn một số khác!");
@@ -299,7 +299,7 @@ public class AuthenticationService implements UserDetailsService {
 
         if (authenticationRepository.findByEmail(registerRequest.getEmail()) != null){
             throw new BadCredentialsException("Email bị trùng, vui lòng chọn một email khác!");
-        }
+        }   
 
         if (registerRequest.getAddress() == null || registerRequest.getAddress().trim().isEmpty()) {
             throw new IllegalArgumentException("Địa chỉ không được để trống!");
