@@ -2,6 +2,7 @@ package com.tiximax.txm.API;
 
 import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Entity.Warehouse;
+import com.tiximax.txm.Model.InfoShipmentCode;
 import com.tiximax.txm.Model.WarehouseRequest;
 import com.tiximax.txm.Model.WarehouseSummary;
 import com.tiximax.txm.Service.WarehouseService;
@@ -83,4 +84,5 @@ public class WarehouseController {
             @RequestParam(required = false) String keyword) {
         return ResponseEntity.ok(warehouseService.suggestShipmentCodes(keyword));
     }
+
 }
