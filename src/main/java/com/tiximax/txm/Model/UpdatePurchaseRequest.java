@@ -16,6 +16,6 @@ public class UpdatePurchaseRequest {
 
     private String note;
 
-    private Map<Long, String> shipmentCodes;
+    private String shipmentCode;
 
 }

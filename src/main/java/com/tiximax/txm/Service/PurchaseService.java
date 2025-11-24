@@ -467,26 +467,20 @@ public class PurchaseService {
         if (request.getNote() != null) {
             purchase.setNote(request.getNote());
         }
-
-        if (request.getShipmentCodes() != null && !request.getShipmentCodes().isEmpty()) {
-            Set<OrderLinks> orderLinks = purchase.getOrderLinks();
-            for (Map.Entry<Long, String> entry : request.getShipmentCodes().entrySet()) {
-                Long orderLinkId = entry.getKey();
-                String newShipmentCode = entry.getValue().trim();
-
-                if (newShipmentCode.isEmpty()) {
-                    throw new IllegalArgumentException("Mã vận đơn không được để trống cho OrderLink ID: " + orderLinkId);
-                }
-
-                OrderLinks link = orderLinks.stream()
-                        .filter(ol -> ol.getLinkId().equals(orderLinkId))
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy OrderLink ID: " + orderLinkId + " trong Purchase này!"));
-
-                if (orderLinksRepository.existsByShipmentCodeAndLinkIdNot(newShipmentCode, orderLinkId)) {
+        if (request.getShipmentCode() != null) {
+            String newShipmentCode = request.getShipmentCode().trim();
+            if (newShipmentCode.isEmpty()) {
+                throw new IllegalArgumentException("Mã vận đơn không được để trống!");
+            }
+            if (orderLinksRepository.existsByShipmentCode(newShipmentCode)) {
+                boolean isExistingOutside = purchase.getOrderLinks().stream()
+                        .anyMatch(link -> !link.getShipmentCode().equals(newShipmentCode) && orderLinksRepository.existsByShipmentCode(newShipmentCode));
+                if (isExistingOutside) {
                     throw new IllegalArgumentException("Mã vận đơn '" + newShipmentCode + "' đã tồn tại!");
                 }
-
+            }
+            Set<OrderLinks> orderLinks = purchase.getOrderLinks();
+            for (OrderLinks link : orderLinks) {
                 link.setShipmentCode(newShipmentCode);
             }
             orderLinksRepository.saveAll(orderLinks);
