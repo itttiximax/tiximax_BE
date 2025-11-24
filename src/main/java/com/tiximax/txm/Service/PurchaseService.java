@@ -16,10 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -407,8 +404,6 @@ public class PurchaseService {
         });
     }
 
-    
-
     public Page<PurchasePendingShipment> getFullPurchases(PurchaseFilter status ,Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
         Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
@@ -460,5 +455,42 @@ public class PurchaseService {
 
             return new PurchasePendingShipment(purchase, pendingLinks);
         });
+    }
+
+    public Purchases updatePurchase(Long purchaseId, UpdatePurchaseRequest request) {
+        Purchases purchase = purchasesRepository.findById(purchaseId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua!"));
+
+        if (request.getFinalPriceOrder() != null) {
+            purchase.setFinalPriceOrder(request.getFinalPriceOrder());
+        }
+        if (request.getNote() != null) {
+            purchase.setNote(request.getNote());
+        }
+
+        if (request.getShipmentCodes() != null && !request.getShipmentCodes().isEmpty()) {
+            Set<OrderLinks> orderLinks = purchase.getOrderLinks();
+            for (Map.Entry<Long, String> entry : request.getShipmentCodes().entrySet()) {
+                Long orderLinkId = entry.getKey();
+                String newShipmentCode = entry.getValue().trim();
+
+                if (newShipmentCode.isEmpty()) {
+                    throw new IllegalArgumentException("Mã vận đơn không được để trống cho OrderLink ID: " + orderLinkId);
+                }
+
+                OrderLinks link = orderLinks.stream()
+                        .filter(ol -> ol.getLinkId().equals(orderLinkId))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy OrderLink ID: " + orderLinkId + " trong Purchase này!"));
+
+                if (orderLinksRepository.existsByShipmentCodeAndLinkIdNot(newShipmentCode, orderLinkId)) {
+                    throw new IllegalArgumentException("Mã vận đơn '" + newShipmentCode + "' đã tồn tại!");
+                }
+
+                link.setShipmentCode(newShipmentCode);
+            }
+            orderLinksRepository.saveAll(orderLinks);
+        }
+        return purchasesRepository.save(purchase);
     }
 }
