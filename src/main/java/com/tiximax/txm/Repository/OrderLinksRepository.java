@@ -65,4 +65,6 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
     @Query("SELECT COUNT(ol) FROM OrderLinks ol WHERE ol.orders.createdAt BETWEEN :start AND :end")
     long countByOrdersCreatedAtBetween(@Param("start") LocalDateTime start,
                                        @Param("end") LocalDateTime end);
+
+    boolean existsByShipmentCodeAndLinkIdNot(String newShipmentCode, Long orderLinkId);
 }

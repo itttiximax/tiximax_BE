@@ -63,8 +63,6 @@ public class AuthenticationController {
 
     @Autowired
     private EmailService emailService;
-    
-   
 
     @Autowired
     private TokenService tokenService;
@@ -351,6 +349,7 @@ public class AuthenticationController {
                     .body(Map.of("error", "Đã có lỗi xảy ra, vui lòng thử lại sau"));
         }
     }
+
     @PostMapping("/forgot-password/send-otp")
     public ResponseEntity<?> sendOtp(@RequestBody ForgotPasswordRequest request) throws Exception {
         authenticationService.sendForgotPasswordOtp(request.getEmail());
@@ -361,6 +360,11 @@ public class AuthenticationController {
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest dto) {
         authenticationService.resetPasswordWithOtp(dto.getEmail(), dto.getOtp(), dto.getNewPassword());
         return ResponseEntity.ok("Mật khẩu đã được đặt lại thành công!");
+    }
+
+    @GetMapping("/{customerId}")
+    public ResponseEntity<Customer> getCustomerById(@PathVariable Long customerId) {
+        return ResponseEntity.ok(authenticationService.getCustomerById(customerId));
     }
    
 }

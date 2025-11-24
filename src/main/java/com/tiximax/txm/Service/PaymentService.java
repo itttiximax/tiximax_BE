@@ -138,8 +138,6 @@ public class PaymentService {
         return paymentCode;
     }
 
-    
-
     public Payment confirmedPayment(String paymentCode) {
         Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
         if (paymentOptional.isEmpty()) {
@@ -350,7 +348,7 @@ public class PaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        BigDecimal collect = totalAmount.add(totalDebt).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal collect = totalAmount.add(totalDebt).setScale(0, RoundingMode.HALF_UP);
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
@@ -505,22 +503,22 @@ public class PaymentService {
         return paymentRepository.findById(paymentId);
     }
 
-   public List<PaymentAuctionResponse> getPaymentByStaffandStatus() {
-    Staff staff = (Staff) accountUtils.getAccountCurrent();
+    public List<PaymentAuctionResponse> getPaymentByStaffandStatus() {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
 
-    List<Payment> payments = paymentRepository
-            .findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(
-                    staff,
-                    OrderStatus.CHO_THANH_TOAN_DAU_GIA,
-                    PaymentStatus.CHO_THANH_TOAN
-            );
+        List<Payment> payments = paymentRepository
+                .findAllByStaffAndOrderStatusAndPaymentStatusOrderByActionAtDesc(
+                        staff,
+                        OrderStatus.CHO_THANH_TOAN_DAU_GIA,
+                        PaymentStatus.CHO_THANH_TOAN
+                );
 
-    return payments.stream()
-            .map(PaymentAuctionResponse::new)  
-            .toList();
+        return payments.stream()
+                .map(PaymentAuctionResponse::new)
+                .toList();
 }
 
-        public List<Payment> getPaymentsByPartialStatus() {
+    public List<Payment> getPaymentsByPartialStatus() {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         return paymentRepository.findPaymentsByStaffAndPartialStatus(staff.getAccountId(), OrderStatus.CHO_THANH_TOAN_SHIP);
     }
@@ -630,8 +628,8 @@ public class PaymentService {
         BigDecimal totalCollect = BigDecimal.ZERO;
         for (Orders order : ordersList) {
             BigDecimal orderFinalPrice = order.getFinalPriceOrder();
-            BigDecimal orderCollect = orderFinalPrice.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal orderLeftover = orderFinalPrice.subtract(orderCollect).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal orderCollect = orderFinalPrice.multiply(depositRate).setScale(0, RoundingMode.HALF_UP);
+            BigDecimal orderLeftover = orderFinalPrice.subtract(orderCollect).setScale(0, RoundingMode.HALF_UP);
             order.setLeftoverMoney(orderLeftover);
             ordersRepository.save(order);
             totalCollect = totalCollect.add(orderCollect);

@@ -16,19 +16,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 
 public class PurchaseService {
 
-    private final String bankName = "sacombank";
-    private final String bankNumber = "070119787309";
-    private final String bankOwner = "TRAN TAN PHAT";
+//    private final String bankName = "sacombank";
+//    private final String bankNumber = "070119787309";
+//    private final String bankOwner = "TRAN TAN PHAT";
 
     @Autowired
     private OrderLinksRepository orderLinksRepository;
@@ -50,6 +47,9 @@ public class PurchaseService {
 
     @Autowired
     private AccountRouteRepository accountRouteRepository;
+
+    @Autowired
+    private BankAccountService bankAccountService;
 
     @Autowired
     private AccountUtils accountUtils;
@@ -218,6 +218,7 @@ public class PurchaseService {
 
 
             if (totalFinalPrice.compareTo(order.getPriceBeforeFee()) > 0){
+                BankAccount bankAccount = bankAccountService.getAccountById(3);
                 Payment payment = new Payment();
                 payment.setOrders(order);
                 payment.setContent(order.getOrderCode());
@@ -226,7 +227,7 @@ public class PurchaseService {
                 payment.setPaymentType(PaymentType.MA_QR);
                 payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
                 payment.setPaymentCode(paymentService.generatePaymentCode());
-                String qrCodeUrl = "https://img.vietqr.io/image/" + bankName + "-" + bankNumber + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankOwner;
+                String qrCodeUrl = "https://img.vietqr.io/image/" + bankAccount.getBankName() + "-" + bankAccount.getAccountNumber() + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
                 payment.setActionAt(LocalDateTime.now());
                 payment.setQrCode(qrCodeUrl);
                 payment.setCustomer(order.getCustomer());
@@ -403,8 +404,6 @@ public class PurchaseService {
         });
     }
 
-    
-
     public Page<PurchasePendingShipment> getFullPurchases(PurchaseFilter status ,Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
         Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
@@ -456,5 +455,36 @@ public class PurchaseService {
 
             return new PurchasePendingShipment(purchase, pendingLinks);
         });
+    }
+
+    public Purchases updatePurchase(Long purchaseId, UpdatePurchaseRequest request) {
+        Purchases purchase = purchasesRepository.findById(purchaseId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch mua!"));
+
+        if (request.getFinalPriceOrder() != null) {
+            purchase.setFinalPriceOrder(request.getFinalPriceOrder());
+        }
+        if (request.getNote() != null) {
+            purchase.setNote(request.getNote());
+        }
+        if (request.getShipmentCode() != null) {
+            String newShipmentCode = request.getShipmentCode().trim();
+            if (newShipmentCode.isEmpty()) {
+                throw new IllegalArgumentException("Mã vận đơn không được để trống!");
+            }
+            if (orderLinksRepository.existsByShipmentCode(newShipmentCode)) {
+                boolean isExistingOutside = purchase.getOrderLinks().stream()
+                        .anyMatch(link -> !link.getShipmentCode().equals(newShipmentCode) && orderLinksRepository.existsByShipmentCode(newShipmentCode));
+                if (isExistingOutside) {
+                    throw new IllegalArgumentException("Mã vận đơn '" + newShipmentCode + "' đã tồn tại!");
+                }
+            }
+            Set<OrderLinks> orderLinks = purchase.getOrderLinks();
+            for (OrderLinks link : orderLinks) {
+                link.setShipmentCode(newShipmentCode);
+            }
+            orderLinksRepository.saveAll(orderLinks);
+        }
+        return purchasesRepository.save(purchase);
     }
 }

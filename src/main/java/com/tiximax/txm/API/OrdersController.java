@@ -5,11 +5,7 @@ import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
-import com.tiximax.txm.Model.ConsignmentRequest;
-import com.tiximax.txm.Model.OrderDetail;
-import com.tiximax.txm.Model.OrderPayment;
-import com.tiximax.txm.Model.OrderWithLinks;
-import com.tiximax.txm.Model.OrdersRequest;
+import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -107,6 +103,7 @@ public class OrdersController {
         List<Orders> orders = ordersService.getOrdersForCurrentStaff();
         return ResponseEntity.ok(orders);
     }
+
     @GetMapping("/for-payment/{page}/{size}/{status}")
     public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
         Sort sort = Sort.by("createdAt").descending();
@@ -129,8 +126,8 @@ public class OrdersController {
     }
 
     @GetMapping("/orderLink/{orderLinkId}")
-    public ResponseEntity<OrderLinks> getOrderLinkById(@PathVariable Long orderLinkId) {
-        OrderLinks orderLink = ordersService.getOrderLinkById(orderLinkId);
+    public ResponseEntity<OrderLinkWithStaff> getOrderLinkById(@PathVariable Long orderLinkId) {
+        OrderLinkWithStaff orderLink = ordersService.getOrderLinkById(orderLinkId);
         return ResponseEntity.ok(orderLink);
     }
 
@@ -205,5 +202,11 @@ public class OrdersController {
         Pageable pageable = PageRequest.of(page, size);
         Page<OrderWithLinks> result = ordersService.getOrdersWithBuyLaterLinks(pageable, orderType);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/info-shipment/{shipmentCode}")
+    public ResponseEntity<InfoShipmentCode> inforShipmentCode(
+            @PathVariable String shipmentCode) {
+        return ResponseEntity.ok(ordersService.inforShipmentCode(shipmentCode));
     }
 }

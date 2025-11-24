@@ -395,7 +395,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     }
 }
 
-
     public Page<Orders> getOrdersPaging(Pageable pageable, OrderStatus status) {
         Account currentAccount = accountUtils.getAccountCurrent();
         if (currentAccount.getRole().equals(AccountRoles.ADMIN) || currentAccount.getRole().equals(AccountRoles.MANAGER)) {
@@ -568,10 +567,25 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         });
     }
 
-    public OrderLinks getOrderLinkById(Long orderLinkId) {
+    public OrderLinkWithStaff getOrderLinkById(Long orderLinkId) {
+//        OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
+//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
+//        return orderLink;
         OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm này!"));
-        return orderLink;
+
+        Staff staff = orderLink.getOrders().getStaff();
+
+        Customer customer = orderLink.getOrders().getCustomer();
+
+        if (staff == null) {
+            throw new IllegalArgumentException("Không tìm thấy thông tin nhân viên liên quan!");
+        }
+        OrderLinkWithStaff orderLinkWithStaff = new OrderLinkWithStaff();
+        orderLinkWithStaff.setOrderLink(orderLink);
+        orderLinkWithStaff.setStaff(staff);
+        orderLinkWithStaff.setCustomer(customer);
+        return orderLinkWithStaff;
     }
     
     public Map<String, Long> getOrderStatusStatistics() {
@@ -634,6 +648,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 OrderLinkStatus.DA_NHAP_KHO_VN
         );
     }
+
     public List<OrderPayment> getOrdersShippingByCustomerCode(String customerCode) {
         Customer customer = authenticationRepository.findByCustomerCode(customerCode);
         if (customer == null) {
@@ -726,21 +741,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         );
         ordersRepository.save(order);
     }
-
-//    public List<Orders> getReadyOrdersForPartial(Pageable pageable) {
-//        Page<Orders> ordersPage = ordersRepository.findByStatus(OrderStatus.DA_DU_HANG, pageable);
-//        return ordersPage.getContent().stream()
-//                .filter(order -> order.getOrderLinks().stream().anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN))
-//                .collect(Collectors.toList());
-//    }
-
-//    public List<Orders> getReadyOrdersForPartial(Pageable pageable) {
-//        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_DU_HANG, OrderStatus.DANG_XU_LY);
-//        Page<Orders> ordersPage = ordersRepository.findByStatusIn(statuses, pageable);
-//        return ordersPage.getContent().stream()
-//                .filter(order -> order.getOrderLinks().stream().anyMatch(link -> link.getStatus() == OrderLinkStatus.DA_NHAP_KHO_VN))
-//                .collect(Collectors.toList());
-//    }
 
     public List<OrderPayment> getReadyOrdersForPartial(Pageable pageable) {
         List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_DU_HANG, OrderStatus.DANG_XU_LY);
@@ -891,5 +891,16 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             return dto;
         });
     }
-    
+
+    public InfoShipmentCode inforShipmentCode(String shipmentCode) {
+        List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
+        InfoShipmentCode infoShipmentCode = new InfoShipmentCode();
+        if (!orderLinks.isEmpty()){
+            infoShipmentCode.setOrders(orderLinks.get(0).getOrders());
+            infoShipmentCode.setCustomer(orderLinks.get(0).getOrders().getCustomer());
+        } else {
+            throw new IllegalStateException("Không tìm thấy mã vận đơn này, vui lòng thử lại!");
+        }
+        return infoShipmentCode;
+    }
 }
