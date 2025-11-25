@@ -94,7 +94,7 @@ public class WarehouseService {
                 warehouse.setNetWeight(warehouse.getWeight());
             }
             warehouse.setImage(warehouseRequest.getImage());
-            warehouse.setImageCheck(warehouseRequest.getImageCheck());
+            warehouse.setImageCheck(warehouseRequest.getImageCheck());  
             warehouse.setStatus(WarehouseStatus.DA_NHAP_KHO);
             warehouse.setCreatedAt(LocalDateTime.now());
             warehouse.setStaff(staff);

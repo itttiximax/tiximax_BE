@@ -22,9 +22,6 @@ public class OrderLinkPending {
     private String trackingCode;
     private OrderLinkStatus status;
 
-
-
-
     public OrderLinkPending(OrderLinks link) {
         this.linkId = link.getLinkId();
         this.productName = link.getProductName();
