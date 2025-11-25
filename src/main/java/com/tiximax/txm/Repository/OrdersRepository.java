@@ -1,5 +1,6 @@
 package com.tiximax.txm.Repository;
 
+import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
@@ -131,5 +132,7 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
         Page<Orders> findByStaffAccountId(Long accountId, Pageable pageable);
         Page<Orders> findByRouteRouteIdIn(Set<Long> routeIds, Pageable pageable);
 
-         long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    List<Orders> findByCustomerAndLeftoverMoneyGreaterThan(Customer customer, BigDecimal zero);
 }

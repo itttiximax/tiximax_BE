@@ -5,6 +5,7 @@ import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -58,6 +59,9 @@ public class OrdersService {
 
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    private CustomerRepository customerRepository;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -519,6 +523,8 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     public OrderDetail getOrderDetail(Long orderId) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+        Hibernate.initialize(order.getWarehouses());
+        Hibernate.initialize(order.getPayments());
         return new OrderDetail(order);
     }
 
@@ -902,5 +908,28 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             throw new IllegalStateException("Không tìm thấy mã vận đơn này, vui lòng thử lại!");
         }
         return infoShipmentCode;
+    }
+
+    public CustomerBalanceAndOrders getOrdersWithNegativeLeftoverByCustomerCode(String customerCode) {
+        Customer customer = customerRepository.findByCustomerCode(customerCode)
+                .orElseThrow(() -> new RuntimeException("Customer not found with code: " + customerCode));
+
+        List<Orders> orders = ordersRepository.findByCustomerAndLeftoverMoneyGreaterThan(
+                customer, BigDecimal.ZERO);
+
+        BigDecimal balance = customer.getBalance() != null ? customer.getBalance() : BigDecimal.ZERO;
+
+        List<OrderPayment> orderPayments = orders.stream()
+                .map(this::convertToOrderPayment)
+                .collect(Collectors.toList());
+
+        return new CustomerBalanceAndOrders(balance, orderPayments);
+    }
+
+    private OrderPayment convertToOrderPayment(Orders order) {
+        OrderPayment payment = new OrderPayment(order);
+        payment.setOrderId(order.getOrderId());
+        payment.setLeftoverMoney(order.getLeftoverMoney());
+        return payment;
     }
 }
