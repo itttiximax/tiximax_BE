@@ -109,7 +109,7 @@ public class PurchaseController {
         return ResponseEntity.ok(result);
     }
 
-      @GetMapping("/lack-shipment-code/{page}/{size}")
+    @GetMapping("/lack-shipment-code/{page}/{size}")
     public ResponseEntity<Page<PurchasePendingShipment>> getPendingShipmentFullPurchases(
             @PathVariable int page,
             @PathVariable int size,
