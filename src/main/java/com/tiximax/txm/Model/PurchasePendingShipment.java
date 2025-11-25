@@ -3,6 +3,7 @@ package com.tiximax.txm.Model;
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Orders;
 import com.tiximax.txm.Entity.Purchases;
+import com.tiximax.txm.Entity.Staff;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,6 +28,8 @@ public class PurchasePendingShipment {
     private List<OrderLinkPending> pendingLinks;
     private Orders orders;
     private Customer customer;
+    private Staff staff;
+    private String note;
 
     public PurchasePendingShipment(Purchases purchase, List<OrderLinkPending> links) {
         this.purchaseId = purchase.getPurchaseId();
@@ -40,5 +43,7 @@ public class PurchasePendingShipment {
         this.pendingLinks = links;
         this.orders = purchase.getOrders();
         this.customer = purchase.getOrders().getCustomer();
+        this.staff = purchase.getOrders().getStaff();
+        this.note = purchase.getNote();
     }
 }
