@@ -415,7 +415,7 @@ public class PurchaseService {
             return Page.empty(pageable);
         }
 
-         String statusValue = (status == null ? null : status.name());
+        String statusValue = (status == null ? null : status.name());
         Page<Purchases> purchasesPage =
                 purchasesRepository.findPurchasesSortedByPendingShipment(routeIds,statusValue, pageable);
 
