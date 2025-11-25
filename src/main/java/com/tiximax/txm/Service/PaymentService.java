@@ -150,25 +150,34 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.DA_THANH_TOAN);
         payment.setCollectedAmount(payment.getAmount());
         payment.setActionAt(LocalDateTime.now());
-        if (payment.getIsMergedPayment()) {
+      if (payment.getIsMergedPayment()) {
             Set<Orders> orders = payment.getRelatedOrders();
+
             for (Orders order : orders) {
-                order.setStatus(OrderStatus.CHO_MUA);
+                if (order.getStatus() == OrderStatus.CHO_THANH_TOAN_DAU_GIA) {
+                    order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+                } else {
+                    order.setStatus(OrderStatus.CHO_MUA);
+                }
                 ordersRepository.save(order);
                 ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
             }
-        } else {
-            Orders order = payment.getOrders();
-            if(order.getStatus() == OrderStatus.CHO_THANH_TOAN_DAU_GIA){
-               order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
-            } else
-            order.setStatus(OrderStatus.CHO_MUA);
-            ordersRepository.save(order);
-            ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
-        }
-        return paymentRepository.save(payment);
-    }
 
+            } else {
+                Orders order = payment.getOrders();
+
+                if (order.getStatus() == OrderStatus.CHO_THANH_TOAN_DAU_GIA) {
+                    order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+                } else {
+                    order.setStatus(OrderStatus.CHO_MUA);
+                }
+
+                ordersRepository.save(order);
+                ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+            }
+
+        return paymentRepository.save(payment);
+        }
 //    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance) {
 //        List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
 //        if (ordersList.size() != orderCodes.size()) {
@@ -695,6 +704,100 @@ public class PaymentService {
         );
         return savedPayment;
     }
+
+      public Payment createMergedPaymentAfterAuction(Set<String> orderCodes, Integer depositPercent, boolean isUseBalance, long bankId) {
+        List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
+        if (ordersList.size() != orderCodes.size()) {
+            throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
+        }
+        if (ordersList.stream().anyMatch(o -> !o.getStatus().equals(OrderStatus.CHO_THANH_TOAN_DAU_GIA))) {
+            throw new RuntimeException("Một hoặc một số đơn hàng chưa đủ điều kiện để thanh toán!");
+        }
+
+        Customer commonCustomer = ordersList.get(0).getCustomer();
+        if (ordersList.stream().anyMatch(o -> !o.getCustomer().equals(commonCustomer))) {
+            throw new RuntimeException("Các đơn hàng phải thuộc cùng một khách hàng để thanh toán gộp!");
+        }
+
+        BigDecimal totalAmount = ordersList.stream()
+                .map(Orders::getPaymentAfterAuction)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal depositRate = BigDecimal.valueOf(depositPercent / 100.00);
+//        BigDecimal totalCollect = totalAmount.multiply(depositRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalCollect = BigDecimal.ZERO;
+        for (Orders order : ordersList) {
+            BigDecimal orderFinalPrice = order.getPaymentAfterAuction();
+            BigDecimal orderCollect = orderFinalPrice.multiply(depositRate).setScale(0, RoundingMode.HALF_UP);
+            BigDecimal orderLeftover = orderFinalPrice.subtract(orderCollect).setScale(0, RoundingMode.HALF_UP);
+            order.setLeftoverMoney(orderLeftover);
+            ordersRepository.save(order);
+            totalCollect = totalCollect.add(orderCollect);
+        }
+
+        Payment payment = new Payment();
+        payment.setPaymentCode(generateMergedPaymentCode());
+        payment.setContent(String.join(" ", orderCodes));
+        payment.setPaymentType(PaymentType.MA_QR);
+        payment.setAmount(totalAmount);
+        payment.setCollectedAmount(totalCollect);
+        payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
+        payment.setDepositPercent(depositPercent);
+        payment.setActionAt(LocalDateTime.now());
+        payment.setCustomer(commonCustomer);
+        payment.setStaff((Staff) accountUtils.getAccountCurrent());
+        payment.setIsMergedPayment(true);
+        payment.setRelatedOrders(new HashSet<>(ordersList));
+
+        BigDecimal qrAmount = totalCollect;
+        BigDecimal balance = (commonCustomer.getBalance() != null) ? commonCustomer.getBalance() : BigDecimal.ZERO;
+        if (isUseBalance && balance.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal usedBalance = balance.min(totalCollect);
+            commonCustomer.setBalance(balance.subtract(usedBalance));
+            qrAmount = totalCollect.subtract(usedBalance);
+        }
+
+        payment.setCollectedAmount(qrAmount);
+
+        BankAccount bankAccount = bankAccountService.getAccountById(bankId);
+        if (bankAccount == null){
+            throw new RuntimeException("Thông tin thẻ ngân hàng không được tìm thấy!");
+        }
+        String qrCodeUrl = "https://img.vietqr.io/image/" + bankAccount.getBankName() + "-" + bankAccount.getAccountNumber() + "-print.png?amount=" + qrAmount + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
+        payment.setQrCode(qrCodeUrl);
+
+        Payment savedPayment = paymentRepository.save(payment);
+
+        for (Orders order : ordersList) {
+            ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
+            order.setStatus(OrderStatus.CHO_THANH_TOAN_DAU_GIA);
+            ordersRepository.save(order);
+        }
+
+        if (isUseBalance && balance.compareTo(BigDecimal.ZERO) > 0) {
+            authenticationRepository.save(commonCustomer);
+        } else if (commonCustomer.getBalance() != null) {
+            authenticationRepository.save(commonCustomer);
+        }
+
+        if (qrAmount.compareTo(BigDecimal.ZERO) == 0 && depositPercent >= 100) {
+            savedPayment.setStatus(PaymentStatus.DA_THANH_TOAN);
+            savedPayment = paymentRepository.save(savedPayment);
+        }
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "UPDATE",
+                        "paymentCode", savedPayment.getPaymentCode(),
+                        "customerCode", commonCustomer.getCustomerCode(),
+                        "message", "Thanh toán gộp sau đấu giá mới được tạo!"
+                )
+        );
+        return savedPayment;
+    }
+
+
+
 
     public String generateMergedPaymentCode() {
         String paymentCode;

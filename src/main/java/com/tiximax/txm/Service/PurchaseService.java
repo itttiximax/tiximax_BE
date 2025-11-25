@@ -218,37 +218,28 @@ public class PurchaseService {
 
 
             if (totalFinalPrice.compareTo(order.getPriceBeforeFee()) > 0){
-                BankAccount bankAccount = bankAccountService.getAccountById(3);
-                Payment payment = new Payment();
-                payment.setOrders(order);
-                payment.setContent(order.getOrderCode());
-                payment.setAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
-                payment.setCollectedAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
-                payment.setPaymentType(PaymentType.MA_QR);
-                payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-                payment.setPaymentCode(paymentService.generatePaymentCode());
-                String qrCodeUrl = "https://img.vietqr.io/image/" + bankAccount.getBankName() + "-" + bankAccount.getAccountNumber() + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
-                payment.setActionAt(LocalDateTime.now());
-                payment.setQrCode(qrCodeUrl);
-                payment.setCustomer(order.getCustomer());
-                payment.setStaff(order.getStaff());
-                payment.setIsMergedPayment(false);
-                paymentRepository.save(payment);
-                order.setStatus(OrderStatus.CHO_THANH_TOAN_DAU_GIA);
-            } else if(order.getPriceBeforeFee().compareTo(totalFinalPrice) > 0) {
-                System.out.println("Số tiền cần thu: " + order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
+                // BankAccount bankAccount = bankAccountService.getAccountById(3);
                 // Payment payment = new Payment();
                 // payment.setOrders(order);
                 // payment.setContent(order.getOrderCode());
-                // payment.setAmount(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
-                // payment.setCollectedAmount(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());
+                // payment.setAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
+                // payment.setCollectedAmount(totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()));
+                // payment.setPaymentType(PaymentType.MA_QR);
                 // payment.setStatus(PaymentStatus.CHO_THANH_TOAN);
-                // payment.setPaymentCode(paymentService.generatePaymentCode());   
+                // payment.setPaymentCode(paymentService.generatePaymentCode());
+                // String qrCodeUrl = "https://img.vietqr.io/image/" + bankAccount.getBankName() + "-" + bankAccount.getAccountNumber() + "-print.png?amount=" + totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate()) + "&addInfo=" + payment.getPaymentCode() + "&accountName=" + bankAccount.getAccountHolder();
+                // payment.setActionAt(LocalDateTime.now());
+                // payment.setQrCode(qrCodeUrl);
                 // payment.setCustomer(order.getCustomer());
                 // payment.setStaff(order.getStaff());
-                // payment.setActionAt(LocalDateTime.now());
                 // payment.setIsMergedPayment(false);
-                // paymentRepository.save(payment);       
+                //paymentRepository.save(payment);
+                BigDecimal paymentAfterAuction = totalFinalPrice.subtract(order.getPriceBeforeFee()).multiply(order.getExchangeRate());
+
+                order.setPaymentAfterAuction(paymentAfterAuction);
+                order.setStatus(OrderStatus.CHO_THANH_TOAN_DAU_GIA);
+            } else if(order.getPriceBeforeFee().compareTo(totalFinalPrice) > 0) {
+                System.out.println("Số tiền cần thu: " + order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate()).negate());     
                 order.setLeftoverMoney(order.getPriceBeforeFee().subtract(totalFinalPrice).multiply(order.getExchangeRate().negate()));
                 order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);      
             }
