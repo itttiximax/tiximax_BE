@@ -189,8 +189,20 @@ public class WarehouseService {
     }
 
     public Page<WarehouseSummary> getWarehousesForPacking(Pageable pageable) {
-        Page<Warehouse> warehousePage = warehouseRepository.findByStatus(WarehouseStatus.DA_NHAP_KHO, pageable);
-        List<WarehouseSummary> summaries = warehousePage.getContent().stream()
+
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        if (staff.getWarehouseLocation() == null) {
+            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+        }
+         WarehouseLocation location = new WarehouseLocation();
+        location.setLocationId(staff.getWarehouseLocation().getLocationId());
+
+    Page<Warehouse> warehousePage =
+            warehouseRepository.findByStatusAndLocation_LocationId(
+                    WarehouseStatus.DA_NHAP_KHO,
+                    location.getLocationId(),
+                    pageable
+            );        List<WarehouseSummary> summaries = warehousePage.getContent().stream()
                 .map(w -> new WarehouseSummary(
                         w.getWarehouseId(),
                         w.getTrackingCode(),
