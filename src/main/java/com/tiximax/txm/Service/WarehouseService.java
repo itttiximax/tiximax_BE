@@ -245,7 +245,7 @@ public class WarehouseService {
             throw new IllegalArgumentException("Vui lòng nhập đầy đủ kích thước và cân nặng!");
         }
 
-        Double dim = (request.getLength() * request.getWidth() * request.getHeight()) / 5000;
+        Double dim = (request.getLength() * request.getWidth() * request.getHeight()) / 6000;
         warehouse.setLength(request.getLength());
         warehouse.setWidth(request.getWidth());
         warehouse.setHeight(request.getHeight());
