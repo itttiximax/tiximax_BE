@@ -215,4 +215,10 @@ public class OrdersController {
         CustomerBalanceAndOrders orders = ordersService.getOrdersWithNegativeLeftoverByCustomerCode(customerCode);
         return ResponseEntity.ok(orders);
     }
+
+    @GetMapping("/by-shipment/{shipmentCode}")
+    public ResponseEntity<OrderByShipmentResponse> getOrderByShipmentCode(@PathVariable String shipmentCode) {
+        OrderByShipmentResponse response = ordersService.getOrderByShipmentCode(shipmentCode);
+        return ResponseEntity.ok(response);
+    }
 }
