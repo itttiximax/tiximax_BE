@@ -90,5 +90,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
       AND p.actionAt BETWEEN :start AND :end """)
         BigDecimal sumPurchaseBetween(@Param("start") LocalDateTime start,
                                         @Param("end") LocalDateTime end);
+
+    List<Payment> findByRelatedOrdersContaining(Orders order);
 }
 

@@ -84,7 +84,7 @@ public class OrdersController {
 
     @GetMapping("/{page}/{size}")
     public ResponseEntity<Page<Orders>> getAllOrders(@PathVariable int page,@PathVariable int size) {
-         Sort sort = Sort.by("createdAt").descending();
+        Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Orders> ordersPage = ordersService.getAllOrdersPaging(pageable);
         return ResponseEntity.ok(ordersPage);

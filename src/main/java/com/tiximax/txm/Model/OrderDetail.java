@@ -27,11 +27,11 @@ public class OrderDetail {
     private String note;
     private Customer customer;
     private Staff staff;
-    private Set<Warehouse> warehouses;
+//    private Set<Warehouse> warehouses;
     private Set<Payment> payments;
     private Set<Purchases> purchases;
     private Set<OrderProcessLog> orderProcessLogs;
-    private Set<OrderLinks> orderLinks;
+//    private Set<OrderLinks> orderLinks;
     private Set<ShipmentTracking> shipmentTrackings;
     private Route route;
     private Destination destination;
@@ -48,11 +48,12 @@ public class OrderDetail {
         this.checkRequired = order.getCheckRequired();
         this.customer = order.getCustomer();
         this.staff = order.getStaff();
-        this.warehouses = order.getWarehouses();
+//        this.warehouses = order.getWarehouses();
+//        this.warehouses = null;
         this.payments = order.getPayments();
         this.purchases = order.getPurchases();
         this.orderProcessLogs = order.getOrderProcessLogs();
-        this.orderLinks = order.getOrderLinks();
+//        this.orderLinks = order.getOrderLinks();
         this.shipmentTrackings = order.getShipmentTrackings();
         this.route = order.getRoute();
         this.destination = order.getDestination();

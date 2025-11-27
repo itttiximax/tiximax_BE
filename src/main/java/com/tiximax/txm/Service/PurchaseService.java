@@ -67,15 +67,19 @@ public class PurchaseService {
         }
         BigDecimal priceLinks = BigDecimal.ZERO;
 
+//        for (OrderLinks ol : orderLinks){
+//            priceLinks.add(ol.getTotalWeb());
+//        }
         for (OrderLinks ol : orderLinks){
-            priceLinks.add(ol.getTotalWeb());
+            priceLinks = priceLinks.add(ol.getTotalWeb());
         }
 
         // if (purchaseRequest.getPurchaseTotal().compareTo(priceLinks) > 0){
         //     throw new IllegalStateException("Giá mua đang cao hơn giá tiền thu khách!");
         // }
 
-        if (!order.getStatus().equals(OrderStatus.CHO_MUA)){
+//        if (!order.getStatus().equals(OrderStatus.CHO_MUA)){
+        if (!(order.getStatus().equals(OrderStatus.CHO_MUA) || order.getStatus().equals(OrderStatus.CHO_NHAP_KHO_NN))){
             throw new RuntimeException("Đơn hàng chưa đủ điều kiện để mua hàng!");
         }
 
@@ -91,8 +95,10 @@ public class PurchaseService {
             }
         }
 
+//        boolean allActive = orderLinks.stream()
+//                .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA);
         boolean allActive = orderLinks.stream()
-                .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA);
+                .allMatch(link -> link.getStatus() == OrderLinkStatus.CHO_MUA || link.getStatus() == OrderLinkStatus.MUA_SAU);
         if (!allActive) {
             throw new IllegalArgumentException("Tất cả mã phải ở trạng thái chờ mua!");
         }
