@@ -368,20 +368,12 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
     public Page<Orders> getAllOrdersPaging(Pageable pageable) {
     Account currentAccount = accountUtils.getAccountCurrent();
-
     if (currentAccount.getRole().equals(AccountRoles.ADMIN) 
             || currentAccount.getRole().equals(AccountRoles.MANAGER)) {
-
-      
         return ordersRepository.findAll(pageable);
-
     } else if (currentAccount.getRole().equals(AccountRoles.STAFF_SALE)) {
-
         return ordersRepository.findByStaffAccountId(currentAccount.getAccountId(), pageable);
-
     } else if (currentAccount.getRole().equals(AccountRoles.LEAD_SALE)) {
-
-
         List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
         Set<Long> routeIds = accountRoutes.stream()
                 .map(AccountRoute::getRoute)
@@ -391,7 +383,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         if (routeIds.isEmpty()) {
             return Page.empty(pageable);
         }
-
         return ordersRepository.findByRouteRouteIdIn(routeIds, pageable);
 
     } else {
@@ -520,12 +511,39 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         });
     }
 
+//    public OrderDetail getOrderDetail(Long orderId) {
+//        Orders order = ordersRepository.findById(orderId)
+//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+//        return new OrderDetail(order);
+//    }
+
     public OrderDetail getOrderDetail(Long orderId) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
-        Hibernate.initialize(order.getWarehouses());
+
+        // Initialize collections to avoid LazyInitializationException and ensure they are loaded
         Hibernate.initialize(order.getPayments());
-        return new OrderDetail(order);
+//        Hibernate.initialize(order.getWarehouses());
+        Hibernate.initialize(order.getPurchases());
+        Hibernate.initialize(order.getOrderProcessLogs());
+//        Hibernate.initialize(order.getOrderLinks());
+        Hibernate.initialize(order.getShipmentTrackings());
+
+        // Get direct payments from one-to-many relation
+        Set<Payment> directPayments = order.getPayments();
+
+        // Get additional payments from many-to-many relation via payment_orders table
+        List<Payment> relatedPayments = paymentRepository.findByRelatedOrdersContaining(order);
+
+        // Combine all unique payments
+        Set<Payment> allPayments = new HashSet<>(directPayments);
+        allPayments.addAll(relatedPayments);
+
+        // Create OrderDetail and override payments with allPayments
+        OrderDetail orderDetail = new OrderDetail(order);
+        orderDetail.setPayments(allPayments);
+
+        return orderDetail;
     }
 
     public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable, OrderType orderType) {
