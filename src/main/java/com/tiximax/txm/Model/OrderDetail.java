@@ -92,6 +92,7 @@ public class OrderDetail {
     private BigDecimal exchangeRate;
     private BigDecimal finalPriceOrder;
     private Boolean checkRequired;
+    private Set<OrderLinks> orderLinks;
     private Customer customer;
     private Staff staff;
     // WAREHOUSE CHỈ HIỆN Ở ĐÂY MỘT LẦN DUY NHẤT
@@ -113,6 +114,7 @@ public class OrderDetail {
         this.exchangeRate = order.getExchangeRate();
         this.finalPriceOrder = order.getFinalPriceOrder();
         this.checkRequired = order.getCheckRequired();
+        this.orderLinks = order.getOrderLinks();
         this.customer = order.getCustomer();
         this.staff = order.getStaff();
         // WAREHOUSE CHỈ LẤY TỪ ORDERLINKS → KHÔNG TRÙNG, CHUẨN NHẤT
