@@ -1,19 +1,87 @@
+//package com.tiximax.txm.Model;
+//
+//import com.tiximax.txm.Entity.*;
+//import com.tiximax.txm.Enums.OrderStatus;
+//import com.tiximax.txm.Enums.OrderType;
+//import lombok.Data;
+//import lombok.Getter;
+//import lombok.Setter;
+//import java.math.BigDecimal;
+//import java.time.LocalDateTime;
+//import java.util.LinkedHashSet;
+//import java.util.Objects;
+//import java.util.Set;
+//import java.util.stream.Collectors;
+//
+//@Data
+//@Getter
+//@Setter
+//
+//public class OrderDetail {
+//
+//    private Long orderId;
+//    private String orderCode;
+//    private OrderType orderType;
+//    private OrderStatus status;
+//    private LocalDateTime createdAt;
+//    private BigDecimal exchangeRate;
+//    private BigDecimal finalPriceOrder;
+//    private Boolean checkRequired;
+//    private String note;
+//    private Customer customer;
+//    private Staff staff;
+//    private Set<Warehouse> warehouses;
+//    private Set<Payment> payments;
+//    private Set<Purchases> purchases;
+//    private Set<OrderProcessLog> orderProcessLogs;
+////    private Set<OrderLinks> orderLinks;
+//    private Set<ShipmentTracking> shipmentTrackings;
+//    private Route route;
+//    private Destination destination;
+//    private Feedback feedback;
+//
+//    public OrderDetail(Orders order) {
+//        this.orderId = order.getOrderId();
+//        this.orderCode = order.getOrderCode();
+//        this.orderType = order.getOrderType();
+//        this.status = order.getStatus();
+//        this.createdAt = order.getCreatedAt();
+//        this.exchangeRate = order.getExchangeRate();
+//        this.finalPriceOrder = order.getFinalPriceOrder();
+//        this.checkRequired = order.getCheckRequired();
+//        this.customer = order.getCustomer();
+//        this.staff = order.getStaff();
+////        this.warehouses = order.getWarehouses();
+//        this.warehouses = order.getOrderLinks().stream()
+//                .map(OrderLinks::getWarehouse)
+//                .filter(Objects::nonNull)
+//                .collect(Collectors.toCollection(LinkedHashSet::new));
+//        this.payments = order.getPayments();
+//        this.purchases = order.getPurchases();
+//        this.orderProcessLogs = order.getOrderProcessLogs();
+////        this.orderLinks = order.getOrderLinks();
+//        this.shipmentTrackings = order.getShipmentTrackings();
+//        this.route = order.getRoute();
+//        this.destination = order.getDestination();
+//        this.feedback = order.getFeedback();
+//    }
+//}
+
 package com.tiximax.txm.Model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Data
-@Getter
-@Setter
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderDetail {
 
     private Long orderId;
@@ -24,14 +92,13 @@ public class OrderDetail {
     private BigDecimal exchangeRate;
     private BigDecimal finalPriceOrder;
     private Boolean checkRequired;
-    private String note;
     private Customer customer;
     private Staff staff;
-//    private Set<Warehouse> warehouses;
+    // WAREHOUSE CHỈ HIỆN Ở ĐÂY MỘT LẦN DUY NHẤT
+    private Set<Warehouse> warehouses;
     private Set<Payment> payments;
-    private Set<Purchases> purchases;
+    private Set<Purchases> purchases; // Trong purchases SẼ KHÔNG CÓ warehouses nữa
     private Set<OrderProcessLog> orderProcessLogs;
-//    private Set<OrderLinks> orderLinks;
     private Set<ShipmentTracking> shipmentTrackings;
     private Route route;
     private Destination destination;
@@ -48,15 +115,31 @@ public class OrderDetail {
         this.checkRequired = order.getCheckRequired();
         this.customer = order.getCustomer();
         this.staff = order.getStaff();
-//        this.warehouses = order.getWarehouses();
-//        this.warehouses = null;
+        // WAREHOUSE CHỈ LẤY TỪ ORDERLINKS → KHÔNG TRÙNG, CHUẨN NHẤT
+        this.warehouses = order.getOrderLinks().stream()
+                .map(OrderLinks::getWarehouse)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         this.payments = order.getPayments();
-        this.purchases = order.getPurchases();
         this.orderProcessLogs = order.getOrderProcessLogs();
-//        this.orderLinks = order.getOrderLinks();
         this.shipmentTrackings = order.getShipmentTrackings();
         this.route = order.getRoute();
         this.destination = order.getDestination();
         this.feedback = order.getFeedback();
+        // PURCHASES: loại bỏ hoàn toàn warehouses bên trong để tránh trùng
+        this.purchases = order.getPurchases().stream()
+                .map(p -> {
+                    Purchases copy = new Purchases();
+                    copy.setPurchaseId(p.getPurchaseId());
+                    copy.setPurchaseCode(p.getPurchaseCode());
+                    copy.setPurchaseImage(p.getPurchaseImage());
+                    copy.setPurchaseTime(p.getPurchaseTime());
+                    copy.setFinalPriceOrder(p.getFinalPriceOrder());
+                    copy.setNote(p.getNote());
+                    copy.setOrderLinks(p.getOrderLinks());
+                    // Không set warehouses → để trống
+                    return copy;
+                })
+                .collect(Collectors.toSet());
     }
 }
