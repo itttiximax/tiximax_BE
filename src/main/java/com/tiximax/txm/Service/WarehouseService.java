@@ -210,6 +210,8 @@ public class WarehouseService {
                         w.getWeight(),
                         w.getNetWeight(),
                         w.getDim(),
+                        w.getImage(),
+                        w.getImageCheck(),
                         w.getCreatedAt()
                 ))
                 .collect(Collectors.toList());
@@ -296,12 +298,13 @@ public class WarehouseService {
         if (request.getWeight() != null) {
             warehouse.setWeight(request.getWeight());
         }
-        if (request.getImage() != null) {
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
             warehouse.setImage(request.getImage());
         }
-        if (request.getImageCheck() != null) {
+        if (request.getImageCheck() != null && !request.getImageCheck().isEmpty()) {
             warehouse.setImageCheck(request.getImageCheck());
         }
+
         if (recalculateDim) {
             if (warehouse.getLength() == null || warehouse.getWidth() == null || warehouse.getHeight() == null) {
                 throw new IllegalArgumentException("Không đủ kích thước để tính dim!");

@@ -613,6 +613,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
         return detail;
     }
+
     public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable, OrderType orderType) {
         Account currentAccount = accountUtils.getAccountCurrent();
 
