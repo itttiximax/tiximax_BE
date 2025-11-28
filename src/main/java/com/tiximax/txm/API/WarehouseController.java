@@ -85,4 +85,12 @@ public class WarehouseController {
         return ResponseEntity.ok(warehouseService.suggestShipmentCodes(keyword));
     }
 
+    @PatchMapping("/{trackingCode}")
+    public ResponseEntity<Warehouse> updateWarehouse(
+            @PathVariable String trackingCode,
+            @RequestBody WarehouseRequest request) {
+        Warehouse updatedWarehouse = warehouseService.updateWarehouse(trackingCode, request);
+        return ResponseEntity.ok(updatedWarehouse);
+    }
+
 }

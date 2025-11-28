@@ -84,7 +84,7 @@ public class OrdersController {
 
     @GetMapping("/{page}/{size}")
     public ResponseEntity<Page<Orders>> getAllOrders(@PathVariable int page,@PathVariable int size) {
-         Sort sort = Sort.by("createdAt").descending();
+        Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Orders> ordersPage = ordersService.getAllOrdersPaging(pageable);
         return ResponseEntity.ok(ordersPage);
@@ -213,5 +213,17 @@ public class OrdersController {
     public ResponseEntity<InfoShipmentCode> inforShipmentCode(
             @PathVariable String shipmentCode) {
         return ResponseEntity.ok(ordersService.inforShipmentCode(shipmentCode));
+    }
+
+    @GetMapping("/leftover-positive/{customerCode}")
+    public ResponseEntity<CustomerBalanceAndOrders> getOrdersWithPositiveLeftoverByCustomer(@PathVariable String customerCode) {
+        CustomerBalanceAndOrders orders = ordersService.getOrdersWithNegativeLeftoverByCustomerCode(customerCode);
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/by-shipment/{shipmentCode}")
+    public ResponseEntity<OrderByShipmentResponse> getOrderByShipmentCode(@PathVariable String shipmentCode) {
+        OrderByShipmentResponse response = ordersService.getOrderByShipmentCode(shipmentCode);
+        return ResponseEntity.ok(response);
     }
 }

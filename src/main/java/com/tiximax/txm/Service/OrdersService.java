@@ -5,6 +5,7 @@ import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -58,6 +61,9 @@ public class OrdersService {
 
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    private CustomerRepository customerRepository;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -364,20 +370,12 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
     public Page<Orders> getAllOrdersPaging(Pageable pageable) {
     Account currentAccount = accountUtils.getAccountCurrent();
-
     if (currentAccount.getRole().equals(AccountRoles.ADMIN) 
             || currentAccount.getRole().equals(AccountRoles.MANAGER)) {
-
-      
         return ordersRepository.findAll(pageable);
-
     } else if (currentAccount.getRole().equals(AccountRoles.STAFF_SALE)) {
-
         return ordersRepository.findByStaffAccountId(currentAccount.getAccountId(), pageable);
-
     } else if (currentAccount.getRole().equals(AccountRoles.LEAD_SALE)) {
-
-
         List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
         Set<Long> routeIds = accountRoutes.stream()
                 .map(AccountRoute::getRoute)
@@ -387,7 +385,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         if (routeIds.isEmpty()) {
             return Page.empty(pageable);
         }
-
         return ordersRepository.findByRouteRouteIdIn(routeIds, pageable);
 
     } else {
@@ -517,10 +514,105 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         });
     }
 
+//    public OrderDetail getOrderDetail(Long orderId) {
+//        Orders order = ordersRepository.findById(orderId)
+//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+//        return new OrderDetail(order);
+//    }
+
+//    public OrderDetail getOrderDetail(Long orderId) {
+//        Orders order = ordersRepository.findById(orderId)
+//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+//
+//        // Initialize collections to avoid LazyInitializationException and ensure they are loaded
+//        Hibernate.initialize(order.getPayments());
+////        Hibernate.initialize(order.getWarehouses());
+//        Hibernate.initialize(order.getPurchases());
+//        Hibernate.initialize(order.getOrderProcessLogs());
+////        Hibernate.initialize(order.getOrderLinks());
+//        Hibernate.initialize(order.getShipmentTrackings());
+//
+//        // Get direct payments from one-to-many relation
+//        Set<Payment> directPayments = order.getPayments();
+//
+//        // Get additional payments from many-to-many relation via payment_orders table
+//        List<Payment> relatedPayments = paymentRepository.findByRelatedOrdersContaining(order);
+//
+//        // Combine all unique payments
+//        Set<Payment> allPayments = new HashSet<>(directPayments);
+//        allPayments.addAll(relatedPayments);
+//
+//        // Create OrderDetail and override payments with allPayments
+//        OrderDetail orderDetail = new OrderDetail(order);
+//        orderDetail.setPayments(allPayments);
+//
+//        return orderDetail;
+//    }
+
+//    @Transactional(readOnly = true)
+//    public OrderDetail getOrderDetail(Long orderId) {
+//        Orders order = ordersRepository.findById(orderId)
+//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
+//
+//        // BẮT BUỘC load hết để tránh LazyInitializationException
+//        Hibernate.initialize(order.getOrderLinks());
+//        order.getOrderLinks().forEach(link -> {
+//            if (link.getWarehouse() != null) {
+//                Hibernate.initialize(link.getWarehouse());
+//            }
+//            if (link.getPurchase() != null) {
+//                Hibernate.initialize(link.getPurchase());
+//            }
+//        });
+//
+//        Hibernate.initialize(order.getPurchases());
+//        Hibernate.initialize(order.getPayments());
+//        Hibernate.initialize(order.getOrderProcessLogs());
+//        Hibernate.initialize(order.getShipmentTrackings());
+//
+//        return new OrderDetail(order);
+//    }
+
+    @Transactional(readOnly = true)
     public OrderDetail getOrderDetail(Long orderId) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
-        return new OrderDetail(order);
+
+        // 1. Load tất cả cần thiết để tránh Lazy
+        Hibernate.initialize(order.getOrderLinks());
+        order.getOrderLinks().forEach(link -> {
+            if (link.getWarehouse() != null) {
+                Hibernate.initialize(link.getWarehouse());
+            }
+            if (link.getPurchase() != null) {
+                Hibernate.initialize(link.getPurchase());
+            }
+        });
+
+        Hibernate.initialize(order.getPurchases());
+        Hibernate.initialize(order.getOrderProcessLogs());
+        Hibernate.initialize(order.getShipmentTrackings());
+
+        // 2. LẤY ĐỦ 2 LOẠI PAYMENT
+        Set<Payment> allPayments = new HashSet<>();
+
+        // Payment trực tiếp (order_id không null)
+        if (order.getPayments() != null) {
+            allPayments.addAll(order.getPayments());
+        }
+
+        // Payment gộp (qua bảng payment_orders)
+        List<Payment> mergedPayments = paymentRepository.findByRelatedOrdersContaining(order);
+        allPayments.addAll(mergedPayments);
+
+        // Gán vào order trước khi tạo DTO (nếu cần, hoặc truyền riêng)
+        // Nhưng tốt nhất là xử lý trong OrderDetail constructor
+
+        // 3. Tạo OrderDetail và truyền thêm allPayments nếu cần
+        OrderDetail detail = new OrderDetail(order);
+        detail.setPayments(allPayments); // ← Quan trọng!
+
+        return detail;
     }
 
     public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable, OrderType orderType) {
@@ -923,5 +1015,40 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             throw new IllegalStateException("Không tìm thấy mã vận đơn này, vui lòng thử lại!");
         }
         return infoShipmentCode;
+    }
+
+    public CustomerBalanceAndOrders getOrdersWithNegativeLeftoverByCustomerCode(String customerCode) {
+        Customer customer = customerRepository.findByCustomerCode(customerCode)
+                .orElseThrow(() -> new RuntimeException("Customer not found with code: " + customerCode));
+
+        List<Orders> orders = ordersRepository.findByCustomerAndLeftoverMoneyGreaterThan(
+                customer, BigDecimal.ZERO);
+
+        BigDecimal balance = customer.getBalance() != null ? customer.getBalance() : BigDecimal.ZERO;
+
+        List<OrderPayment> orderPayments = orders.stream()
+                .map(this::convertToOrderPayment)
+                .collect(Collectors.toList());
+
+        return new CustomerBalanceAndOrders(balance, orderPayments);
+    }
+
+    private OrderPayment convertToOrderPayment(Orders order) {
+        OrderPayment payment = new OrderPayment(order);
+        payment.setOrderId(order.getOrderId());
+        payment.setLeftoverMoney(order.getLeftoverMoney());
+        return payment;
+    }
+
+    public OrderByShipmentResponse getOrderByShipmentCode(String shipmentCode) {
+        List<OrderLinks> links = orderLinksRepository.findByShipmentCode(shipmentCode);
+
+        if (links.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy mã vận đơn: " + shipmentCode);
+        }
+
+        Orders order = links.get(0).getOrders();
+
+        return new OrderByShipmentResponse(order, links);
     }
 }

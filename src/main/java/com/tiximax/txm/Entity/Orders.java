@@ -1,6 +1,7 @@
 package com.tiximax.txm.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
 import jakarta.persistence.*;
@@ -59,7 +60,8 @@ public class Orders {
 
     @ManyToOne
     @JoinColumn(name="customer_id", nullable = false)
-    @JsonIgnore
+//    @JsonIgnore
+    @JsonManagedReference
     Customer customer;
 
     @ManyToOne

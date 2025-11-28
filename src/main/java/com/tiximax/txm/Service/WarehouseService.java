@@ -210,6 +210,8 @@ public class WarehouseService {
                         w.getWeight(),
                         w.getNetWeight(),
                         w.getDim(),
+                        w.getImage(),
+                        w.getImageCheck(),
                         w.getCreatedAt()
                 ))
                 .collect(Collectors.toList());
@@ -265,5 +267,58 @@ public class WarehouseService {
 
     public List<String> suggestShipmentCodes(String keyword) {
         return orderLinksRepository.suggestShipmentCodes(keyword);
+    }
+
+    public Warehouse updateWarehouse(String trackingCode, WarehouseRequest request) {
+        Optional<Warehouse> warehouseOptional = warehouseRepository.findByTrackingCode(trackingCode);
+        if (warehouseOptional.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy kho với mã tracking: " + trackingCode);
+        }
+        Warehouse warehouse = warehouseOptional.get();
+
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        if (staff.getWarehouseLocation() == null) {
+            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+        }
+
+        boolean recalculateDim = false;
+
+        if (request.getLength() != null) {
+            warehouse.setLength(request.getLength());
+            recalculateDim = true;
+        }
+        if (request.getWidth() != null) {
+            warehouse.setWidth(request.getWidth());
+            recalculateDim = true;
+        }
+        if (request.getHeight() != null) {
+            warehouse.setHeight(request.getHeight());
+            recalculateDim = true;
+        }
+        if (request.getWeight() != null) {
+            warehouse.setWeight(request.getWeight());
+        }
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            warehouse.setImage(request.getImage());
+        }
+        if (request.getImageCheck() != null && !request.getImageCheck().isEmpty()) {
+            warehouse.setImageCheck(request.getImageCheck());
+        }
+
+        if (recalculateDim) {
+            if (warehouse.getLength() == null || warehouse.getWidth() == null || warehouse.getHeight() == null) {
+                throw new IllegalArgumentException("Không đủ kích thước để tính dim!");
+            }
+            Double dim = (warehouse.getLength() * warehouse.getWidth() * warehouse.getHeight()) / 5000;
+            warehouse.setDim(dim);
+        }
+
+        if (warehouse.getWeight() != null && warehouse.getDim() != null) {
+            warehouse.setNetWeight(Math.max(warehouse.getDim(), warehouse.getWeight()));
+        } else if (warehouse.getWeight() != null || warehouse.getDim() != null) {
+            throw new IllegalArgumentException("Không đủ dữ liệu để tính netWeight!");
+        }
+
+        return warehouseRepository.save(warehouse);
     }
 }
