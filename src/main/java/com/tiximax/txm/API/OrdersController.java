@@ -142,6 +142,11 @@ public class OrdersController {
         List<OrderPayment> orders = ordersService.getOrdersByCustomerCode(customerCode);
         return ResponseEntity.ok(orders);
     }
+    @GetMapping("/payment-auction/by-customer/{customerCode}")
+    public ResponseEntity<List<OrderPayment>> getAuctionByCustomer(@PathVariable String customerCode) {
+        List<OrderPayment> orders = ordersService.getAfterPaymentAuctionsByCustomerCode(customerCode);
+        return ResponseEntity.ok(orders);
+    }
 
     @GetMapping("/orders-shipping/by-customer/{customerCode}")
     public ResponseEntity<List<OrderPayment>> getOrdersShippingByCustomer(@PathVariable String customerCode) {

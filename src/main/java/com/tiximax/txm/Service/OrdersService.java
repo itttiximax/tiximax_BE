@@ -445,6 +445,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             OrderStatus.DA_XAC_NHAN,
             OrderStatus.CHO_THANH_TOAN,
             OrderStatus.DA_DU_HANG,
+            OrderStatus.DAU_GIA_THANH_CONG,
             OrderStatus.CHO_THANH_TOAN_DAU_GIA,
             OrderStatus.CHO_THANH_TOAN_SHIP
     );
@@ -715,6 +716,26 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         }
 
         List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DA_XAC_NHAN);
+
+        return orders.stream()
+                .map(order -> {
+                    OrderPayment orderPayment = new OrderPayment(order);
+                    return orderPayment;
+                })
+                .collect(Collectors.toList());
+    }
+
+     public List<OrderPayment> getAfterPaymentAuctionsByCustomerCode(String customerCode) {
+        Customer customer = authenticationRepository.findByCustomerCode(customerCode);
+        if (customer == null) {
+            throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
+        }
+
+        if (!customer.getStaffId().equals(accountUtils.getAccountCurrent().getAccountId())) {
+            throw new IllegalStateException("Bạn không có quyền truy cập đơn hàng của khách hàng này!");
+        }
+
+        List<Orders> orders = ordersRepository.findByCustomerCodeAndStatus(customerCode, OrderStatus.DAU_GIA_THANH_CONG);
 
         return orders.stream()
                 .map(order -> {

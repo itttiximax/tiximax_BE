@@ -8,5 +8,9 @@ public enum AccountRoles {
     STAFF_WAREHOUSE_FOREIGN,
     STAFF_WAREHOUSE_DOMESTIC,
     MANAGER,
-    ADMIN
+    ADMIN,
+    HR,
+    ACCOUNTANT,
+    MARKETING,
+    LEAD_MARKETING
 }

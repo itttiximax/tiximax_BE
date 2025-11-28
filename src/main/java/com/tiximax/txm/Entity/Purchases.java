@@ -31,6 +31,10 @@ public class Purchases {
 
     private String note;
 
+    @Column(name = "is_purchased")
+    private Boolean purchased;
+
+
     @ManyToOne
     @JoinColumn(name="staff_id", nullable = false)
     @JsonIgnore
