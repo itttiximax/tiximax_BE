@@ -710,7 +710,7 @@ public class PaymentService {
         if (ordersList.size() != orderCodes.size()) {
             throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
         }
-        if (ordersList.stream().anyMatch(o -> !o.getStatus().equals(OrderStatus.CHO_THANH_TOAN_DAU_GIA))) {
+        if (ordersList.stream().anyMatch(o -> !o.getStatus().equals(OrderStatus.DAU_GIA_THANH_CONG))) {
             throw new RuntimeException("Một hoặc một số đơn hàng chưa đủ điều kiện để thanh toán!");
         }
 
@@ -771,6 +771,7 @@ public class PaymentService {
         for (Orders order : ordersList) {
             ordersService.addProcessLog(order, savedPayment.getPaymentCode(), ProcessLogAction.TAO_THANH_TOAN_HANG);
             order.setStatus(OrderStatus.CHO_THANH_TOAN_DAU_GIA);
+            order.getPurchases().forEach(purchase -> purchase.setPurchased(true));
             ordersRepository.save(order);
         }
 
@@ -779,7 +780,6 @@ public class PaymentService {
         } else if (commonCustomer.getBalance() != null) {
             authenticationRepository.save(commonCustomer);
         }
-
         if (qrAmount.compareTo(BigDecimal.ZERO) == 0 && depositPercent >= 100) {
             savedPayment.setStatus(PaymentStatus.DA_THANH_TOAN);
             savedPayment = paymentRepository.save(savedPayment);

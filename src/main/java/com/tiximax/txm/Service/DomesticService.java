@@ -396,6 +396,7 @@ public List<Map<String, Object>> getReadyForDeliveryOrders(Pageable pageable) {
         Customer customer = customerEntry.getKey();
         Map<String, Object> customerData = new HashMap<>();
         customerData.put("customerName", customer.getName());
+        customerData.put("customerCode", customer.getCustomerCode());
         customerData.put("customerPhone", customer.getPhone());
 
         Map<Address, List<Orders>> addressToOrdersMap = customerEntry.getValue().stream()
@@ -418,21 +419,37 @@ public List<Map<String, Object>> getReadyForDeliveryOrders(Pageable pageable) {
             List<Map<String, Object>> packingsData = new ArrayList<>();
 
             for (Map.Entry<Packing, List<Warehouse>> packingEntry : packingToWarehousesMap.entrySet()) {
-                Packing packing = packingEntry.getKey();
+    Packing packing = packingEntry.getKey();
 
-                Set<String> trackingCodes = packingEntry.getValue().stream()
-                        .filter(warehouse -> warehouse.getOrderLinks().stream()
-                                .anyMatch(orderLink -> orderLink.getStatus() == OrderLinkStatus.CHO_GIAO))
-                        .map(Warehouse::getTrackingCode)
-                        .collect(Collectors.toSet());
+    // trackingCodes
+    Set<String> trackingCodes = packingEntry.getValue().stream()
+            .filter(warehouse -> warehouse.getOrderLinks().stream()
+                    .anyMatch(orderLink -> orderLink.getStatus() == OrderLinkStatus.CHO_GIAO))
+            .map(Warehouse::getTrackingCode)
+            .collect(Collectors.toSet());
 
-                if (trackingCodes.isEmpty()) continue;
+    if (trackingCodes.isEmpty()) continue;
 
-                Map<String, Object> packingData = new HashMap<>();
-                packingData.put("packingCode", packing.getPackingCode());
-                packingData.put("trackingCodes", trackingCodes);
-                packingsData.add(packingData);
-            }
+    // orderLinks
+    List<Map<String, Object>> orderLinksList = packingEntry.getValue().stream()
+            .flatMap(warehouse -> warehouse.getOrderLinks().stream())
+            .filter(orderLink -> orderLink.getStatus() == OrderLinkStatus.CHO_GIAO)
+            .map(orderLink -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("orderLinkId", orderLink.getLinkId());
+                map.put("trackingCode", orderLink.getTrackingCode());
+                map.put("price", orderLink.getPriceWeb());
+                map.put("status", orderLink.getStatus());
+                return map;
+            })
+            .collect(Collectors.toList());
+
+            Map<String, Object> packingData = new HashMap<>();
+            packingData.put("packingCode", packing.getPackingCode());
+            packingData.put("trackingCodes", trackingCodes);
+            packingData.put("orderLinks", orderLinksList);
+            packingsData.add(packingData);
+        }
 
             if (packingsData.isEmpty()) continue;
 
