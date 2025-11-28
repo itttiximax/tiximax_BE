@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -216,63 +217,68 @@ public class PurchaseService {
                               link.getStatus() == OrderLinkStatus.DA_HUY);
 
     if (allValid && !allOrderLinks.isEmpty()) {
+    BigDecimal purchaseTotal = purchaseRequest.getPurchaseTotal();  // Giá sau đấu giá
+    BigDecimal priceBeforeFee = order.getPriceBeforeFee();          // Giá dự kiến ban đầu
+    BigDecimal exchange = order.getExchangeRate();                  // Tỷ giá VND/CNY
+    BigDecimal total = purchaseTotal.add(purchaseRequest.getShipWeb());
+    BigDecimal feePercent = purchaseRequest.getPurchaseFee()
+        .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+    BigDecimal fee = total.multiply(feePercent);
+    
+                          
 
-        BigDecimal purchaseTotal = purchaseRequest.getPurchaseTotal();  // Giá sau đấu giá
-        BigDecimal priceBeforeFee = order.getPriceBeforeFee();          // Giá dự kiến ban đầu
-        BigDecimal exchange = order.getExchangeRate();                  // Tỷ giá VND/CNY
+    // In ra các giá trị để kiểm tra
+    System.out.println("purchaseTotal: " + purchaseTotal);
+    System.out.println("priceBeforeFee: " + priceBeforeFee);
+    System.out.println("Total: " + total);
+    System.out.println("exchange: " + exchange);
+    System.out.println("fee: " + fee);
+    System.out.println("shipWeb: " + purchaseRequest.getShipWeb());
 
-        BigDecimal fee = purchaseTotal.multiply(purchaseRequest.getPurchaseFee());  // phí mua hộ
-        BigDecimal shipWeb = purchaseRequest.getShipWeb();                           // ship web
-
-       
-        // CASE 1 — GIÁ TĂNG → KHÁCH TRẢ THÊM
-       
-        if (purchaseTotal.compareTo(priceBeforeFee) > 0) {
-
-            BigDecimal diff = purchaseTotal.subtract(priceBeforeFee); 
-
-            BigDecimal totalCNY = diff.add(fee).add(shipWeb);
-
-            BigDecimal paymentAfterAuction = totalCNY.multiply(exchange); 
-
-            order.setPaymentAfterAuction(paymentAfterAuction);
-            order.setLeftoverMoney(BigDecimal.ZERO);
-            order.setStatus(OrderStatus.DAU_GIA_THANH_CONG);
-            purchase.setPurchased(false);
-        }
-
-         // CASE 2 — GIÁ GIẢM → KHÁCH ĐƯỢC HOÀN TIỀN
-       
-        else if (priceBeforeFee.compareTo(purchaseTotal) > 0) {
-
-            BigDecimal leftoverCNY = priceBeforeFee.subtract(purchaseTotal);
-
-            BigDecimal totalCNY = fee.add(shipWeb);
-
-            BigDecimal finalCNY = leftoverCNY.subtract(totalCNY);
-
-            BigDecimal leftoverVND = finalCNY.multiply(exchange).negate(); // âm = hoàn tiền
-
-            order.setPaymentAfterAuction(BigDecimal.ZERO);
-            order.setLeftoverMoney(leftoverVND);
-            order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
-            purchase.setPurchased(true);
-        }
-       
-        // CASE 3 — GIÁ BẰNG NHAU → CHỈ THU PHÍ VÀ SHIP
-       
-        else {
-            BigDecimal totalCNY = BigDecimal.ZERO;
-            totalCNY.add(fee).add(shipWeb);
-            order.setPaymentAfterAuction(BigDecimal.ZERO);
-            order.setLeftoverMoney(totalCNY.multiply(exchange));
-            order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
-            purchase.setPurchased(true);
-        }
-
-        purchasesRepository.save(purchase);
-        ordersRepository.save(order);
+    // CASE 1 — GIÁ TĂNG → KHÁCH TRẢ THÊM
+    if (purchaseTotal.compareTo(priceBeforeFee) > 0) {
+        BigDecimal diff = total.subtract(priceBeforeFee); // chênh lệch giá
+        System.out.println("diff: " + diff);
+        BigDecimal totalCNY = diff.add(fee);
+        System.out.println("totalCNY (after adding fee and shipWeb): " + totalCNY);
+        BigDecimal paymentAfterAuction = totalCNY.multiply(exchange);
+        System.out.println("paymentAfterAuction (in VND): " + paymentAfterAuction);
+        order.setPaymentAfterAuction(paymentAfterAuction);
+        order.setLeftoverMoney(BigDecimal.ZERO);
+        order.setStatus(OrderStatus.DAU_GIA_THANH_CONG);
+        purchase.setPurchased(false);
     }
+
+    // CASE 2 — GIÁ GIẢM → KHÁCH ĐƯỢC HOÀN TIỀN
+    else if (priceBeforeFee.compareTo(purchaseTotal) > 0) {
+        BigDecimal leftoverCNY = priceBeforeFee.subtract(purchaseTotal);
+        System.out.println("leftoverCNY: " + leftoverCNY);
+        BigDecimal totalCNY = fee;
+        System.out.println("totalCNY (fee + shipWeb): " + totalCNY);
+        BigDecimal finalCNY = leftoverCNY.subtract(totalCNY);
+        System.out.println("finalCNY (after subtracting fee and shipWeb): " + finalCNY);
+        BigDecimal leftoverVND = finalCNY.multiply(exchange).negate(); // âm = hoàn tiền
+        System.out.println("leftoverVND (in VND): " + leftoverVND);
+        order.setPaymentAfterAuction(BigDecimal.ZERO);
+        order.setLeftoverMoney(leftoverVND);
+        order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+        purchase.setPurchased(true);
+    }
+
+    // CASE 3 — GIÁ BẰNG NHAU → CHỈ THU PHÍ VÀ SHIP
+    else {
+        BigDecimal totalCNY = fee;
+        System.out.println("totalCNY (fee + shipWeb): " + totalCNY);
+        order.setPaymentAfterAuction(BigDecimal.ZERO);
+        order.setLeftoverMoney(totalCNY.multiply(exchange));
+        System.out.println("leftoverMoney (in VND): " + order.getLeftoverMoney());
+        order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+        purchase.setPurchased(true);
+    }
+
+    purchasesRepository.save(purchase);
+    ordersRepository.save(order);
+}
     return purchase;
 }
 
