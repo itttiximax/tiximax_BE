@@ -22,6 +22,7 @@ public class OrderPayment {
     private LocalDateTime createdAt;
     private BigDecimal exchangeRate;
     private BigDecimal finalPriceOrder;
+    private BigDecimal PaymentAfterAuction;
     private String note;
     private Customer customer;
     private String paymentCode;
@@ -37,6 +38,7 @@ public class OrderPayment {
         this.status = order.getStatus();
         this.createdAt = order.getCreatedAt();
         this.exchangeRate = order.getExchangeRate();
+        this.PaymentAfterAuction = order.getPaymentAfterAuction();
         this.finalPriceOrder = order.getFinalPriceOrder();
         this.customer = order.getCustomer();
         this.paymentCode = null;
