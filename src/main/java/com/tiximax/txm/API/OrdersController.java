@@ -226,4 +226,20 @@ public class OrdersController {
         OrderByShipmentResponse response = ordersService.getOrderByShipmentCode(shipmentCode);
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/update-destination/batch")
+    public ResponseEntity<List<Orders>> updateDestinationBatch(
+            @RequestBody UpdateDestinationBatchRequest request) {
+
+        if (request.getShipmentCodes() == null || request.getShipmentCodes().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<Orders> updatedOrders = ordersService.updateDestinationByShipmentCodes(
+                request.getShipmentCodes(),
+                request.getDestinationId()
+        );
+
+        return ResponseEntity.ok(updatedOrders);
+    }
 }
