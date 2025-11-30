@@ -258,7 +258,7 @@ public class PurchaseService {
             leftoverVND = round1(leftoverVND);
             order.setPaymentAfterAuction(BigDecimal.ZERO);
             order.setLeftoverMoney(leftoverVND);
-            order.setNote("Khách còn thiếu tiền phí mua hộ " + leftoverVND );
+//            order.setNote("Khách còn thiếu tiền phí mua hộ " + leftoverVND );
              order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
             purchase.setPurchased(false);
         }
@@ -270,7 +270,7 @@ public class PurchaseService {
         System.out.println("totalCNY (fee + shipWeb): " + totalCNY);
         order.setPaymentAfterAuction(BigDecimal.ZERO);
         order.setLeftoverMoney(round1(totalCNY.multiply(exchange)));
-        order.setNote("Khách còn thiếu tiền phí " + totalCNY.multiply(round1(totalCNY.multiply(exchange))));
+//        order.setNote("Khách còn thiếu tiền phí " + totalCNY.multiply(round1(totalCNY.multiply(exchange))));
         order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
         purchase.setPurchased(true);
     }
