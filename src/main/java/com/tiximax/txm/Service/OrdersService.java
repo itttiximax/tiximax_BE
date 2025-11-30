@@ -514,65 +514,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         });
     }
 
-//    public OrderDetail getOrderDetail(Long orderId) {
-//        Orders order = ordersRepository.findById(orderId)
-//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
-//        return new OrderDetail(order);
-//    }
-
-//    public OrderDetail getOrderDetail(Long orderId) {
-//        Orders order = ordersRepository.findById(orderId)
-//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
-//
-//        // Initialize collections to avoid LazyInitializationException and ensure they are loaded
-//        Hibernate.initialize(order.getPayments());
-////        Hibernate.initialize(order.getWarehouses());
-//        Hibernate.initialize(order.getPurchases());
-//        Hibernate.initialize(order.getOrderProcessLogs());
-////        Hibernate.initialize(order.getOrderLinks());
-//        Hibernate.initialize(order.getShipmentTrackings());
-//
-//        // Get direct payments from one-to-many relation
-//        Set<Payment> directPayments = order.getPayments();
-//
-//        // Get additional payments from many-to-many relation via payment_orders table
-//        List<Payment> relatedPayments = paymentRepository.findByRelatedOrdersContaining(order);
-//
-//        // Combine all unique payments
-//        Set<Payment> allPayments = new HashSet<>(directPayments);
-//        allPayments.addAll(relatedPayments);
-//
-//        // Create OrderDetail and override payments with allPayments
-//        OrderDetail orderDetail = new OrderDetail(order);
-//        orderDetail.setPayments(allPayments);
-//
-//        return orderDetail;
-//    }
-
-//    @Transactional(readOnly = true)
-//    public OrderDetail getOrderDetail(Long orderId) {
-//        Orders order = ordersRepository.findById(orderId)
-//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
-//
-//        // BẮT BUỘC load hết để tránh LazyInitializationException
-//        Hibernate.initialize(order.getOrderLinks());
-//        order.getOrderLinks().forEach(link -> {
-//            if (link.getWarehouse() != null) {
-//                Hibernate.initialize(link.getWarehouse());
-//            }
-//            if (link.getPurchase() != null) {
-//                Hibernate.initialize(link.getPurchase());
-//            }
-//        });
-//
-//        Hibernate.initialize(order.getPurchases());
-//        Hibernate.initialize(order.getPayments());
-//        Hibernate.initialize(order.getOrderProcessLogs());
-//        Hibernate.initialize(order.getShipmentTrackings());
-//
-//        return new OrderDetail(order);
-//    }
-
     @Transactional(readOnly = true)
     public OrderDetail getOrderDetail(Long orderId) {
         Orders order = ordersRepository.findById(orderId)
@@ -725,7 +666,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .collect(Collectors.toList());
     }
 
-     public List<OrderPayment> getAfterPaymentAuctionsByCustomerCode(String customerCode) {
+    public List<OrderPayment> getAfterPaymentAuctionsByCustomerCode(String customerCode) {
         Customer customer = authenticationRepository.findByCustomerCode(customerCode);
         if (customer == null) {
             throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
@@ -1050,5 +991,59 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         Orders order = links.get(0).getOrders();
 
         return new OrderByShipmentResponse(order, links);
+    }
+
+    @Transactional
+    public List<Orders> updateDestinationByShipmentCodes(List<String> shipmentCodes, Long newDestinationId) {
+        if (shipmentCodes == null || shipmentCodes.isEmpty()) {
+            throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
+        }
+
+        // 1. Lấy destination mới 1 lần duy nhất
+        Destination newDestination = destinationRepository.findById(newDestinationId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy điểm đến với ID: " + newDestinationId));
+
+        // 2. Kiểm tra quyền
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff staff)) {
+            throw new IllegalStateException("Chỉ nhân viên mới được phép thực hiện thao tác này!");
+        }
+        Set<AccountRoles> allowedRoles = Set.of(AccountRoles.ADMIN, AccountRoles.MANAGER, AccountRoles.STAFF_SALE, AccountRoles.LEAD_SALE);
+        if (!allowedRoles.contains(staff.getRole())) {
+            throw new IllegalStateException("Bạn không có quyền thay đổi điểm đến!");
+        }
+
+        // 4. LẤY TẤT CẢ OrderLinks CỦA TẤT CẢ SHIPMENT CODE TRONG 1 QUERY DUY NHẤT
+        List<OrderLinks> allLinks = orderLinksRepository.findAllByShipmentCodeIn(shipmentCodes);
+
+        if (allLinks.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy bất kỳ mã vận đơn nào trong danh sách!");
+        }
+
+        // 5. Nhóm theo đơn hàng để tránh update trùng
+        Map<Orders, List<OrderLinks>> orderToLinksMap = allLinks.stream()
+                .collect(Collectors.groupingBy(OrderLinks::getOrders));
+
+        List<Orders> updatedOrders = new ArrayList<>();
+        List<String> invalidCodes = new ArrayList<>();
+
+        for (Map.Entry<Orders, List<OrderLinks>> entry : orderToLinksMap.entrySet()) {
+            Orders order = entry.getKey();
+
+            // Cập nhật destination
+            Destination oldDestination = order.getDestination();
+            order.setDestination(newDestination);
+
+            updatedOrders.add(order);
+
+        }
+
+        // Nếu có đơn không thể cập nhật → báo lỗi rõ ràng
+        if (!invalidCodes.isEmpty()) {
+            throw new IllegalArgumentException("Không thể cập nhật điểm đến cho các đơn đã giao/hủy: " + String.join(", ", invalidCodes));
+        }
+
+        // 6. SAVE TẤT CẢ ĐƠN HÀNG TRONG 1 LẦN DUY NHẤT (batch update)
+        return ordersRepository.saveAll(updatedOrders);
     }
 }
