@@ -199,6 +199,7 @@ public class PurchaseService {
         link.setPurchase(purchase);
         link.setShipWeb(purchaseRequest.getShipWeb());
         link.setPurchaseFee(purchaseRequest.getPurchaseFee());
+        link.setPriceWeb(purchaseRequest.getPurchaseTotal());
         link.setStatus(OrderLinkStatus.DAU_GIA_THANH_CONG);
         link.setShipmentCode(purchaseRequest.getShipmentCode());
     }
@@ -226,23 +227,12 @@ public class PurchaseService {
     BigDecimal fee = total.multiply(feePercent);
     
                           
-
-    // In ra các giá trị để kiểm tra
-    System.out.println("purchaseTotal: " + purchaseTotal);
-    System.out.println("priceBeforeFee: " + priceBeforeFee);
-    System.out.println("Total: " + total);
-    System.out.println("exchange: " + exchange);
-    System.out.println("fee: " + fee);
-    System.out.println("shipWeb: " + purchaseRequest.getShipWeb());
-
     // CASE 1 — GIÁ TĂNG → KHÁCH TRẢ THÊM
-    if (purchaseTotal.compareTo(priceBeforeFee) > 0) {
-        BigDecimal diff = total.subtract(priceBeforeFee); // chênh lệch giá
-        System.out.println("diff: " + diff);
+    if (total.compareTo(priceBeforeFee) > 0) {
+        BigDecimal diff = total.subtract(priceBeforeFee); 
         BigDecimal totalCNY = diff.add(fee);
-        System.out.println("totalCNY (after adding fee and shipWeb): " + totalCNY);
         BigDecimal paymentAfterAuction = totalCNY.multiply(exchange);
-        System.out.println("paymentAfterAuction (in VND): " + paymentAfterAuction);
+        paymentAfterAuction = round1(paymentAfterAuction);
         order.setPaymentAfterAuction(paymentAfterAuction);
         order.setLeftoverMoney(BigDecimal.ZERO);
         order.setStatus(OrderStatus.DAU_GIA_THANH_CONG);
@@ -250,19 +240,28 @@ public class PurchaseService {
     }
 
     // CASE 2 — GIÁ GIẢM → KHÁCH ĐƯỢC HOÀN TIỀN
-    else if (priceBeforeFee.compareTo(purchaseTotal) > 0) {
-        BigDecimal leftoverCNY = priceBeforeFee.subtract(purchaseTotal);
-        System.out.println("leftoverCNY: " + leftoverCNY);
-        BigDecimal totalCNY = fee;
-        System.out.println("totalCNY (fee + shipWeb): " + totalCNY);
-        BigDecimal finalCNY = leftoverCNY.subtract(totalCNY);
-        System.out.println("finalCNY (after subtracting fee and shipWeb): " + finalCNY);
-        BigDecimal leftoverVND = finalCNY.multiply(exchange).negate(); // âm = hoàn tiền
-        System.out.println("leftoverVND (in VND): " + leftoverVND);
+    else if (priceBeforeFee.compareTo(total) > 0) {
+        BigDecimal leftoverCNY = priceBeforeFee.subtract(total);
+        BigDecimal totalfee = fee;
+        if(leftoverCNY.compareTo(totalfee) > 0){
+        BigDecimal leftoverFinal = leftoverCNY.subtract(totalfee);
+        BigDecimal leftoverVND = leftoverFinal.multiply(exchange).negate(); // âm = hoàn tiền
+        leftoverVND = round1(leftoverVND);
         order.setPaymentAfterAuction(BigDecimal.ZERO);
         order.setLeftoverMoney(leftoverVND);
         order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
-        purchase.setPurchased(true);
+        purchase.setPurchased(true); 
+        }
+        else if(leftoverCNY.compareTo(totalfee) < 0) {
+            BigDecimal leftoverFinal = totalfee.subtract(leftoverCNY);
+            BigDecimal leftoverVND = leftoverFinal.multiply(exchange); 
+            leftoverVND = round1(leftoverVND);
+            order.setPaymentAfterAuction(BigDecimal.ZERO);
+            order.setLeftoverMoney(leftoverVND);
+            order.setNote("Khách còn thiếu tiền phí mua hộ " + leftoverVND );
+             order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+            purchase.setPurchased(false);
+        }
     }
 
     // CASE 3 — GIÁ BẰNG NHAU → CHỈ THU PHÍ VÀ SHIP
@@ -270,8 +269,8 @@ public class PurchaseService {
         BigDecimal totalCNY = fee;
         System.out.println("totalCNY (fee + shipWeb): " + totalCNY);
         order.setPaymentAfterAuction(BigDecimal.ZERO);
-        order.setLeftoverMoney(totalCNY.multiply(exchange));
-        System.out.println("leftoverMoney (in VND): " + order.getLeftoverMoney());
+        order.setLeftoverMoney(round1(totalCNY.multiply(exchange)));
+        order.setNote("Khách còn thiếu tiền phí " + totalCNY.multiply(round1(totalCNY.multiply(exchange))));
         order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
         purchase.setPurchased(true);
     }
@@ -510,4 +509,9 @@ public class PurchaseService {
         }
         return purchasesRepository.save(purchase);
     }
+    private BigDecimal round1(BigDecimal v) {
+    if (v == null) return BigDecimal.ZERO;
+    return v.setScale(1, RoundingMode.HALF_UP);
+}
+
 }
