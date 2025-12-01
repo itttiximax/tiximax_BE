@@ -309,7 +309,7 @@ public class WarehouseService {
             if (warehouse.getLength() == null || warehouse.getWidth() == null || warehouse.getHeight() == null) {
                 throw new IllegalArgumentException("Không đủ kích thước để tính dim!");
             }
-            Double dim = (warehouse.getLength() * warehouse.getWidth() * warehouse.getHeight()) / 5000;
+            Double dim = (warehouse.getLength() * warehouse.getWidth() * warehouse.getHeight()) / 6000;
             warehouse.setDim(dim);
         }
 

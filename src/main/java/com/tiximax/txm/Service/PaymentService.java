@@ -3,6 +3,7 @@ package com.tiximax.txm.Service;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.PaymentAuctionResponse;
+import com.tiximax.txm.Model.SmsRequest;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.query.Order;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -49,6 +51,9 @@ public class PaymentService {
 
     @Autowired
     private BankAccountService bankAccountService;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -612,5 +617,15 @@ public class PaymentService {
             return "GD-" + input.substring(2);
         }
         return input;
+    }
+
+    public SmsRequest getSmsFromExternalApi() {
+        String url = "https://bank-sms.hidden-sunset-f690.workers.dev/v1/sms";
+        try {
+            SmsRequest response = restTemplate.getForObject(url, SmsRequest.class);
+            return response != null ? response : new SmsRequest();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
