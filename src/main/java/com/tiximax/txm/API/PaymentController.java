@@ -107,4 +107,10 @@ public class PaymentController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/sms-external")
+    public ResponseEntity<SmsRequest> getExternalSms() {
+        SmsRequest smsData = paymentService.getSmsFromExternalApi();
+        return ResponseEntity.ok(smsData);
+    }
+
 }
