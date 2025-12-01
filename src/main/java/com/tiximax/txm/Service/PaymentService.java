@@ -36,6 +36,8 @@ public class PaymentService {
 
     @Autowired
     private OrdersService ordersService;
+    @Autowired
+    private PurchasesRepository purchasesRepository;
 
     @Autowired
     private OrderLinksRepository orderLinksRepository;
@@ -99,6 +101,10 @@ public class PaymentService {
 
             for (Orders order : orders) {
                 if (order.getStatus() == OrderStatus.CHO_THANH_TOAN_DAU_GIA) {
+                    order.getPurchases().forEach(purchase -> {
+                        purchase.setPurchased(true);
+                        purchasesRepository.save(purchase);
+                    });
                     order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
                 } else {
                     order.setStatus(OrderStatus.CHO_MUA);

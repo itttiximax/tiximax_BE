@@ -28,18 +28,20 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
 
     List<OrderLinks> findByShipmentCodeIn(List<String> shipmentCodes);
 
-      @Query("""
-          SELECT ol
-          FROM OrderLinks ol
-          WHERE ol.orders.customer.customerCode = :customerCode
-            AND ol.shipmentCode IS NOT NULL
-            AND ol.status = :status
-            AND ol.partialShipment IS NULL
-      """)
-      List<OrderLinks> findLinksInWarehouseWithoutPartialShipment(
-              @Param("customerCode") String customerCode,
-              @Param("status") OrderLinkStatus status
-      );
+        @Query("""
+        SELECT ol
+        FROM OrderLinks ol
+        WHERE ol.orders.customer.customerCode = :customerCode
+          AND ol.shipmentCode IS NOT NULL
+          AND ol.shipmentCode <> ''
+          AND ol.status = :status
+          AND ol.partialShipment IS NULL
+  """)
+  List<OrderLinks> findLinksInWarehouseWithoutPartialShipment(
+          @Param("customerCode") String customerCode,
+          @Param("status") OrderLinkStatus status
+  );
+
 
     // OrderLinksRepository.java
     @Query("""

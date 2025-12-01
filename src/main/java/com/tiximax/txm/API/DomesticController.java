@@ -77,4 +77,35 @@ public class DomesticController {
 
     return ResponseEntity.ok(result);
 }
+@PostMapping("/transfer-to-warehouse")
+public ResponseEntity<Domestic> transferPackingToWarehouse(
+        @RequestBody Map<String, Object> requestBody) {
+
+    // Validate request body
+    if (!requestBody.containsKey("packingCodes") ||
+        !requestBody.containsKey("toLocationId")) {
+        return ResponseEntity.badRequest().body(null);
+    }
+
+    List<String> packingCodes = (List<String>) requestBody.get("packingCodes");
+    Long toLocationId = Long.parseLong(requestBody.get("toLocationId").toString());
+    String note = requestBody.containsKey("note") ? requestBody.get("note").toString() : null;
+
+    Domestic domestic = domesticService.TranferPackingToWarehouse(packingCodes, toLocationId, note);
+
+    return ResponseEntity.ok(domestic);
+}
+@PostMapping("/received-from-warehouse/{domesticId}")
+public ResponseEntity<Domestic> receivedPackingFromWarehouse(@PathVariable Long domesticId) {
+
+    if (domesticId == null || domesticId <= 0) {
+        return ResponseEntity.badRequest().build();
+    }
+
+    Domestic domestic = domesticService.RecievedPackingFromWarehouse(domesticId);
+
+    return ResponseEntity.ok(domestic);
+}
+
+
 }
