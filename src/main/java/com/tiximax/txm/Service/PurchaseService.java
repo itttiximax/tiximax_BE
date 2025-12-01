@@ -266,7 +266,7 @@ public class PurchaseService {
 
     // CASE 3 — GIÁ BẰNG NHAU → CHỈ THU PHÍ VÀ SHIP
     else {
-        BigDecimal totalCNY = fee;
+        BigDecimal totalCNY = fee.add(purchaseRequest.getShipWeb());
         System.out.println("totalCNY (fee + shipWeb): " + totalCNY);
         order.setPaymentAfterAuction(BigDecimal.ZERO);
         order.setLeftoverMoney(round1(totalCNY.multiply(exchange)));

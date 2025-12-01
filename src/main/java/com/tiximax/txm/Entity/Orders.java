@@ -47,7 +47,9 @@ public class Orders {
     private BigDecimal leftoverMoney;
 
     private BigDecimal PaymentAfterAuction;
-
+    
+    @Column(nullable = true)
+    private String note; 
 
     @Column(nullable = false)
     private Boolean checkRequired;
