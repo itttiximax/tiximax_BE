@@ -8,4 +8,8 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     List<BankAccount> findByIsProxyAndIsRevenue(Boolean isProxy, Boolean isRevenue);
 
     BankAccount findBankAccountById(long id);
+
+    List<BankAccount> findByIsProxy(boolean isProxy);
+
+    List<BankAccount> findByIsRevenue(boolean isRevenue);
 }

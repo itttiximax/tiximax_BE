@@ -620,7 +620,7 @@ public class PaymentService {
     }
 
     public SmsRequest getSmsFromExternalApi() {
-        String url = "https://bank-sms.hidden-sunset-f690.workers.dev/v1/sms";
+        String url = "https://bank-sms.hidden-sunset-f690.workers.dev/";
         try {
             SmsRequest response = restTemplate.getForObject(url, SmsRequest.class);
             return response != null ? response : new SmsRequest();
