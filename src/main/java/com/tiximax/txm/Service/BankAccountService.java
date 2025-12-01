@@ -35,4 +35,12 @@ public class BankAccountService {
     public BankAccount getAccountById(long id){
         return bankAccountRepository.findBankAccountById(id);
     }
+
+    public List<BankAccount> findByProxy() {
+        return bankAccountRepository.findByIsProxy(true);
+    }
+
+    public List<BankAccount> findByRevenue() {
+        return bankAccountRepository.findByIsRevenue(true);
+    }
 }

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,4 +37,12 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     Optional<Warehouse> findByTrackingCode(String trackingCode);
 
     List<Warehouse> findByPackingPackingIdAndTrackingCodeIn(Long packingId, List<String> trackingCodes);
+
+//    Double sumNetWeightByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+    @Query("SELECT COALESCE(SUM(w.netWeight), 0) " +
+            "FROM Warehouse w " +
+            "WHERE w.createdAt BETWEEN :start AND :end")
+    Double sumNetWeightByCreatedAtBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }

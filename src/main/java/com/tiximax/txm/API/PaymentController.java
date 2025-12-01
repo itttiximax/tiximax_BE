@@ -3,6 +3,7 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Payment;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Model.PaymentAuctionResponse;
+import com.tiximax.txm.Model.SmsRequest;
 import com.tiximax.txm.Service.PaymentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +23,6 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
-//    @PostMapping("{orderCode}/{depositPercent}/{isUseBalance}")
-//    public ResponseEntity<Payment> createPayment(@PathVariable String orderCode,
-//                                                 @PathVariable Integer depositPercent,
-//                                                 @PathVariable boolean isUseBalance) {
-//        Payment createdPayment = paymentService.createPayment(orderCode, depositPercent, isUseBalance);
-//        return ResponseEntity.ok(createdPayment);
-//    }
-
     @GetMapping("/order/{orderCode}")
     public ResponseEntity<List<Payment>> getPaymentsByOrderId(@PathVariable String orderCode) {
         List<Payment> payments = paymentService.getPaymentsByOrderCode(orderCode);
@@ -45,7 +38,7 @@ public class PaymentController {
         return ResponseEntity.ok(createdPayment);
     }
 
-        @PostMapping("/merged/payment-after-auction/{depositPercent}/{isUseBalance}/{bankId}")
+    @PostMapping("/merged/payment-after-auction/{depositPercent}/{isUseBalance}/{bankId}")
     public ResponseEntity<Payment> createMergedPaymentAfterAuction(@RequestBody Set<String> orderCodes,
                                                        @PathVariable Integer depositPercent,
                                                        @PathVariable boolean isUseBalance,
@@ -106,6 +99,18 @@ public class PaymentController {
         Optional<Payment> payment = paymentService.getPendingPaymentByOrderId(orderId);
         return payment.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/auto-confirm")
+    public ResponseEntity<Void> autoConfirm(@RequestBody SmsRequest request) {
+        paymentService.autoConfirm(request.getAmount(), request.getContent());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/sms-external")
+    public ResponseEntity<SmsRequest> getExternalSms() {
+        SmsRequest smsData = paymentService.getSmsFromExternalApi();
+        return ResponseEntity.ok(smsData);
     }
 
 }

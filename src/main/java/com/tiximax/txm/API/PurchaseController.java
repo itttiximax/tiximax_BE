@@ -82,23 +82,8 @@ public class PurchaseController {
         List<PendingShipmentPurchase> result = purchaseService.getPurchasesWithPendingShipment();
         return ResponseEntity.ok(result);
     }
-
     
-
-    // @GetMapping("/lack-shipment-code/{page}/{size}")
-    // public ResponseEntity<Page<PurchasePendingShipment>> getPendingShipmentPurchases(
-    //         @PathVariable int page,
-    //         @PathVariable int size) {
-
-    //     Pageable pageable = PageRequest.of(page, size, Sort.by("purchaseTime").descending());
-    //     Page<PurchasePendingShipment> result = purchaseService.getPendingShipmentPurchases(pageable);
-
-    //     return ResponseEntity.ok(result);
-    // }
-
-    
-    
-      @GetMapping("/all-purchase/{page}/{size}")
+    @GetMapping("/all-purchase/{page}/{size}")
     public ResponseEntity<Page<PurchasePendingShipment>> getFullPurchases(
             @PathVariable int page,
             @PathVariable int size,

@@ -77,4 +77,18 @@ public class BankAccountController {
         }
         return ResponseEntity.ok(accounts);
     }
+
+    @GetMapping("/filter/proxy")
+    public ResponseEntity<List<BankAccount>> getBankAccountsByProxy(){
+        List<BankAccount> accounts;
+        accounts = bankAccountService.findByProxy();
+        return ResponseEntity.ok(accounts);
+    }
+
+    @GetMapping("/filter/revenue")
+    public ResponseEntity<List<BankAccount>> getBankAccountsByRevenue(){
+        List<BankAccount> accounts;
+        accounts = bankAccountService.findByRevenue();
+        return ResponseEntity.ok(accounts);
+    }
 }

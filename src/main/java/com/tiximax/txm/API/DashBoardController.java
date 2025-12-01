@@ -1,6 +1,8 @@
 package com.tiximax.txm.API;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -57,5 +59,22 @@ public class DashBoardController {
         }
 
         return dashBoardService.getDashboard(startDate, endDate);
+    }
+
+    @GetMapping("admin/orders")
+    public Map<String, Long> getAdminOrders(){
+        return dashBoardService.getOrderCounts();
+    }
+    @GetMapping("admin/customers")
+    public Map<String, Long> getAdminCustomers()  {
+        return dashBoardService.getCustomerCount();
+    }
+    @GetMapping("admin/payments")
+    public Map<String, BigDecimal> getAdminPayments()   {
+        return dashBoardService.getPaymentSummary();
+    }
+    @GetMapping("admin/weights")
+    public Map<String, Double> getAdminWeights()    {
+        return dashBoardService.getWeightSummary();
     }
 }

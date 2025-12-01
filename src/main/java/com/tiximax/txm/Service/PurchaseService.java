@@ -258,7 +258,7 @@ public class PurchaseService {
             leftoverVND = round1(leftoverVND);
             order.setPaymentAfterAuction(BigDecimal.ZERO);
             order.setLeftoverMoney(leftoverVND);
-            order.setNote("Khách còn thiếu tiền phí mua hộ " + leftoverVND );
+//            order.setNote("Khách còn thiếu tiền phí mua hộ " + leftoverVND );
              order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
             purchase.setPurchased(false);
         }
@@ -270,7 +270,7 @@ public class PurchaseService {
         System.out.println("totalCNY (fee + shipWeb): " + totalCNY);
         order.setPaymentAfterAuction(BigDecimal.ZERO);
         order.setLeftoverMoney(round1(totalCNY.multiply(exchange)));
-        order.setNote("Khách còn thiếu tiền phí " + totalCNY.multiply(round1(totalCNY.multiply(exchange))));
+//        order.setNote("Khách còn thiếu tiền phí " + totalCNY.multiply(round1(totalCNY.multiply(exchange))));
         order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
         purchase.setPurchased(true);
     }
@@ -471,10 +471,8 @@ public class PurchaseService {
 
         return purchasesPage.map(purchase -> {
             List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
-        //       .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
                     .map(OrderLinkPending::new)
                     .collect(Collectors.toList());
-
             return new PurchasePendingShipment(purchase, pendingLinks);
         });
     }
@@ -488,6 +486,9 @@ public class PurchaseService {
         }
         if (request.getNote() != null) {
             purchase.setNote(request.getNote());
+        }
+        if (request.getImagePurchased() != null && !request.getImagePurchased().isEmpty()) {
+            purchase.setPurchaseImage(request.getImagePurchased());
         }
         if (request.getShipmentCode() != null) {
             String newShipmentCode = request.getShipmentCode().trim();

@@ -92,5 +92,15 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
                                         @Param("end") LocalDateTime end);
 
     List<Payment> findByRelatedOrdersContaining(Orders order);
+
+//    BigDecimal sumCollectedAmountByStatusAndActionAtBetween(PaymentStatus paymentStatus, LocalDateTime start, LocalDateTime end);
+    @Query("SELECT COALESCE(SUM(p.collectedAmount), 0) " +
+            "FROM Payment p " +
+            "WHERE p.status = :status " +
+            "AND p.actionAt BETWEEN :start AND :end")
+    BigDecimal sumCollectedAmountByStatusAndActionAtBetween(
+            @Param("status") PaymentStatus status,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 }
 
