@@ -471,10 +471,8 @@ public class PurchaseService {
 
         return purchasesPage.map(purchase -> {
             List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
-        //       .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
                     .map(OrderLinkPending::new)
                     .collect(Collectors.toList());
-
             return new PurchasePendingShipment(purchase, pendingLinks);
         });
     }
@@ -488,6 +486,9 @@ public class PurchaseService {
         }
         if (request.getNote() != null) {
             purchase.setNote(request.getNote());
+        }
+        if (request.getImagePurchased() != null && !request.getImagePurchased().isEmpty()) {
+            purchase.setPurchaseImage(request.getImagePurchased());
         }
         if (request.getShipmentCode() != null) {
             String newShipmentCode = request.getShipmentCode().trim();

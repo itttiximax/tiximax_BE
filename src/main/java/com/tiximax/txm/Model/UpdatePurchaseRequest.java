@@ -17,4 +17,6 @@ public class UpdatePurchaseRequest {
 
     private String shipmentCode;
 
+    private String imagePurchased;
+
 }
