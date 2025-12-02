@@ -200,9 +200,9 @@ public class OrdersService {
         Optional<Destination> destination = destinationRepository.findById(consignmentRequest.getDestinationId());
 
 //        if (ordersRequest.getPriceShip().compareTo(route.getUnitBuyingPrice()) < 0){
-        if (consignmentRequest.getPriceShip().compareTo(route.getUnitDepositPrice()) < 0){
-            throw new IllegalArgumentException("Giá cước không được nhỏ hơn giá cố định, liên hệ quản lý để được hỗ trợ thay đổi giá cước!");
-        }
+        // if (consignmentRequest.getPriceShip().compareTo(route.getUnitDepositPrice()) < 0){
+        //     throw new IllegalArgumentException("Giá cước không được nhỏ hơn giá cố định, liên hệ quản lý để được hỗ trợ thay đổi giá cước!");
+        // }
 
         if (destination.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy điểm đến!");
@@ -219,6 +219,7 @@ public class OrdersService {
         order.setOrderType(consignmentRequest.getOrderType());
         order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
         order.setCreatedAt(LocalDateTime.now());
+        order.setPriceShip(consignmentRequest.getPriceShip());
         order.setDestination(destination.get());
         order.setCheckRequired(consignmentRequest.getCheckRequired());
         order.setRoute(route);
@@ -720,18 +721,17 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                     OrderPayment orderPayment = new OrderPayment(order);
 
                     BigDecimal totalNetWeight = order.getWarehouses() != null
-                            ? order.getWarehouses().stream()
-                            .map(Warehouse::getNetWeight)
-                            .filter(netWeight -> netWeight != null)
-                            .map(BigDecimal::valueOf)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add)
-                            : BigDecimal.ZERO;
+                     ? order.getWarehouses().stream()
+                .map(Warehouse::getNetWeight)
+                .filter(Objects::nonNull)
+                .map(BigDecimal::valueOf)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(1, RoundingMode.HALF_UP)  
+                : BigDecimal.ZERO.setScale(1);
                     orderPayment.setTotalNetWeight(totalNetWeight);
 
                     Route route = order.getRoute();
-                    BigDecimal unitPrice = (order.getOrderType() == OrderType.KY_GUI && route.getUnitDepositPrice() != null)
-                            ? route.getUnitDepositPrice()
-                            : route.getUnitBuyingPrice() != null ? route.getUnitBuyingPrice() : BigDecimal.ZERO;
+                    BigDecimal unitPrice = order.getPriceShip();
                     BigDecimal finalPriceOrder = totalNetWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
                     orderPayment.setFinalPriceOrder(finalPriceOrder);
                     orderPayment.setLeftoverMoney(order.getLeftoverMoney());

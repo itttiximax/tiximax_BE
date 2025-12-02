@@ -147,12 +147,12 @@ public class PaymentService {
             throw new RuntimeException("Các đơn hàng phải thuộc cùng một khách hàng để thanh toán gộp!");
         }
 
-        BigDecimal unitPrice;
-        if (ordersList.get(0).getOrderType() == OrderType.KY_GUI) {
-            unitPrice = ordersList.get(0).getRoute().getUnitDepositPrice();
-        } else {
-            unitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
-        }
+        BigDecimal unitPrice = ordersList.get(0).getPriceShip();
+        // if (ordersList.get(0).getOrderType() == OrderType.KY_GUI) {
+        //     unitPrice = ordersList.get(0).getRoute().getUnitDepositPrice();
+        // } else {
+        //     unitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
+        // }
 
         boolean hasNullWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
@@ -161,12 +161,14 @@ public class PaymentService {
             throw new RuntimeException("Một hoặc nhiều đơn hàng chưa được cân, vui lòng kiểm tra lại!");
         }
 
-        BigDecimal totalWeight = ordersList.stream()
-                .flatMap(order -> order.getWarehouses().stream())
-                .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
-                .map(Warehouse::getNetWeight)
-                .map(BigDecimal::valueOf)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+      BigDecimal totalWeight = ordersList.stream()
+        .flatMap(order -> order.getWarehouses().stream())
+        .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
+        .map(Warehouse::getNetWeight)
+        .map(BigDecimal::valueOf)
+        .reduce(BigDecimal.ZERO, BigDecimal::add)
+        .setScale(1, RoundingMode.HALF_UP); 
+
 
         BigDecimal totalAmount = totalWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
 
