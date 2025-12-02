@@ -265,12 +265,20 @@ public class AuthenticationService implements UserDetailsService {
     }
 
     public String generateCustomerCode() {
-        String customerCode;
-        do {
-            customerCode = "KH-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
-        } while (customerRepository.existsByCustomerCode(customerCode));
-        return customerCode;
+    String lastCode = customerRepository.findLatestCustomerCode();
+
+    if (lastCode == null) {
+        return "C00001";
     }
+    int number = Integer.parseInt(lastCode.substring(1));
+    number++;
+    if (number < 100000) {
+        return String.format("C%05d", number);
+    } else {
+        return "C" + number;  
+    }
+}
+
 
     public String generateStaffCode() {
         String customerCode;

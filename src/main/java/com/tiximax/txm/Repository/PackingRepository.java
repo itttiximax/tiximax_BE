@@ -31,6 +31,15 @@ public interface PackingRepository extends JpaRepository<Packing, Long> {
 
     List<Packing> findAllByPackingCodeIn(List<String> packingCode);
 
+        @Query("""
+        SELECT DISTINCT p
+        FROM Packing p
+        LEFT JOIN FETCH p.warehouses w
+        WHERE p.packingId IN :ids
+    """)
+    List<Packing> findAllChoBayWithWarehouses(@Param("ids") List<Long> ids);
+
+
     Optional<Packing> findByPackingCode(String packingCode);
 
     Page<Packing> findByStatus(PackingStatus packingStatus, Pageable pageable);

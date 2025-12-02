@@ -6,6 +6,7 @@ import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.PackingStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
 import com.tiximax.txm.Model.PackingEligibleOrder;
+import com.tiximax.txm.Model.PackingExport;
 import com.tiximax.txm.Model.PackingInWarehouse;
 import com.tiximax.txm.Model.PackingRequest;
 import com.tiximax.txm.Repository.*;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -349,4 +352,53 @@ public class PackingService {
         }
         return list;
     }
+
+    public List<PackingExport> getPackingExportByIdsChoBay(List<Long> packingIds) {
+
+        List<Packing> packings = packingRepository.findAllChoBayWithWarehouses(packingIds);
+
+        List<PackingExport> exports = new ArrayList<>();
+
+        for (Packing packing : packings) {
+            for (Warehouse w : packing.getWarehouses()) {
+
+                PackingExport dto = new PackingExport();
+
+                // PACKING INFO
+                dto.setPackingCode(packing.getPackingCode());
+
+                // WAREHOUSE INFO
+                dto.setTrackingCode(w.getTrackingCode());
+                dto.setHeight(w.getHeight());
+                dto.setLength(w.getLength());
+                dto.setWidth(w.getWidth());
+                dto.setDim(w.getDim());
+                dto.setNetWeight(w.getNetWeight());
+
+                // ORDER INFO
+                Orders order = w.getOrders();
+                if (order != null) {
+                    dto.setOrderCode(order.getOrderCode());
+
+                    if (order.getCustomer() != null) {
+                        dto.setCustomerCode(order.getCustomer().getCustomerCode());
+                        dto.setCustomerName(order.getCustomer().getName());
+                        dto.setCustomerPhone(order.getCustomer().getPhone());
+                        dto.setAddress(order.getAddress().getAddressName());
+                    }
+                }
+
+               
+                if (packing.getStaff() != null) {
+                    dto.setStaffName(packing.getStaff().getName());
+                }
+
+                exports.add(dto);
+            }
+        }
+
+        return exports;
+    }
+
+  
 }
