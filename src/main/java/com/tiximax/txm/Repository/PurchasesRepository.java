@@ -41,7 +41,7 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
             Pageable pageable
     );
 
-  @Query(
+@Query(
     value = """
         SELECT * FROM (
             SELECT DISTINCT
@@ -66,8 +66,7 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
                     OR :status IS NOT NULL 
                     AND ol.status = :status
                 )
-
-          
+            AND p.is_purchased = true  -- Sử dụng is_purchased thay vì purchased
             AND NOT EXISTS (
                 SELECT 1 
                 FROM order_links olx
@@ -90,6 +89,7 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
                 OR :status IS NOT NULL 
                 AND ol.status = :status
             )
+        AND p.is_purchased = true  -- Cập nhật countQuery để sử dụng is_purchased
         AND NOT EXISTS (
             SELECT 1 
             FROM order_links olx
@@ -105,7 +105,6 @@ Page<Purchases> findPurchasesSortedByPendingShipment(
         @Param("status") String status,
         Pageable pageable
 );
-
 
  @Query(
     value = """
