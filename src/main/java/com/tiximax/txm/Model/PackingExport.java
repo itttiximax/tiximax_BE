@@ -15,22 +15,18 @@ import java.util.Map;
 
 public class PackingExport {
 
-    private String packingCode;
-    
+    private String packingCode;   
     private String orderCode;
-
     private String trackingCode;
-
-    private BigDecimal height ;
-    private BigDecimal length ;
-    private BigDecimal width ;
-    private BigDecimal dim ;
-    private BigDecimal netWeight ;
+    private Double height ;
+    private Double length ;
+    private Double width ;
+    private Double dim ;
+    private Double netWeight ;
     private String customerCode;
     private String  customerName ;
     private String customerPhone;
     private String Address;
     private String staffName ;
-
 
 }

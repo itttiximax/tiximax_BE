@@ -3,6 +3,7 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Packing;
 import com.tiximax.txm.Model.AssignFlightRequest;
 import com.tiximax.txm.Model.PackingEligibleOrder;
+import com.tiximax.txm.Model.PackingExport;
 import com.tiximax.txm.Model.PackingInWarehouse;
 import com.tiximax.txm.Model.PackingRequest;
 import com.tiximax.txm.Service.PackingService;
@@ -95,4 +96,8 @@ public class PackingController {
         List<String> packingList = packingService.getPackingListByCode(packingCode);
         return ResponseEntity.ok(packingList);
     }
+    @PostMapping("/export")
+        public List<PackingExport> exportChoBay(@RequestBody List<Long> packingIds) {
+            return packingService.getPackingExportByIdsChoBay(packingIds);
+        }
 }

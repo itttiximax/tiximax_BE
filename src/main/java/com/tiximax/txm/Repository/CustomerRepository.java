@@ -40,4 +40,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     @Query("SELECT c FROM Customer c WHERE c.accountId = :customerId")
     Optional<Customer> findByCustomerId(@Param("customerId") Long customerId);
 
+    @Query("SELECT c.customerCode FROM Customer c ORDER BY c.customerCode DESC LIMIT 1")
+    String findLatestCustomerCode();
+
+
 }

@@ -468,6 +468,10 @@ public class PaymentService {
         if (qrAmount.compareTo(BigDecimal.ZERO) == 0 && depositPercent >= 100) {
             savedPayment.setStatus(PaymentStatus.DA_THANH_TOAN);
             savedPayment = paymentRepository.save(savedPayment);
+            for (Orders order : ordersList) {
+                order.setStatus(OrderStatus.CHO_MUA);
+                ordersRepository.save(order);
+            }
         }
         messagingTemplate.convertAndSend(
                 "/topic/Tiximax",
@@ -531,6 +535,7 @@ public class PaymentService {
             BigDecimal usedBalance = balance.min(totalCollect);
             commonCustomer.setBalance(balance.subtract(usedBalance));
             qrAmount = totalCollect.subtract(usedBalance);
+            
         }
 
         payment.setCollectedAmount(qrAmount);
@@ -559,6 +564,10 @@ public class PaymentService {
         if (qrAmount.compareTo(BigDecimal.ZERO) == 0 && depositPercent >= 100) {
             savedPayment.setStatus(PaymentStatus.DA_THANH_TOAN);
             savedPayment = paymentRepository.save(savedPayment);
+            for (Orders order : ordersList) {
+                order.setStatus(OrderStatus.CHO_NHAP_KHO_NN);
+                ordersRepository.save(order);
+            }
         }
         messagingTemplate.convertAndSend(
                 "/topic/Tiximax",
