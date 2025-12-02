@@ -31,6 +31,8 @@ public class OrdersService {
 
     @Autowired
     private OrdersRepository ordersRepository;
+    
+  
 
     @Autowired
     private OrderLinksRepository orderLinksRepository;
@@ -465,13 +467,15 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         
         return ordersPage.map(order -> {
             OrderPayment orderPayment = new OrderPayment(order);
-             if (status == OrderStatus.CHO_THANH_TOAN_DAU_GIA) {
-            Optional<Payment> payment = order.getPayments().stream()
-                    .filter(p -> p.getStatus() == PaymentStatus.CHO_THANH_TOAN)
-                    .findFirst();
-            orderPayment.setPaymentCode(payment.map(Payment::getPaymentCode).orElse(null));
-            return orderPayment;
-        }
+          if (status == OrderStatus.CHO_THANH_TOAN_DAU_GIA) {
+
+    Optional<Payment> payment = paymentRepository.findPaymentForOrder(
+            order.getOrderId(),
+            PaymentStatus.CHO_THANH_TOAN.name()
+    );
+    orderPayment.setPaymentCode(payment.map(Payment::getPaymentCode).orElse(null));
+    return orderPayment;
+}
 
             if (status == OrderStatus.DA_DU_HANG || status == OrderStatus.CHO_THANH_TOAN_SHIP) {
                 BigDecimal totalNetWeight = order.getWarehouses().stream()

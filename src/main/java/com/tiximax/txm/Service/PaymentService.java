@@ -519,6 +519,7 @@ public class PaymentService {
         payment.setPaymentCode(generateMergedPaymentCode());
         payment.setContent(String.join(" ", orderCodes));
         payment.setPaymentType(PaymentType.MA_QR);
+        payment.setPaymentCode(generateMergedPaymentCode());
         payment.setAmount(totalAmount);
         payment.setCollectedAmount(totalCollect);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN);

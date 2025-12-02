@@ -93,6 +93,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findByRelatedOrdersContaining(Orders order);
 
+    @Query(value = "SELECT p.* FROM payment p " +
+               "JOIN payment_orders po ON p.payment_id = po.payment_id " +
+               "WHERE po.order_id = :orderId " +
+               "AND p.status = :status", 
+       nativeQuery = true)
+    Optional<Payment> findPaymentForOrder(@Param("orderId") Long orderId,
+                                      @Param("status") String status);
+
+
+
 //    BigDecimal sumCollectedAmountByStatusAndActionAtBetween(PaymentStatus paymentStatus, LocalDateTime start, LocalDateTime end);
     @Query("SELECT COALESCE(SUM(p.collectedAmount), 0) " +
             "FROM Payment p " +
