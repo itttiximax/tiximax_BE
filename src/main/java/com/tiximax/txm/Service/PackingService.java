@@ -379,12 +379,13 @@ public class PackingService {
                 Orders order = w.getOrders();
                 if (order != null) {
                     dto.setOrderCode(order.getOrderCode());
+                    dto.setDestination(order.getDestination().getDestinationName());
 
                     if (order.getCustomer() != null) {
                         dto.setCustomerCode(order.getCustomer().getCustomerCode());
                         dto.setCustomerName(order.getCustomer().getName());
-                        dto.setCustomerPhone(order.getCustomer().getPhone());
-                        dto.setAddress(order.getAddress().getAddressName());
+//                        dto.setCustomerPhone(order.getCustomer().getPhone());
+//                        dto.setAddress(order.getAddress().getAddressName());
                     }
                 }
 

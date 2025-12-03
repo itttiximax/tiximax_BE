@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -48,12 +50,13 @@ public class PaymentController {
     }
 
 
-    @PostMapping("/merged-shipping/{isUseBalance}/{bankId}/{customerVoucherId}")
+    @PostMapping("/merged-shipping/{isUseBalance}/{bankId}/{priceShipDos}/{customerVoucherId}")
     public ResponseEntity<Payment> createMergedPaymentShipping(@RequestBody Set<String> orderCodes,
                                                                @PathVariable boolean isUseBalance,
                                                                @PathVariable Long bankId,
+                                                               @PathVariable BigDecimal priceShipDos,
                                                                @RequestParam(required = false) Long customerVoucherId) {
-        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes, isUseBalance, bankId, customerVoucherId);
+        Payment createdPayment = paymentService.createMergedPaymentShipping(orderCodes, isUseBalance, bankId, priceShipDos, customerVoucherId);
         return ResponseEntity.ok(createdPayment);
     }
 
