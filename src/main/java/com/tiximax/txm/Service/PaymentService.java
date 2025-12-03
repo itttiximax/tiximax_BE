@@ -129,7 +129,7 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
-    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance, long bankId, Long customerVoucherId) {
+    public Payment createMergedPaymentShipping(Set<String> orderCodes, boolean isUseBalance, long bankId, BigDecimal priceShipDos, Long customerVoucherId) {
         if (orderCodes == null || orderCodes.isEmpty()) {
             throw new RuntimeException("Không tìm thấy đơn hàng nào!");
         }
@@ -208,11 +208,11 @@ public class PaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        BigDecimal collect = totalAmount.add(totalDebt).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal collect = totalAmount.add(totalDebt).add(priceShipDos).setScale(0, RoundingMode.HALF_UP);
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
-        payment.setContent(String.join(", ", orderCodes));
+        payment.setContent(String.join(", ", orderCodes) + priceShipDos + "k ship");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);

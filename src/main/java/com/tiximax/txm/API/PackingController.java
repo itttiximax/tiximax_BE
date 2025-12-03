@@ -96,8 +96,8 @@ public class PackingController {
         List<String> packingList = packingService.getPackingListByCode(packingCode);
         return ResponseEntity.ok(packingList);
     }
-    @PostMapping("/export")
-        public List<PackingExport> exportChoBay(@RequestBody List<Long> packingIds) {
-            return packingService.getPackingExportByIdsChoBay(packingIds);
-        }
+    @GetMapping("/export")
+    public List<PackingExport> exportChoBay(@RequestParam List<Long> packingIds) {
+        return packingService.getPackingExportByIdsChoBay(packingIds);
+    }
 }

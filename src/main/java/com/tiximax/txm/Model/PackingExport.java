@@ -25,8 +25,9 @@ public class PackingExport {
     private Double netWeight ;
     private String customerCode;
     private String  customerName ;
-    private String customerPhone;
-    private String Address;
+//    private String customerPhone;
+//    private String Address;
+    private String destination;
     private String staffName ;
 
 }

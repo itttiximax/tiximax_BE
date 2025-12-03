@@ -79,7 +79,7 @@ public class WarehouseService {
             ordersRepository.save(order);
         }
 
-        Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 5000;
+        Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 6000;
 
         Warehouse warehouse = new Warehouse();
             warehouse.setTrackingCode(shipmentCode);
