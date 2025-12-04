@@ -13,6 +13,7 @@ public class WarehouseSummary {
 
     private Long warehouseId;
     private String trackingCode;
+    private String destination;
     private String orderCode;
     private Double weight;
     private Double netWeight;
@@ -21,10 +22,11 @@ public class WarehouseSummary {
     private String imageCheck;
     private LocalDateTime createdAt;
 
-    public WarehouseSummary(Long warehouseId, String trackingCode, String orderCode, Double weight, Double netWeight, Double dim, String image, String imageCheck, LocalDateTime createdAt) {
+    public WarehouseSummary(Long warehouseId, String trackingCode, String orderCode,String destination, Double weight, Double netWeight, Double dim, String image, String imageCheck, LocalDateTime createdAt) {
         this.warehouseId = warehouseId;
         this.trackingCode = trackingCode;
         this.orderCode = orderCode;
+        this.destination = destination;
         this.weight = weight;
         this.netWeight = netWeight;
         this.dim = dim;
