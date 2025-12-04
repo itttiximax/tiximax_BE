@@ -57,27 +57,6 @@ public class BankAccountController {
         return ResponseEntity.notFound().build();
     }
 
-    @GetMapping("/filter")
-    public ResponseEntity<List<BankAccount>> getBankAccountsByProxyAndRevenue(
-            @RequestParam(required = false) Boolean isProxy,
-            @RequestParam(required = false) Boolean isRevenue) {
-        List<BankAccount> accounts;
-        if (isProxy != null && isRevenue != null) {
-            accounts = bankAccountService.findByProxyAndRevenue(isProxy, isRevenue);
-        } else if (isProxy != null) {
-            accounts = bankAccountService.findAll().stream()
-                    .filter(a -> a.getIsProxy().equals(isProxy))
-                    .toList();
-        } else if (isRevenue != null) {
-            accounts = bankAccountService.findAll().stream()
-                    .filter(a -> a.getIsRevenue().equals(isRevenue))
-                    .toList();
-        } else {
-            accounts = bankAccountService.findAll();
-        }
-        return ResponseEntity.ok(accounts);
-    }
-
     @GetMapping("/filter/proxy")
     public ResponseEntity<List<BankAccount>> getBankAccountsByProxy(){
         List<BankAccount> accounts;

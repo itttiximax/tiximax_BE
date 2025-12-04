@@ -1,14 +1,26 @@
 package com.tiximax.txm.Model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
-@Getter
-@Setter
-
+@NoArgsConstructor
 public class SmsRequest {
-    private long amount;
-    private String content;
+    @JsonProperty("success")
+    private boolean success;
+
+    @JsonProperty("data")
+    private List<SmsItem> data;
+
+    @Data
+    @NoArgsConstructor
+    public static class SmsItem {  // Inner class gọn
+        @JsonProperty("amount")
+        private long amount;
+
+        @JsonProperty("content")
+        private String content;
+    }
 }
