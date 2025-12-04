@@ -207,6 +207,7 @@ public class WarehouseService {
                         w.getWarehouseId(),
                         w.getTrackingCode(),
                         w.getOrders().getOrderCode(),
+                         w.getOrders().getDestination().getDestinationName(),
                         w.getWeight(),
                         w.getNetWeight(),
                         w.getDim(),
