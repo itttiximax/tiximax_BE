@@ -1,5 +1,6 @@
 package com.tiximax.txm.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.PaymentAuctionResponse;
@@ -9,7 +10,10 @@ import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -17,8 +21,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
+//@Lazy
 
 public class PaymentService {
 
@@ -36,6 +43,7 @@ public class PaymentService {
 
     @Autowired
     private OrdersService ordersService;
+
     @Autowired
     private PurchasesRepository purchasesRepository;
 
@@ -56,6 +64,9 @@ public class PaymentService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -79,7 +90,7 @@ public class PaymentService {
     public String generatePaymentCode() {
         String paymentCode;
         do {
-            paymentCode = "GD-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
+            paymentCode = "GD" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
         } while (paymentRepository.existsByPaymentCode(paymentCode));
         return paymentCode;
     }
@@ -212,7 +223,7 @@ public class PaymentService {
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
-        payment.setContent(String.join(", ", orderCodes) + priceShipDos + "k ship");
+        payment.setContent(String.join(", ", orderCodes) + " - " + priceShipDos + "k ship");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);
@@ -277,87 +288,85 @@ public class PaymentService {
     }
 
     public Payment confirmedPaymentShipment(String paymentCode) {
-    System.out.println("=== Start confirmedPaymentShipment ===");
-    Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
+        Optional<Payment> paymentOptional = paymentRepository.findByPaymentCode(paymentCode);
 
-    if (paymentOptional.isEmpty()) {
-        System.out.println("[STOP] Không tìm thấy giao dịch!");
-        throw new RuntimeException("Không tìm thấy giao dịch này!");
-    }
-
-    Payment payment = paymentOptional.get();
-
-    if (!payment.getStatus().equals(PaymentStatus.CHO_THANH_TOAN_SHIP)) {
-        System.out.println("[STOP] Trạng thái payment KHÔNG PHẢI CHỜ THANH TOÁN SHIP => DỪNG");
-        throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
-    }
-
-    payment.setStatus(PaymentStatus.DA_THANH_TOAN_SHIP);
-    payment.setCollectedAmount(payment.getAmount());
-    payment.setActionAt(LocalDateTime.now());
-
-    if (payment.getIsMergedPayment()) {
-        System.out.println("==> Chạy nhánh [MERGED PAYMENT]");
-        Set<Orders> orders = payment.getRelatedOrders();
-        System.out.println("Số đơn liên quan: " + orders.size());
-
-        for (Orders order : orders) {
-            order.setStatus(OrderStatus.CHO_GIAO);
-            for (OrderLinks orderLink : order.getOrderLinks()) {
-                orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
-            }
-            ordersRepository.save(order);
-            ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+        if (paymentOptional.isEmpty()) {
+            System.out.println("[STOP] Không tìm thấy giao dịch!");
+            throw new RuntimeException("Không tìm thấy giao dịch này!");
         }
-    }
 
-    else {
-      
-        if (payment.getOrders() != null) {
-        
-            Orders order = payment.getOrders();
-            order.setStatus(OrderStatus.CHO_GIAO);
-            for (OrderLinks orderLink : order.getOrderLinks()) {
-                orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
-            }
+        Payment payment = paymentOptional.get();
 
-            ordersRepository.save(order);
-            ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
-        } 
+        if (!payment.getStatus().equals(PaymentStatus.CHO_THANH_TOAN_SHIP)) {
+            System.out.println("[STOP] Trạng thái payment KHÔNG PHẢI CHỜ THANH TOÁN SHIP => DỪNG");
+            throw new RuntimeException("Trạng thái đơn hàng không phải chờ thanh toán!");
+        }
 
-        else {
-            List<PartialShipment> partialShipments = partialShipmentRepository.findByPayment(payment);
+        payment.setStatus(PaymentStatus.DA_THANH_TOAN_SHIP);
+        payment.setCollectedAmount(payment.getAmount());
+        payment.setActionAt(LocalDateTime.now());
 
-            for (PartialShipment shipment : partialShipments) {
-                shipment.setStatus(OrderStatus.CHO_GIAO);
-                shipment.setShipmentDate(LocalDateTime.now());
+        if (payment.getIsMergedPayment()) {
+            System.out.println("==> Chạy nhánh [MERGED PAYMENT]");
+            Set<Orders> orders = payment.getRelatedOrders();
+            System.out.println("Số đơn liên quan: " + orders.size());
 
-                Set<OrderLinks> readyLinks = shipment.getReadyLinks();
-
-                for (OrderLinks link : readyLinks) {
-                    link.setStatus(OrderLinkStatus.CHO_GIAO);
-                    link.setPartialShipment(shipment); 
-                    orderLinksRepository.save(link);   
-                
-
-                partialShipmentRepository.save(shipment);
-
-                Orders order = shipment.getOrders();
-                boolean allLinksDone = order.getOrderLinks().stream()
-                    .allMatch(l -> l.getStatus() == OrderLinkStatus.CHO_GIAO || l.getStatus() == OrderLinkStatus.DA_HUY || l.getStatus() == OrderLinkStatus.DA_GIAO);
-
-                if (allLinksDone) {
-                    order.setStatus(OrderStatus.CHO_GIAO);
+            for (Orders order : orders) {
+                order.setStatus(OrderStatus.CHO_GIAO);
+                for (OrderLinks orderLink : order.getOrderLinks()) {
+                    orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
                 }
                 ordersRepository.save(order);
                 ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
             }
         }
-        }
-    }
 
+        else {
+
+            if (payment.getOrders() != null) {
+
+                Orders order = payment.getOrders();
+                order.setStatus(OrderStatus.CHO_GIAO);
+                for (OrderLinks orderLink : order.getOrderLinks()) {
+                    orderLink.setStatus(OrderLinkStatus.CHO_GIAO);
+                }
+
+                ordersRepository.save(order);
+                ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+            }
+
+            else {
+                List<PartialShipment> partialShipments = partialShipmentRepository.findByPayment(payment);
+
+                for (PartialShipment shipment : partialShipments) {
+                    shipment.setStatus(OrderStatus.CHO_GIAO);
+                    shipment.setShipmentDate(LocalDateTime.now());
+
+                    Set<OrderLinks> readyLinks = shipment.getReadyLinks();
+
+                    for (OrderLinks link : readyLinks) {
+                        link.setStatus(OrderLinkStatus.CHO_GIAO);
+                        link.setPartialShipment(shipment);
+                        orderLinksRepository.save(link);
+
+
+                    partialShipmentRepository.save(shipment);
+
+                    Orders order = shipment.getOrders();
+                    boolean allLinksDone = order.getOrderLinks().stream()
+                        .allMatch(l -> l.getStatus() == OrderLinkStatus.CHO_GIAO || l.getStatus() == OrderLinkStatus.DA_HUY || l.getStatus() == OrderLinkStatus.DA_GIAO);
+
+                    if (allLinksDone) {
+                        order.setStatus(OrderStatus.CHO_GIAO);
+                    }
+                    ordersRepository.save(order);
+                    ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
+                }
+            }
+            }
+        }
     return paymentRepository.save(payment);
-}
+    }
 
     public Optional<Payment> getPaymentsById(Long paymentId) {
         return paymentRepository.findById(paymentId);
@@ -585,65 +594,71 @@ public class PaymentService {
     public String generateMergedPaymentCode() {
         String paymentCode;
         do {
-            paymentCode = "MG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
+            paymentCode = "MG" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
         } while (paymentRepository.existsByPaymentCode(paymentCode));
         return paymentCode;
     }
 
-    public void autoConfirm(long amount, String rawContent) {
-        if (rawContent == null || rawContent.trim().isEmpty()) {
-            return;
-        }
-
-        String inputCode   = rawContent.trim().toUpperCase();
-        String paymentCode = normalizeCode(inputCode);
-
-        Optional<Payment> opt = paymentRepository.findByPaymentCode(paymentCode);
-        if (opt.isEmpty()) {
-            return;
-        }
-
-        Payment payment = opt.get();
-        PaymentStatus status = payment.getStatus();
-
-        if (status != PaymentStatus.CHO_THANH_TOAN && status != PaymentStatus.CHO_THANH_TOAN_SHIP) {
-            return;
-        }
-
-        BigDecimal expected = payment.getCollectedAmount().setScale(0, RoundingMode.HALF_UP);
-        BigDecimal received = BigDecimal.valueOf(amount);
-
-        if (expected.compareTo(received) > 0) {
-            return;
-        }
-
-        try {
-            if (status == PaymentStatus.CHO_THANH_TOAN_SHIP) {
-                confirmedPaymentShipment(paymentCode);
-            } else if (status == PaymentStatus.CHO_THANH_TOAN) {
-                confirmedPayment(paymentCode);
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    private String normalizeCode(String input) {
-        if (input.startsWith("MG") && !input.contains("-") && input.length() >= 8) {
-            return "MG-" + input.substring(2);
-        }
-        if (input.startsWith("GD") && !input.contains("-") && input.length() >= 8) {
-            return "GD-" + input.substring(2);
-        }
-        return input;
-    }
-
-    public SmsRequest getSmsFromExternalApi() {
+    public SmsRequest getSmsFromExternalApi() throws Exception {
         String url = "https://bank-sms.hidden-sunset-f690.workers.dev/";
-        try {
-            SmsRequest response = restTemplate.getForObject(url, SmsRequest.class);
-            return response != null ? response : new SmsRequest();
-        } catch (Exception e) {
-            return null;
+        String jsonResponse = restTemplate.getForObject(url, String.class);
+
+        if (jsonResponse == null || jsonResponse.isEmpty()) {
+            throw new RuntimeException("Empty response");
         }
+
+        return objectMapper.readValue(jsonResponse, SmsRequest.class);  // Parse nhanh
     }
+
+//    @Async("taskExecutor")
+//    public CompletableFuture<Void> processAutoConfirmsAsync(List<SmsRequest.SmsItem> data) {
+//        if (data == null || data.isEmpty()) {
+//            return CompletableFuture.completedFuture(null);
+//        }
+//
+//        for (SmsRequest.SmsItem item : data) {
+//            String code = item.getContent().trim();
+//            Optional<Payment> opt = paymentRepository.findByPaymentCode(code);
+//
+//            if (opt.isEmpty()) {
+//                continue;
+//            }
+//
+//            Payment payment = opt.get();
+//            PaymentStatus status = payment.getStatus();
+//
+//            BigDecimal expected = payment.getCollectedAmount().setScale(0, RoundingMode.HALF_UP);
+//            BigDecimal received = BigDecimal.valueOf(item.getAmount());
+//            if (expected.compareTo(received) > 0) {
+//                continue;
+//            }
+//
+//            if (status == PaymentStatus.DA_THANH_TOAN || status == PaymentStatus.DA_THANH_TOAN_SHIP) {
+//                break;
+//            }
+//
+//            try {
+//                if (status == PaymentStatus.CHO_THANH_TOAN) {
+//                    confirmedPayment(code);
+//                } else if (status == PaymentStatus.CHO_THANH_TOAN_SHIP) {
+//                    confirmedPaymentShipment(code);
+//                }
+//            } catch (Exception e) {
+//                System.err.println("[ERR] Confirm fail " + code + ": " + e.getMessage());
+//            }
+//        }
+//        return CompletableFuture.completedFuture(null);
+//    }
+
+//    @Scheduled(fixedRate = 600000)
+//    public void scheduledAutoSmsProcess() {
+//        try {
+//            SmsRequest smsData = getSmsFromExternalApi();
+//            if (smsData != null && smsData.isSuccess() && smsData.getData() != null && !smsData.getData().isEmpty()) {
+//                processAutoConfirmsAsync(smsData.getData());
+//            }
+//        } catch (Exception e) {
+//            System.err.println("[SCHEDULER ERR] " + e.getMessage());
+//        }
+//    }
 }
