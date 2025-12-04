@@ -401,5 +401,10 @@ public class PackingService {
         return exports;
     }
 
-  
+
+    public List<Warehouse> getWarehousesByPackingId(Long packingId) {
+        Packing packing = packingRepository.findById(packingId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy packing này!"));
+        return new ArrayList<>(packing.getWarehouses());
+    }
 }
