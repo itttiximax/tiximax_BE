@@ -1,6 +1,7 @@
 package com.tiximax.txm.Repository;
 
 import com.tiximax.txm.Entity.OrderLinks;
+import com.tiximax.txm.Entity.Warehouse;
 import com.tiximax.txm.Enums.OrderLinkStatus;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -51,8 +52,7 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
             """)
     List<OrderLinks> findPendingShipmentLinks();
 
-
-    
+     List<OrderLinks> findByWarehouse(Warehouse warehouse);
 
     @Query("""
     SELECT DISTINCT ol.shipmentCode

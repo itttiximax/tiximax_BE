@@ -101,6 +101,12 @@ public class PackingService {
         if (warehouses.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy mã vận đơn bạn cung cấp!");
         }
+        for (Warehouse warehouse : warehouses) {
+        if (warehouse.getPacking() != null) {
+            throw new IllegalArgumentException("Warehouse với mã vận đơn " + warehouse.getTrackingCode() + " đã có packingId, không thể tiếp tục.");
+        }
+        }
+
 
         Set<Orders> orders = warehouses.stream()
                 .map(Warehouse::getOrders)
@@ -357,49 +363,49 @@ public class PackingService {
 
         List<Packing> packings = packingRepository.findAllChoBayWithWarehouses(packingIds);
 
-        List<PackingExport> exports = new ArrayList<>();
+    List<PackingExport> exports = new ArrayList<>();
 
-        for (Packing packing : packings) {
-            for (Warehouse w : packing.getWarehouses()) {
+    for (Packing packing : packings) {
+        for (Warehouse w : packing.getWarehouses()) {
 
-                PackingExport dto = new PackingExport();
+            PackingExport dto = new PackingExport();
 
-                // PACKING INFO
-                dto.setPackingCode(packing.getPackingCode());
+            dto.setPackingCode(packing.getPackingCode());
 
-                // WAREHOUSE INFO
-                dto.setTrackingCode(w.getTrackingCode());
-                dto.setHeight(w.getHeight());
-                dto.setLength(w.getLength());
-                dto.setWidth(w.getWidth());
-                dto.setDim(w.getDim());
-                dto.setNetWeight(w.getNetWeight());
+            dto.setTrackingCode(w.getTrackingCode());
+            dto.setHeight(w.getHeight());
+            dto.setLength(w.getLength());
+            dto.setWeight(w.getWeight());
+            dto.setWidth(w.getWidth());
+            dto.setDim(w.getDim());
+            dto.setNetWeight(w.getNetWeight());
 
-                // ORDER INFO
-                Orders order = w.getOrders();
-                if (order != null) {
-                    dto.setOrderCode(order.getOrderCode());
-                    dto.setDestination(order.getDestination().getDestinationName());
-
-                    if (order.getCustomer() != null) {
-                        dto.setCustomerCode(order.getCustomer().getCustomerCode());
-                        dto.setCustomerName(order.getCustomer().getName());
-//                        dto.setCustomerPhone(order.getCustomer().getPhone());
-//                        dto.setAddress(order.getAddress().getAddressName());
-                    }
-                }
-
-               
-                if (packing.getStaff() != null) {
-                    dto.setStaffName(packing.getStaff().getName());
-                }
-
-                exports.add(dto);
+            // 🔥 LẤY PRODUCT NAME
+            List<OrderLinks> links = orderLinksRepository.findByWarehouse(w);
+            if (!links.isEmpty()) {
+                dto.setProductName(links.get(0).getProductName()); 
+                // hoặc join tất cả productName nếu muốn
             }
-        }
 
-        return exports;
+            // ORDER INFO
+            Orders order = w.getOrders();
+            if (order != null) {
+                dto.setOrderCode(order.getOrderCode());
+                dto.setDestination(order.getDestination().getDestinationName());
+
+                if (order.getCustomer() != null) {
+                    dto.setStaffName(order.getStaff().getName());
+                    dto.setCustomerCode(order.getCustomer().getCustomerCode());
+                    dto.setCustomerName(order.getCustomer().getName());
+                }
+            }
+
+            exports.add(dto);
+        }
     }
+
+    return exports;
+}
 
   
 }

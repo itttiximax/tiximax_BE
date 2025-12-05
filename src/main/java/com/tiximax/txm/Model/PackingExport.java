@@ -18,9 +18,11 @@ public class PackingExport {
     private String packingCode;   
     private String orderCode;
     private String trackingCode;
+    private String productName;
     private Double height ;
     private Double length ;
     private Double width ;
+    private Double weight ;
     private Double dim ;
     private Double netWeight ;
     private String customerCode;
