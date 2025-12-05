@@ -377,62 +377,6 @@ public class PackingService {
                         .map(warehouse -> buildPackingExport(packing, warehouse, orderLinksMap)))
                 .collect(Collectors.toList());
     }
-//
-//    private PackingExport buildPackingExport(Packing packing, Warehouse warehouse,
-//                                             Map<String, List<OrderLinks>> orderLinksMap) {
-//        PackingExport dto = new PackingExport();
-//
-//        dto.setPackingCode(packing.getPackingCode());
-//        dto.setFlightCode(packing.getFlightCode());
-//        dto.setTrackingCode(warehouse.getTrackingCode());
-//
-//        List<OrderLinks> orderLinks = orderLinksMap.getOrDefault(warehouse.getTrackingCode(), List.of());
-//
-//        List<String> productNames   = new ArrayList<>();
-//        List<String> purchaseImages = new ArrayList<>();
-//        List<String> productLinks   = new ArrayList<>();
-//
-//        if (!orderLinks.isEmpty()) {
-//            dto.setClassify(orderLinks.get(0).getClassify());
-//            for (OrderLinks link : orderLinks) {
-//                if (link.getProductName() != null && !link.getProductName().trim().isEmpty()) {
-//                    productNames.add(link.getProductName().trim());
-//                }
-//                if (link.getPurchaseImage() != null && !link.getPurchaseImage().trim().isEmpty()) {
-//                    purchaseImages.add(link.getPurchaseImage().trim());
-//                }
-//                if (link.getProductLink() != null && !link.getProductLink().trim().isEmpty()) {
-//                    productLinks.add(link.getProductLink().trim());
-//                }
-//            }
-//        }
-//        dto.setProductNames(productNames);
-//        dto.setPurchaseImages(purchaseImages);
-//        dto.setProductLink(productLinks);
-//        dto.setHeight(warehouse.getHeight());
-//        dto.setLength(warehouse.getLength());
-//        dto.setWidth(warehouse.getWidth());
-//        dto.setDim(warehouse.getDim());
-//        dto.setNetWeight(warehouse.getNetWeight());
-//
-//        Orders order = warehouse.getOrders();
-//        if (order != null) {
-//            dto.setOrderCode(order.getOrderCode());
-//            dto.setDestination(order.getDestination() != null ? order.getDestination().getDestinationName() : null);
-//            if (order.getCustomer() != null) {
-//                dto.setCustomerCode(order.getCustomer().getCustomerCode());
-//                dto.setCustomerName(order.getCustomer().getName());
-//            }
-//            dto.setStaffName(order.getStaff() != null ? order.getStaff().getName() : null);
-//        } else {
-//            dto.setOrderCode(null);
-//            dto.setDestination(null);
-//            dto.setCustomerCode(null);
-//            dto.setCustomerName(null);
-//            dto.setStaffName(packing.getStaff() != null ? packing.getStaff().getName() : null);
-//        }
-//        return dto;
-//    }
 
     private PackingExport buildPackingExport(Packing packing, Warehouse warehouse,
                                              Map<String, List<OrderLinks>> orderLinksMap) {
