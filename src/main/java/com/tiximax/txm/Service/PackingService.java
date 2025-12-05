@@ -102,6 +102,12 @@ public class PackingService {
         if (warehouses.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy mã vận đơn bạn cung cấp!");
         }
+        for (Warehouse warehouse : warehouses) {
+        if (warehouse.getPacking() != null) {
+            throw new IllegalArgumentException("Warehouse với mã vận đơn " + warehouse.getTrackingCode() + " đã có packingId, không thể tiếp tục.");
+        }
+        }
+
 
         Set<Orders> orders = warehouses.stream()
                 .map(Warehouse::getOrders)

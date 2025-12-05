@@ -30,6 +30,7 @@ public class PackingExport {
     private Double height ;
     private Double length ;
     private Double width ;
+    private Double weight ;
     private Double dim ;
     private Double netWeight ;
     private String customerCode;
