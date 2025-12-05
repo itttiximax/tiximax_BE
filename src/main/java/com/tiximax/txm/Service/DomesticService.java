@@ -228,7 +228,6 @@ public class DomesticService {
                 String name = (String) customerData.get("customerName");
                 List<Map<String, Object>> addresses = (List<Map<String, Object>>) customerData.get("addresses");
                 if (addresses == null || addresses.isEmpty()) return false;
-
                 
                 List<Map<String, Object>> packings = (List<Map<String, Object>>) addresses.get(0).get("packings");
                 if (packings == null || packings.isEmpty()) return false;
