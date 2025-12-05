@@ -15,9 +15,11 @@ import java.util.Map;
 
 public class PackingExport {
 
-    private String packingCode;   
+    private String packingCode;
+    private String flightCode;
     private String orderCode;
     private String trackingCode;
+    private String classify;
     private Double height ;
     private Double length ;
     private Double width ;
