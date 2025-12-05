@@ -7,13 +7,13 @@ import com.tiximax.txm.Model.SmsRequest;
 import com.tiximax.txm.Service.PaymentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @RestController
 @CrossOrigin
@@ -104,16 +104,41 @@ public class PaymentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/auto-confirm")
-    public ResponseEntity<Void> autoConfirm(@RequestBody SmsRequest request) {
-        paymentService.autoConfirm(request.getAmount(), request.getContent());
-        return ResponseEntity.ok().build();
-    }
+//    @PostMapping("/auto-confirm")
+//    public ResponseEntity<Void> autoConfirm(@RequestBody SmsRequest request) {
+//        paymentService.autoConfirm(request.getAmount(), request.getContent());
+//        return ResponseEntity.ok().build();
+//    }
+
+//    @GetMapping("/sms-external")
+//    public ResponseEntity<SmsRequest> getExternalSms() {
+//        SmsRequest smsData = paymentService.getSmsFromExternalApi();
+//        return ResponseEntity.ok(smsData);
+//    }
+
+//    @GetMapping("/sms-external")
+//    public ResponseEntity<SmsRequest> getExternalSms() {
+//        SmsRequest smsData = paymentService.getSmsFromExternalApi();
+//        if (smsData != null && smsData.isSuccess()) {  // Check success để tránh trả data rỗng
+//            return ResponseEntity.ok(smsData);
+//        }
+//        return ResponseEntity.ok(new SmsRequest());  // Empty nếu lỗi
+//    }
 
     @GetMapping("/sms-external")
-    public ResponseEntity<SmsRequest> getExternalSms() {
-        SmsRequest smsData = paymentService.getSmsFromExternalApi();
-        return ResponseEntity.ok(smsData);
+    public ResponseEntity<?> getExternalSms() {  // Dùng <?> như exchange rates
+        try {
+            SmsRequest smsData = paymentService.getSmsFromExternalApi();
+            return ResponseEntity.ok(smsData);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to fetch SMS data");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("timestamp", LocalDateTime.now());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorResponse);
+        }
     }
 
 }

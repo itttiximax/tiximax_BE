@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -15,10 +16,17 @@ import java.util.Map;
 
 public class PackingExport {
 
-    private String packingCode;   
+    private String packingCode;
+    private String flightCode;
     private String orderCode;
     private String trackingCode;
-    private String productName;
+    private List<String> productNames;
+//    private List<String> purchaseImages;
+    private BigDecimal price;
+    private List<String> productLink;
+//    private BigDecimal purchasedPrice;
+//    private String purchaseInvoiceImage;
+    private String classify;
     private Double height ;
     private Double length ;
     private Double width ;
@@ -26,9 +34,7 @@ public class PackingExport {
     private Double dim ;
     private Double netWeight ;
     private String customerCode;
-    private String  customerName ;
-//    private String customerPhone;
-//    private String Address;
+    private String customerName;
     private String destination;
     private String staffName ;
 
