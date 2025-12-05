@@ -691,7 +691,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .collect(Collectors.toList());
     }
 
-    public List<OrderLinks> getLinksInWarehouseByCustomer(String customerCode) {
+    public List<WareHouseOrderLink> getLinksInWarehouseByCustomer(String customerCode) {
 
          Customer customer = authenticationRepository.findByCustomerCode(customerCode);
         if (customer == null) {
@@ -702,10 +702,61 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             throw new IllegalStateException("Bạn không có quyền truy cập đơn hàng của khách hàng này!");
         }
         
-        return orderLinksRepository.findLinksInWarehouseWithoutPartialShipment(
+        var orderLinks =  orderLinksRepository.findLinksInWarehouseWithoutPartialShipment(
                 customerCode,
                 OrderLinkStatus.DA_NHAP_KHO_VN
         );
+             for (OrderLinks link : orderLinks) {
+            Hibernate.initialize(link.getWarehouse()); // Ensures the warehouse is fetched
+        }
+
+        return orderLinks.stream()
+    .map(link -> {
+        WareHouseOrderLink warehouseOrderLink = new WareHouseOrderLink();
+        warehouseOrderLink.setWarehouseId(link.getWarehouse().getWarehouseId());
+        warehouseOrderLink.setLength(link.getWarehouse().getLength());
+        warehouseOrderLink.setWidth(link.getWarehouse().getWidth());
+        warehouseOrderLink.setHeight(link.getWarehouse().getHeight());
+        warehouseOrderLink.setWeight(link.getWarehouse().getWeight());
+        warehouseOrderLink.setDim(link.getWarehouse().getDim());
+        warehouseOrderLink.setLinkId(link.getLinkId());
+        warehouseOrderLink.setProductLink(link.getProductLink());
+        warehouseOrderLink.setProductName(link.getProductName());
+        warehouseOrderLink.setQuantity(link.getQuantity());
+        warehouseOrderLink.setPriceWeb(link.getPriceWeb());
+        warehouseOrderLink.setShipWeb(link.getShipWeb());
+        warehouseOrderLink.setTotalWeb(link.getTotalWeb());
+        warehouseOrderLink.setPurchaseFee(link.getPurchaseFee());
+        warehouseOrderLink.setExtraCharge(link.getExtraCharge());
+        warehouseOrderLink.setFinalPriceVnd(link.getFinalPriceVnd());
+
+        if (link.getWarehouse().getLength() != null && link.getWarehouse().getWidth() != null && link.getWarehouse().getHeight() != null) {
+            BigDecimal volume = BigDecimal.valueOf(link.getWarehouse().getLength())
+                .multiply(BigDecimal.valueOf(link.getWarehouse().getWidth()))
+                .multiply(BigDecimal.valueOf(link.getWarehouse().getHeight()));
+
+            BigDecimal finalPriceShip = volume.divide(BigDecimal.valueOf(6000), 2, RoundingMode.HALF_UP);
+            BigDecimal intPart = finalPriceShip.setScale(0, RoundingMode.FLOOR); 
+            BigDecimal decimalPart = finalPriceShip.subtract(intPart); 
+
+        if (decimalPart.compareTo(BigDecimal.valueOf(0.5)) >= 0) {
+            finalPriceShip = intPart.add(BigDecimal.valueOf(0.5)); 
+        } else {
+            finalPriceShip = intPart.add(decimalPart.setScale(1, RoundingMode.FLOOR)); 
+        }
+        warehouseOrderLink.setFinalPriceShip(finalPriceShip.multiply(orderLinks.get(0).getOrders().getPriceShip()));
+        }
+        warehouseOrderLink.setTrackingCode(link.getTrackingCode());
+        warehouseOrderLink.setClassify(link.getClassify());
+        warehouseOrderLink.setPurchaseImage(link.getPurchaseImage());
+        warehouseOrderLink.setWebsite(link.getWebsite());
+        warehouseOrderLink.setShipmentCode(link.getShipmentCode());
+        warehouseOrderLink.setStatus(link.getStatus());
+        warehouseOrderLink.setNote(link.getNote());
+        warehouseOrderLink.setGroupTag(link.getGroupTag());
+        return warehouseOrderLink;
+    })
+    .collect(Collectors.toList());
     }
 
     public List<OrderPayment> getOrdersShippingByCustomerCode(String customerCode) {
