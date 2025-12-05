@@ -232,7 +232,7 @@ public List<PartialShipment> createPartialShipment(ShipmentCodesRequest tracking
     }
 
     // === Tính phí ship tổng ===
-    BigDecimal totalShippingFee = calculateTotalShippingFee(commonRoute.getRouteId(), allTrackingCodes);
+    BigDecimal totalShippingFee = calculateTotalShippingFee(allTrackingCodes);
     if (totalShippingFee == null || totalShippingFee.compareTo(BigDecimal.ZERO) <= 0) {
         throw new RuntimeException("Không thể tính phí vận chuyển!");
     }
@@ -362,7 +362,7 @@ public List<PartialShipment> createPartialShipment(ShipmentCodesRequest tracking
  public Optional<PartialShipment> getById(Long id) {
         return partialShipmentRepository.findById(id);
     }
-    private BigDecimal calculateTotalShippingFee(Long routeId, List<String> selectedTrackingCodes) {
+    private BigDecimal calculateTotalShippingFee( List<String> selectedTrackingCodes) {
     List<Warehouse> warehouses = warehousereRepository.findByTrackingCodeIn(selectedTrackingCodes);
 
     System.out.println("Tracking codes: " + selectedTrackingCodes);
@@ -370,21 +370,22 @@ public List<PartialShipment> createPartialShipment(ShipmentCodesRequest tracking
     if (warehouses.isEmpty()) {
         throw new IllegalArgumentException("Không tìm thấy kiện hàng tương ứng với tracking codes");
     }
-    var Route = routeRepository.findById(routeId).orElseThrow(() -> new IllegalArgumentException("Route không tồn tại"));
 
-    BigDecimal ratePerKg = Route.getUnitBuyingPrice();
+    BigDecimal ratePerKg = warehouses.get(0).getOrders().getPriceShip();
 
     BigDecimal totalFee = warehouses.stream()
-        .map(w -> {
-            Double net = w.getNetWeight();
-            if (net == null) {
-                throw new IllegalArgumentException(
-                    "Thiếu netWeight cho kiện " + w.getTrackingCode()
-                );
-            }
-            return BigDecimal.valueOf(net).multiply(ratePerKg);
-        })
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
+    .map(w -> {
+        Double net = w.getNetWeight();
+        if (net == null) {
+            throw new IllegalArgumentException(
+                "Thiếu netWeight cho kiện " + w.getTrackingCode()
+            );
+        }
+        BigDecimal roundedNetWeight = BigDecimal.valueOf(net).setScale(1, RoundingMode.HALF_UP);
+
+        return roundedNetWeight.multiply(ratePerKg);
+    })
+    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
     return totalFee;
 }
