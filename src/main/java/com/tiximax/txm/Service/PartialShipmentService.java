@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -165,6 +166,7 @@ public class PartialShipmentService {
 public List<PartialShipment> createPartialShipment(ShipmentCodesRequest trackingCodesRequest,
                                                    boolean isUseBalance,
                                                    long bankId,
+                                                   BigDecimal priceShipDos,
                                                    Long customerVoucherId) {
 
     Staff currentStaff = (Staff) accountUtils.getAccountCurrent();
@@ -267,7 +269,7 @@ public List<PartialShipment> createPartialShipment(ShipmentCodesRequest tracking
             discount = voucher.getValue();
         }
 
-        finalAmount = totalShippingFee.subtract(discount).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+        finalAmount = totalShippingFee.subtract(discount).max(BigDecimal.ZERO).setScale(0, RoundingMode.HALF_UP);
     }
 
     // === Tính tổng cần thu (cộng nợ cũ nếu có) ===
@@ -275,9 +277,9 @@ public List<PartialShipment> createPartialShipment(ShipmentCodesRequest tracking
             .map(Orders::getLeftoverMoney)
             .filter(leftover -> leftover != null && leftover.compareTo(BigDecimal.ZERO) > 0)
             .reduce(BigDecimal.ZERO, BigDecimal::add)
-            .setScale(2, RoundingMode.HALF_UP);
+            .setScale(0, RoundingMode.HALF_UP);
 
-    BigDecimal collect = finalAmount.add(totalDebt).setScale(2, RoundingMode.HALF_UP);
+    BigDecimal collect = finalAmount.add(totalDebt).add(priceShipDos).setScale(0, RoundingMode.HALF_UP);
 
     // === Xử lý dùng số dư ===
     BigDecimal balance = (commonCustomer.getBalance() != null) ? commonCustomer.getBalance() : BigDecimal.ZERO;
@@ -293,7 +295,7 @@ public List<PartialShipment> createPartialShipment(ShipmentCodesRequest tracking
     // === Tạo Payment gộp ===
     Payment payment = new Payment();
     payment.setPaymentCode(paymentService.generatePaymentCode()); // hoặc generatePaymentCode() tùy bạn
-    payment.setContent("Phí ship gộp: " + String.join(", ", allTrackingCodes));
+    payment.setContent("Phí ship gộp: " + String.join(", ", allTrackingCodes) + " +" + priceShipDos + "k");
     payment.setPaymentType(PaymentType.MA_QR);
     payment.setAmount(finalAmount);
     payment.setCollectedAmount(qrAmount);

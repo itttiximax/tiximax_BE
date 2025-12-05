@@ -77,7 +77,7 @@ public class PaymentController {
        List<PaymentAuctionResponse> confirmedPayment = paymentService.getPaymentByStaffandStatus();
         return ResponseEntity.ok(confirmedPayment);
     }
-     @GetMapping("/partial-payment")
+    @GetMapping("/partial-payment")
     public ResponseEntity<List<Payment>> getPaymentsByPartialStatus(
     ) {
         List<Payment> payments = paymentService.getPaymentsByPartialStatus();
