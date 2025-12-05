@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,8 +29,9 @@ public class PartialShipmentController {
     public ResponseEntity<Payment> createPartialShipment(@RequestBody ShipmentCodesRequest selectedTrackingCode,
                                                                     @PathVariable boolean isUseBalance,
                                                                     @PathVariable Long bankId,
+                                                                    @PathVariable BigDecimal priceShipDos,
                                                                     @RequestParam(required = false) Long customerVoucherId) {
-        List<PartialShipment> partial = partialShipmentService.createPartialShipment(selectedTrackingCode, isUseBalance, bankId, customerVoucherId);
+        List<PartialShipment> partial = partialShipmentService.createPartialShipment(selectedTrackingCode, isUseBalance, bankId, priceShipDos, customerVoucherId);
         Payment payment = partial.get(0).getPayment();                                                             
         return ResponseEntity.ok(payment);
     }

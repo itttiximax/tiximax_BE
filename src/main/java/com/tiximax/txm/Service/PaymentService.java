@@ -180,7 +180,6 @@ public class PaymentService {
         .reduce(BigDecimal.ZERO, BigDecimal::add)
         .setScale(1, RoundingMode.HALF_UP); 
 
-
         BigDecimal totalAmount = totalWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal discount = BigDecimal.ZERO;
@@ -223,7 +222,7 @@ public class PaymentService {
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
-        payment.setContent(String.join(", ", orderCodes) + " - " + priceShipDos + "k ship");
+        payment.setContent(String.join(", ", orderCodes) + " + " + priceShipDos + "k ship");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);
@@ -494,7 +493,7 @@ public class PaymentService {
         return savedPayment;
     }
 
-      public Payment createMergedPaymentAfterAuction(Set<String> orderCodes, Integer depositPercent, boolean isUseBalance, long bankId) {
+    public Payment createMergedPaymentAfterAuction(Set<String> orderCodes, Integer depositPercent, boolean isUseBalance, long bankId) {
         List<Orders> ordersList = ordersRepository.findAllByOrderCodeIn(new ArrayList<>(orderCodes));
         if (ordersList.size() != orderCodes.size()) {
             throw new RuntimeException("Một hoặc một số đơn hàng không được tìm thấy!");
