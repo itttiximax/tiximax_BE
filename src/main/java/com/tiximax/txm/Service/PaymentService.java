@@ -609,45 +609,45 @@ public class PaymentService {
         return objectMapper.readValue(jsonResponse, SmsRequest.class);  // Parse nhanh
     }
 
-//    @Async("taskExecutor")
-//    public CompletableFuture<Void> processAutoConfirmsAsync(List<SmsRequest.SmsItem> data) {
-//        if (data == null || data.isEmpty()) {
-//            return CompletableFuture.completedFuture(null);
-//        }
-//
-//        for (SmsRequest.SmsItem item : data) {
-//            String code = item.getContent().trim();
-//            Optional<Payment> opt = paymentRepository.findByPaymentCode(code);
-//
-//            if (opt.isEmpty()) {
-//                continue;
-//            }
-//
-//            Payment payment = opt.get();
-//            PaymentStatus status = payment.getStatus();
-//
-//            BigDecimal expected = payment.getCollectedAmount().setScale(0, RoundingMode.HALF_UP);
-//            BigDecimal received = BigDecimal.valueOf(item.getAmount());
-//            if (expected.compareTo(received) > 0) {
-//                continue;
-//            }
-//
-//            if (status == PaymentStatus.DA_THANH_TOAN || status == PaymentStatus.DA_THANH_TOAN_SHIP) {
-//                break;
-//            }
-//
-//            try {
-//                if (status == PaymentStatus.CHO_THANH_TOAN) {
-//                    confirmedPayment(code);
-//                } else if (status == PaymentStatus.CHO_THANH_TOAN_SHIP) {
-//                    confirmedPaymentShipment(code);
-//                }
-//            } catch (Exception e) {
-//                System.err.println("[ERR] Confirm fail " + code + ": " + e.getMessage());
-//            }
-//        }
-//        return CompletableFuture.completedFuture(null);
-//    }
+    @Async("taskExecutor")
+    public CompletableFuture<Void> processAutoConfirmsAsync(List<SmsRequest.SmsItem> data) {
+        if (data == null || data.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        for (SmsRequest.SmsItem item : data) {
+            String code = item.getContent().trim();
+            Optional<Payment> opt = paymentRepository.findByPaymentCode(code);
+
+            if (opt.isEmpty()) {
+                continue;
+            }
+
+            Payment payment = opt.get();
+            PaymentStatus status = payment.getStatus();
+
+            BigDecimal expected = payment.getCollectedAmount().setScale(0, RoundingMode.HALF_UP);
+            BigDecimal received = BigDecimal.valueOf(item.getAmount());
+            if (expected.compareTo(received) > 0) {
+                continue;
+            }
+
+            if (status == PaymentStatus.DA_THANH_TOAN || status == PaymentStatus.DA_THANH_TOAN_SHIP) {
+                break;
+            }
+
+            try {
+                if (status == PaymentStatus.CHO_THANH_TOAN) {
+                    confirmedPayment(code);
+                } else if (status == PaymentStatus.CHO_THANH_TOAN_SHIP) {
+                    confirmedPaymentShipment(code);
+                }
+            } catch (Exception e) {
+                System.err.println("[ERR] Confirm fail " + code + ": " + e.getMessage());
+            }
+        }
+        return CompletableFuture.completedFuture(null);
+    }
 
 //    @Scheduled(fixedRate = 600000)
 //    public void scheduledAutoSmsProcess() {

@@ -25,7 +25,7 @@ public class PartialShipmentController {
     @Autowired
     private PartialShipmentService partialShipmentService;
 
-    @PostMapping("/partial-shipment/{isUseBalance}/{bankId}/{customerVoucherId}")
+    @PostMapping("/partial-shipment/{isUseBalance}/{bankId}/{priceShipDos}/{customerVoucherId}")
     public ResponseEntity<Payment> createPartialShipment(@RequestBody ShipmentCodesRequest selectedTrackingCode,
                                                                     @PathVariable boolean isUseBalance,
                                                                     @PathVariable Long bankId,
