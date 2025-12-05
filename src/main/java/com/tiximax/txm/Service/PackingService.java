@@ -363,19 +363,17 @@ public class PackingService {
             for (Warehouse w : packing.getWarehouses()) {
 
                 PackingExport dto = new PackingExport();
-
-                // PACKING INFO
+                List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(w.getTrackingCode());
                 dto.setPackingCode(packing.getPackingCode());
-
-                // WAREHOUSE INFO
+                dto.setFlightCode(packing.getFlightCode());
                 dto.setTrackingCode(w.getTrackingCode());
+                dto.setClassify(orderLinks.get(0).getClassify());
                 dto.setHeight(w.getHeight());
                 dto.setLength(w.getLength());
                 dto.setWidth(w.getWidth());
                 dto.setDim(w.getDim());
                 dto.setNetWeight(w.getNetWeight());
 
-                // ORDER INFO
                 Orders order = w.getOrders();
                 if (order != null) {
                     dto.setOrderCode(order.getOrderCode());
@@ -384,14 +382,11 @@ public class PackingService {
                     if (order.getCustomer() != null) {
                         dto.setCustomerCode(order.getCustomer().getCustomerCode());
                         dto.setCustomerName(order.getCustomer().getName());
-//                        dto.setCustomerPhone(order.getCustomer().getPhone());
-//                        dto.setAddress(order.getAddress().getAddressName());
                     }
                 }
-
                
                 if (packing.getStaff() != null) {
-                    dto.setStaffName(packing.getStaff().getName());
+                    dto.setStaffName(w.getOrders() != null ? w.getOrders().getStaff().getName() : null);
                 }
 
                 exports.add(dto);
