@@ -374,16 +374,18 @@ public List<PartialShipment> createPartialShipment(ShipmentCodesRequest tracking
     BigDecimal ratePerKg = warehouses.get(0).getOrders().getPriceShip();
 
     BigDecimal totalFee = warehouses.stream()
-        .map(w -> {
-            Double net = w.getNetWeight();
-            if (net == null) {
-                throw new IllegalArgumentException(
-                    "Thiếu netWeight cho kiện " + w.getTrackingCode()
-                );
-            }
-            return BigDecimal.valueOf(net).multiply(ratePerKg);
-        })
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
+    .map(w -> {
+        Double net = w.getNetWeight();
+        if (net == null) {
+            throw new IllegalArgumentException(
+                "Thiếu netWeight cho kiện " + w.getTrackingCode()
+            );
+        }
+        BigDecimal roundedNetWeight = BigDecimal.valueOf(net).setScale(1, RoundingMode.HALF_UP);
+
+        return roundedNetWeight.multiply(ratePerKg);
+    })
+    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
     return totalFee;
 }
