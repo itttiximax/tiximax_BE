@@ -35,6 +35,13 @@ public class DomesticController {
         Domestic domestic = domesticService.createDomesticForWarehousing(request.getPackingCode(), request.getNote());
         return ResponseEntity.ok(domestic);
     }
+      @GetMapping("/ready-for-delivery-to-ship")
+    public ResponseEntity<List<Map<String, Object>>> getReadyForDeliveryOrders( 
+        @RequestParam List<String> shipmentCodes) {
+        List<Map<String, Object>> result = domesticService.getReadyForDeliveryOrdersToShip(shipmentCodes);
+      
+        return ResponseEntity.ok(result);
+    }
 
     @GetMapping("/ready-for-delivery/{page}/{size}")
     public ResponseEntity<List<Map<String, Object>>> getReadyForDeliveryOrders(@PathVariable int page, @PathVariable int size) {
@@ -107,5 +114,17 @@ public ResponseEntity<Domestic> receivedPackingFromWarehouse(@PathVariable Long 
     return ResponseEntity.ok(domestic);
 }
 
+  @PostMapping("/transfer-by-shipment")
+    public ResponseEntity<List<DomesticResponse>> transferByShipmentCode(@RequestBody List<String> shipmentCodes) {
+        if (shipmentCodes == null || shipmentCodes.isEmpty()) {
+            return ResponseEntity.badRequest().build();  
+        }
+        List<DomesticResponse> domesticResponses = domesticService.transferByShipmentCode(shipmentCodes);
+        
+        if (domesticResponses.isEmpty()) {
+            return ResponseEntity.noContent().build();  
+        }
+        return ResponseEntity.ok(domesticResponses);  
+    }
 
 }
