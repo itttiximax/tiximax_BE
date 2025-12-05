@@ -155,8 +155,8 @@ public class OrdersController {
     }
 
     @GetMapping("/partial-for-customer/{customerCode}")
-    public ResponseEntity<List<OrderLinks>> getLinksByCustomer(@PathVariable String customerCode) {
-        List<OrderLinks> links = ordersService.getLinksInWarehouseByCustomer(customerCode);
+    public ResponseEntity<List<WareHouseOrderLink>> getLinksByCustomer(@PathVariable String customerCode) {
+        List<WareHouseOrderLink> links = ordersService.getLinksInWarehouseByCustomer(customerCode);
         return ResponseEntity.ok(links);
     }
 
