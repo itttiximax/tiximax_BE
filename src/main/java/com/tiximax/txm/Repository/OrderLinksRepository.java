@@ -9,7 +9,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 
@@ -80,4 +82,8 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
     Long countByOrders_CreatedAtBetween(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    // Trong OrderLinksRepository
+    Set<OrderLinks> findByShipmentCodeIn(Collection<String> shipmentCodes);
+
 }
