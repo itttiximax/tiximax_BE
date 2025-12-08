@@ -209,17 +209,18 @@ public class AuthenticationController {
         return ResponseEntity.ok(dtoPage);
     }
 
- @GetMapping("/my-customers/{page}/{size}")
-    public ResponseEntity<Page<CustomerResponseDTO>> getCustomersByStaff(
-            @PathVariable int page,
-            @PathVariable int size
-    ) {
-        Sort sort = Sort.by("createdAt").descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Customer> customersPage = authenticationService.getCustomersByStaff(pageable);
-        Page<CustomerResponseDTO> dtoPage = customersPage.map(CustomerResponseDTO::fromEntity);
-        return ResponseEntity.ok(dtoPage);
-    }
+@GetMapping("/my-customers/{page}/{size}")
+public ResponseEntity<Page<CustomerResponseDTO>> getCustomersByStaff(
+        @PathVariable int page,
+        @PathVariable int size,
+        @RequestParam(required = false) String search
+) {
+    Sort sort = Sort.by("createdAt").descending();
+    Pageable pageable = PageRequest.of(page, size, sort);
+    Page<Customer> customersPage = authenticationService.getCustomersByStaff(search, pageable);
+    Page<CustomerResponseDTO> dtoPage = customersPage.map(CustomerResponseDTO::fromEntity);
+    return ResponseEntity.ok(dtoPage);
+}
 
     @GetMapping("/sale-lead-staff/{page}/{size}")
     public ResponseEntity<Page<Staff>> getSaleLeadStaff(@PathVariable int page, @PathVariable int size) {

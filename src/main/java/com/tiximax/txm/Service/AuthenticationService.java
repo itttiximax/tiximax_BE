@@ -353,10 +353,15 @@ public class AuthenticationService implements UserDetailsService {
         return customerRepository.findAll(pageable);
     }
 
-    public Page<Customer> getCustomersByStaff(Pageable pageable) {
-        Long staffId = accountUtils.getAccountCurrent().getAccountId();
-        return customerRepository.findByStaffId(staffId, pageable);
+    public Page<Customer> getCustomersByStaff(String keyword, Pageable pageable) {
+    Long staffId = accountUtils.getAccountCurrent().getAccountId();
+
+    if (keyword != null && keyword.trim().isEmpty()) {
+        keyword = null;
     }
+    return customerRepository.searchByStaff(staffId, keyword, pageable);
+}
+
 
     public Page<Staff> getSaleAndLeadSaleStaff(Pageable pageable) {
         List<AccountRoles> roles = Arrays.asList(AccountRoles.STAFF_SALE, AccountRoles.LEAD_SALE);
