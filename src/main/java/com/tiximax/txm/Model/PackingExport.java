@@ -21,11 +21,9 @@ public class PackingExport {
     private String orderCode;
     private String trackingCode;
     private List<String> productNames;
-//    private List<String> purchaseImages;
     private BigDecimal price;
     private List<String> productLink;
-//    private BigDecimal purchasedPrice;
-//    private String purchaseInvoiceImage;
+    private List<Integer> quantities;
     private String classify;
     private Double height ;
     private Double length ;
