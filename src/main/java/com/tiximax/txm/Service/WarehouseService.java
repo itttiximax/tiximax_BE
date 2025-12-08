@@ -19,6 +19,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,7 +49,6 @@ public class WarehouseService {
         if (orderLinks.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy mã sản phẩm với mã vận đơn " + shipmentCode + "!");
         }
-
         Orders order = orderLinks.get(0).getOrders();
         if (order == null) {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng liên quan đến mã vận đơn này!");
@@ -79,17 +81,22 @@ public class WarehouseService {
             ordersRepository.save(order);
         }
 
-        Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 6000;
+      Double dim = (warehouseRequest.getLength() * warehouseRequest.getWidth() * warehouseRequest.getHeight()) / 6000.0;
+
+        BigDecimal dimRounded = new BigDecimal(dim)
+                .setScale(1, RoundingMode.HALF_UP);
+
+        double finalDim = dimRounded.doubleValue();
 
         Warehouse warehouse = new Warehouse();
             warehouse.setTrackingCode(shipmentCode);
             warehouse.setLength(warehouseRequest.getLength());
             warehouse.setWidth(warehouseRequest.getWidth());
             warehouse.setHeight(warehouseRequest.getHeight());
-            warehouse.setDim(dim);
+            warehouse.setDim(finalDim);
             warehouse.setWeight(warehouseRequest.getWeight());
-            if (dim > warehouse.getWeight()){
-                warehouse.setNetWeight(dim);
+            if (finalDim > warehouse.getWeight()){
+                warehouse.setNetWeight(finalDim);
             } else {
                 warehouse.setNetWeight(warehouse.getWeight());
             }
@@ -111,9 +118,7 @@ public class WarehouseService {
 
         warehouseRepository.save(warehouse);
         orderLinksRepository.saveAll(orderLinks);
-
         ordersService.addProcessLog(order, shipmentCode, ProcessLogAction.DA_NHAP_KHO_NN);
-
         return warehouse;
     }
 
