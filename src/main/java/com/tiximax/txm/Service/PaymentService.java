@@ -159,11 +159,6 @@ public class PaymentService {
         }
 
         BigDecimal unitPrice = ordersList.get(0).getPriceShip();
-        // if (ordersList.get(0).getOrderType() == OrderType.KY_GUI) {
-        //     unitPrice = ordersList.get(0).getRoute().getUnitDepositPrice();
-        // } else {
-        //     unitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
-        // }
 
         boolean hasNullWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
@@ -172,15 +167,39 @@ public class PaymentService {
             throw new RuntimeException("Một hoặc nhiều đơn hàng chưa được cân, vui lòng kiểm tra lại!");
         }
 
-      BigDecimal totalWeight = ordersList.stream()
-        .flatMap(order -> order.getWarehouses().stream())
-        .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
-        .map(Warehouse::getNetWeight)
-        .map(BigDecimal::valueOf)
-        .reduce(BigDecimal.ZERO, BigDecimal::add)
-        .setScale(1, RoundingMode.HALF_UP); 
+//      BigDecimal totalWeight = ordersList.stream()
+//        .flatMap(order -> order.getWarehouses().stream())
+//        .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
+//        .map(Warehouse::getNetWeight)
+//        .map(BigDecimal::valueOf)
+//        .reduce(BigDecimal.ZERO, BigDecimal::add)
+//        .setScale(1, RoundingMode.HALF_UP);
 
-        BigDecimal totalAmount = totalWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal rawTotalWeight = ordersList.stream()
+                .flatMap(order -> order.getWarehouses().stream())
+                .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
+                .map(Warehouse::getNetWeight)
+                .map(BigDecimal::valueOf)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalWeight;
+        if (rawTotalWeight.compareTo(BigDecimal.ONE) < 0) {
+            if (ordersList.get(0).getRoute().getName().equals("JPY")){
+                if (rawTotalWeight.compareTo(new BigDecimal("0.5")) <= 0) {
+                    totalWeight = new BigDecimal("0.5");
+                } else {
+                    totalWeight = BigDecimal.ONE;
+                }
+            } else {
+                totalWeight = BigDecimal.ONE;
+            }
+        } else {
+            totalWeight = rawTotalWeight.setScale(1, RoundingMode.HALF_UP);
+        }
+
+
+        BigDecimal totalAmount = totalWeight.multiply(unitPrice).setScale(0, RoundingMode.HALF_UP);
 
         BigDecimal discount = BigDecimal.ZERO;
         CustomerVoucher customerVoucher = null;
@@ -216,13 +235,13 @@ public class PaymentService {
                 .map(Orders::getLeftoverMoney)
                 .filter(leftover -> leftover != null && leftover.compareTo(BigDecimal.ZERO) > 0)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .setScale(0, RoundingMode.HALF_UP);
 
         BigDecimal collect = totalAmount.add(totalDebt).add(priceShipDos).setScale(0, RoundingMode.HALF_UP);
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
-        payment.setContent(String.join(", ", orderCodes) + " + " + priceShipDos + "k ship");
+        payment.setContent(String.join(", ", orderCodes) + " + " + priceShipDos + " ship");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);
