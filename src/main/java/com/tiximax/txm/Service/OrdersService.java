@@ -7,6 +7,7 @@ import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -70,6 +71,7 @@ public class OrdersService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    @Lazy
     @Autowired
     private PaymentService paymentService;
 
