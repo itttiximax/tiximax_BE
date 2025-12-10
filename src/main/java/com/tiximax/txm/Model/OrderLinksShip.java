@@ -2,6 +2,7 @@ package com.tiximax.txm.Model;
 
 import com.tiximax.txm.Entity.OrderLinks;
 import com.tiximax.txm.Entity.Warehouse;
+import com.tiximax.txm.Enums.OrderLinkStatus;
 
 import jakarta.persistence.Column;
 import lombok.Data;
@@ -13,6 +14,7 @@ public class OrderLinksShip {
     private Long linkId;
     private String productName;
     private String image;
+    private OrderLinkStatus status;
     private String packingCode;
     private String shipmentCode;
     private Double length;
@@ -28,6 +30,7 @@ public class OrderLinksShip {
         this.linkId = link.getLinkId();
         this.productName = link.getProductName();
         this.shipmentCode = link.getShipmentCode();
+        this.status = link.getStatus();
         this.image = (warehouse != null) ? warehouse.getImage() : null;        
         this.length = (warehouse != null) ? warehouse.getLength() : null;
         this.width = (warehouse != null) ? warehouse.getWidth() : null;
