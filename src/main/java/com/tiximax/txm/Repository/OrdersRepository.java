@@ -162,4 +162,15 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
             @Param("threshold") BigDecimal threshold,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT DISTINCT o FROM Orders o
+    JOIN o.orderLinks ol
+    WHERE o.staff.accountId = :staffId
+      AND (ol.shipmentCode IS NULL OR TRIM(ol.shipmentCode) = '')
+    """)
+    Page<Orders> findOrdersWithEmptyShipmentCodeByStaff(
+            @Param("staffId") Long staffId,
+            Pageable pageable
+    );
 }

@@ -142,6 +142,7 @@ public class OrdersController {
         List<OrderPayment> orders = ordersService.getOrdersByCustomerCode(customerCode);
         return ResponseEntity.ok(orders);
     }
+
     @GetMapping("/payment-auction/by-customer/{customerCode}")
     public ResponseEntity<List<OrderPayment>> getAuctionByCustomer(@PathVariable String customerCode) {
         List<OrderPayment> orders = ordersService.getAfterPaymentAuctionsByCustomerCode(customerCode);
@@ -242,5 +243,31 @@ public class OrdersController {
         );
 
         return ResponseEntity.ok(updatedOrders);
+    }
+
+    @GetMapping("/without-shipment/{page}/{size}")
+    public ResponseEntity<Page<OrdersPendingShipment>> getOrdersWithoutShipmentCode(
+            @PathVariable int page,
+            @PathVariable int size) {
+
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<OrdersPendingShipment> result = ordersService.getMyOrdersWithoutShipmentCode(pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @PatchMapping("/shipmentCode/{orderId}/{orderLinkId}/{shipmentCode}")
+    public ResponseEntity<OrderWithLinks> updateShipmentCode(
+            @PathVariable Long orderId,
+            @PathVariable Long orderLinkId,
+            @PathVariable String shipmentCode) {
+
+        if (shipmentCode == null || shipmentCode.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        OrderWithLinks updated = ordersService.updateShipmentCode(orderId, orderLinkId, shipmentCode.trim());
+        return ResponseEntity.ok(updated);
     }
 }

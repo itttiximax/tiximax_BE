@@ -1102,12 +1102,10 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         if (shipmentCodes == null || shipmentCodes.isEmpty()) {
             throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
         }
-
-        // 1. Lấy destination mới 1 lần duy nhất
+        
         Destination newDestination = destinationRepository.findById(newDestinationId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy điểm đến với ID: " + newDestinationId));
-
-        // 2. Kiểm tra quyền
+        
         Account currentAccount = accountUtils.getAccountCurrent();
         if (!(currentAccount instanceof Staff staff)) {
             throw new IllegalStateException("Chỉ nhân viên mới được phép thực hiện thao tác này!");
@@ -1116,15 +1114,13 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         if (!allowedRoles.contains(staff.getRole())) {
             throw new IllegalStateException("Bạn không có quyền thay đổi điểm đến!");
         }
-
-        // 4. LẤY TẤT CẢ OrderLinks CỦA TẤT CẢ SHIPMENT CODE TRONG 1 QUERY DUY NHẤT
+        
         List<OrderLinks> allLinks = orderLinksRepository.findAllByShipmentCodeIn(shipmentCodes);
 
         if (allLinks.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy bất kỳ mã vận đơn nào trong danh sách!");
         }
-
-        // 5. Nhóm theo đơn hàng để tránh update trùng
+        
         Map<Orders, List<OrderLinks>> orderToLinksMap = allLinks.stream()
                 .collect(Collectors.groupingBy(OrderLinks::getOrders));
 
@@ -1133,21 +1129,71 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
         for (Map.Entry<Orders, List<OrderLinks>> entry : orderToLinksMap.entrySet()) {
             Orders order = entry.getKey();
-
-            // Cập nhật destination
+            
             Destination oldDestination = order.getDestination();
             order.setDestination(newDestination);
 
             updatedOrders.add(order);
 
         }
-
-        // Nếu có đơn không thể cập nhật → báo lỗi rõ ràng
+        
         if (!invalidCodes.isEmpty()) {
             throw new IllegalArgumentException("Không thể cập nhật điểm đến cho các đơn đã giao/hủy: " + String.join(", ", invalidCodes));
         }
-
-        // 6. SAVE TẤT CẢ ĐƠN HÀNG TRONG 1 LẦN DUY NHẤT (batch update)
         return ordersRepository.saveAll(updatedOrders);
+    }
+
+    public Page<OrdersPendingShipment> getMyOrdersWithoutShipmentCode(Pageable pageable) {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+
+        Page<Orders> ordersPage = ordersRepository.findOrdersWithEmptyShipmentCodeByStaff(
+                staff.getAccountId(), pageable);
+
+        return ordersPage.map(order -> {
+            List<OrderLinkPending> pendingLinks = order.getOrderLinks().stream()
+                    .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
+                    .map(OrderLinkPending::new)
+                    .toList();
+
+            return new OrdersPendingShipment(order, pendingLinks);
+        });
+    }
+
+    @Transactional
+    public OrderWithLinks updateShipmentCode(Long orderId, Long orderLinkId, String shipmentCode) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff staff)) {
+            throw new IllegalStateException("Chỉ nhân viên mới được thực hiện thao tác này!");
+        }
+    
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng: " + orderId));
+
+        OrderLinks link = order.getOrderLinks().stream()
+                .filter(l -> l.getLinkId().equals(orderLinkId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy link với ID: " + orderLinkId));
+
+        String oldCode = link.getShipmentCode();
+        link.setShipmentCode(shipmentCode);
+
+        addProcessLog(order,
+                "Cập nhật mã vận đơn: " + oldCode + " → " + shipmentCode +
+                        " (Link: " + link.getProductName() + ")",
+                ProcessLogAction.DA_CHINH_SUA);
+
+        messagingTemplate.convertAndSend("/topic/Tiximax", Map.of(
+                "event", "UPDATE_SHIPMENT",
+                "orderCode", order.getOrderCode(),
+                "linkId", orderLinkId,
+                "shipmentCode", shipmentCode
+        ));
+
+        OrderWithLinks dto = new OrderWithLinks(order);
+        List<OrderLinkPending> pendingLinks = order.getOrderLinks().stream()
+                .filter(l -> l.getShipmentCode() == null || l.getShipmentCode().trim().isEmpty())
+                .map(OrderLinkPending::new)
+                .toList();
+        return dto;
     }
 }
