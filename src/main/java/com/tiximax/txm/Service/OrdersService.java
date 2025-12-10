@@ -1003,6 +1003,14 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         });
     }
 
+        // public Page<OrderWithLinks> getOrderLinksCanShip(Pageable pageable, OrderStatus orderStatus, OrderLinkStatus orderLinkStatus) {
+        //         Account currentAccount = accountUtils.getAccountCurrent();
+
+        //     if (!currentAccount.getRole().equals(AccountRoles.STAFF_WAREHOUSE_DOMESTIC)) {
+        //         throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
+        //     }
+        // }       
+
     public InfoShipmentCode inforShipmentCode(String shipmentCode) {
         List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
         InfoShipmentCode infoShipmentCode = new InfoShipmentCode();
