@@ -135,4 +135,31 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     List<Orders> findByCustomerAndLeftoverMoneyGreaterThan(Customer customer, BigDecimal zero);
+
+    @Query("SELECT o FROM Orders o " +
+            "WHERE o.leftoverMoney IS NOT NULL " +
+            "AND o.leftoverMoney < :threshold " +
+            "AND EXISTS (" +
+            "   SELECT 1 FROM OrderLinks ol " +
+            "   WHERE ol.orders = o AND ol.status = 'DA_HUY'" +
+            ")")
+    Page<Orders> findOrdersWithRefundableCancelledLinks(
+            @Param("threshold") BigDecimal threshold,
+            Pageable pageable
+    );
+
+    // Cho staff sale
+    @Query("SELECT o FROM Orders o " +
+            "WHERE o.staff.accountId = :staffId " +
+            "AND o.leftoverMoney IS NOT NULL " +
+            "AND o.leftoverMoney < :threshold " +
+            "AND EXISTS (" +
+            "   SELECT 1 FROM OrderLinks ol " +
+            "   WHERE ol.orders = o AND ol.status = 'DA_HUY'" +
+            ")")
+    Page<Orders> findByStaffIdAndRefundableCancelledLinks(
+            @Param("staffId") Long staffId,
+            @Param("threshold") BigDecimal threshold,
+            Pageable pageable
+    );
 }

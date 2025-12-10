@@ -181,20 +181,21 @@ public class OrdersController {
     }
 
     @GetMapping("/refund/{page}/{size}")
-    public ResponseEntity<Page<Orders>> getOrdersWithNegativeLeftoverMoney(
+    public ResponseEntity<Page<RefundResponse>> getOrdersWithNegativeLeftoverMoney(
             @PathVariable int page,
             @PathVariable int size) {
         Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Orders> ordersPage = ordersService.getOrdersWithNegativeLeftoverMoney(pageable);
+        Page<RefundResponse> ordersPage = ordersService.getOrdersWithNegativeLeftoverMoney(pageable);
         return ResponseEntity.ok(ordersPage);
     }
 
-    @PutMapping("/refund-confirm/{orderId}")
+    @PutMapping("/refund-confirm/{orderId}/{image}")
     public ResponseEntity<Orders> processNegativeLeftoverMoney(
             @PathVariable Long orderId,
+            @PathVariable String image,
             @RequestParam boolean refundToCustomer) {
-        Orders updatedOrder = ordersService.processNegativeLeftoverMoney(orderId, refundToCustomer);
+        Orders updatedOrder = ordersService.processNegativeLeftoverMoney(orderId, image, refundToCustomer);
         return ResponseEntity.ok(updatedOrder);
     }
 

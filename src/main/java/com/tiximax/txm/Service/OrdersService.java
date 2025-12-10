@@ -888,28 +888,65 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .collect(Collectors.toList());
     }
 
-    public Page<Orders> getOrdersWithNegativeLeftoverMoney(Pageable pageable) {
+//    public Page<RefundResponse> getOrdersWithNegativeLeftoverMoney(Pageable pageable) {
+//        Account currentAccount = accountUtils.getAccountCurrent();
+//        if (!(currentAccount instanceof Staff)) {
+//            throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập danh sách đơn hàng này!");
+//        }
+//        Staff staff = (Staff) currentAccount;
+//        Long staffId = staff.getAccountId();
+//
+////        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
+//
+//        AccountRoles role = staff.getRole();
+//
+//        if (AccountRoles.MANAGER.equals(role)) {
+//            return ordersRepository.findByLeftoverMoneyLessThan(BigDecimal.ZERO, pageable);
+//        } else if (AccountRoles.STAFF_SALE.equals(role) || AccountRoles.LEAD_SALE.equals(role)) {
+//            return ordersRepository.findByStaffAccountIdAndLeftoverMoneyLessThan(staffId, BigDecimal.ZERO, pageable);
+//        } else {
+//            throw new IllegalStateException("Vai trò không hợp lệ!");
+//        }
+//    }
+
+    public Page<RefundResponse> getOrdersWithNegativeLeftoverMoney(Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
         if (!(currentAccount instanceof Staff)) {
             throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập danh sách đơn hàng này!");
         }
         Staff staff = (Staff) currentAccount;
         Long staffId = staff.getAccountId();
-
-        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
-
         AccountRoles role = staff.getRole();
 
+        Page<Orders> ordersPage;
+
         if (AccountRoles.MANAGER.equals(role)) {
-            return ordersRepository.findByStatusInAndLeftoverMoneyLessThan(statuses, BigDecimal.ZERO, pageable);
+            ordersPage = ordersRepository.findOrdersWithRefundableCancelledLinks(
+                    BigDecimal.ZERO, pageable);
         } else if (AccountRoles.STAFF_SALE.equals(role) || AccountRoles.LEAD_SALE.equals(role)) {
-            return ordersRepository.findByStaffAccountIdAndStatusInAndLeftoverMoneyLessThan(staffId, statuses, BigDecimal.ZERO, pageable);
+            ordersPage = ordersRepository.findByStaffIdAndRefundableCancelledLinks(
+                    staffId, BigDecimal.ZERO, pageable);
         } else {
             throw new IllegalStateException("Vai trò không hợp lệ!");
         }
+
+        // Map sang RefundResponse, chỉ lấy các link DA_HUY
+        Page<RefundResponse> result = ordersPage.map(order -> {
+            RefundResponse response = new RefundResponse();
+            response.setOrder(order);
+
+            List<OrderLinks> cancelledLinks = order.getOrderLinks().stream()
+                    .filter(link -> link.getStatus() == OrderLinkStatus.DA_HUY)
+                    .toList();
+
+            response.setCancelledLinks(cancelledLinks);
+            return response;
+        });
+
+        return result;
     }
 
-    public Orders processNegativeLeftoverMoney(Long orderId, boolean refundToCustomer) {
+    public Orders processNegativeLeftoverMoney(Long orderId, String image, boolean refundToCustomer) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
 
@@ -929,7 +966,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         refundPayment.setPaymentCode(paymentService.generatePaymentCode());
         refundPayment.setPaymentType(PaymentType.MA_QR);
         refundPayment.setAmount(amountToProcess.negate());
-        refundPayment.setCollectedAmount(BigDecimal.ZERO);
         refundPayment.setStatus(PaymentStatus.DA_HOAN_TIEN);
         refundPayment.setActionAt(LocalDateTime.now());
         refundPayment.setCustomer(customer);
@@ -939,10 +975,13 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
         if (refundToCustomer) {
             refundPayment.setContent("Hoàn tiền cho đơn " + order.getOrderCode());
+            refundPayment.setQrCode(image);
+            refundPayment.setCollectedAmount(amountToProcess.negate());
             paymentRepository.save(refundPayment);
         } else {
             customer.setBalance(customer.getBalance().add(amountToProcess));
             refundPayment.setContent("Chuyển vào số dư cho đơn " + order.getOrderCode());
+            refundPayment.setCollectedAmount(BigDecimal.ZERO);
             paymentRepository.save(refundPayment);
         }
 
