@@ -3,12 +3,14 @@ package com.tiximax.txm.Service;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.*;
+import com.tiximax.txm.Model.EnumFilter.ShipStatus;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -33,8 +35,6 @@ public class OrdersService {
     @Autowired
     private OrdersRepository ordersRepository;
     
-  
-
     @Autowired
     private OrderLinksRepository orderLinksRepository;
 
@@ -1003,13 +1003,67 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         });
     }
 
-        // public Page<OrderWithLinks> getOrderLinksCanShip(Pageable pageable, OrderStatus orderStatus, OrderLinkStatus orderLinkStatus) {
-        //         Account currentAccount = accountUtils.getAccountCurrent();
+ public Page<ShipLinks> getOrderLinksForWarehouse(
+        Pageable pageable,
+        ShipStatus status,
+        String shipmentCode,
+        String customerCode
+) {
 
-        //     if (!currentAccount.getRole().equals(AccountRoles.STAFF_WAREHOUSE_DOMESTIC)) {
-        //         throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
-        //     }
-        // }       
+    Account currentAccount = accountUtils.getAccountCurrent();
+    if (!currentAccount.getRole().equals(AccountRoles.STAFF_WAREHOUSE_DOMESTIC)) {
+        throw new IllegalStateException("Chỉ nhân viên kho mới có quyền truy cập!");
+    }
+
+    List<OrderLinkStatus> statuses =
+            (status == null) ? DEFAULT_SHIP_STATUSES : List.of(convert(status));
+
+    // gọi repository đã thêm search
+    Page<Orders> ordersPage = ordersRepository.filterOrdersByLinkStatus(
+            statuses,
+            (shipmentCode == null || shipmentCode.isBlank()) ? null : shipmentCode,
+            (customerCode == null || customerCode.isBlank()) ? null : customerCode,
+            pageable
+    );
+
+    List<ShipLinks> result = new ArrayList<>();
+
+    for (Orders order : ordersPage.getContent()) {
+
+        List<OrderLinks> validLinks = order.getOrderLinks().stream()
+                .filter(link -> statuses.contains(link.getStatus()))
+                .filter(link -> shipmentCode == null 
+                        || link.getShipmentCode() != null 
+                        || link.getShipmentCode().contains(shipmentCode)) // nếu muốn lọc lần 2
+                .sorted(Comparator.comparing(
+                        OrderLinks::getGroupTag,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ))
+                .toList();
+
+        if (validLinks.isEmpty())
+            continue;
+
+        List<OrderLinksShip> orderLinksShips = validLinks.stream()
+                .map(link -> {
+
+                    Warehouse wh = link.getWarehouse();
+                    String packingCode = (wh != null && wh.getPacking() != null)
+                            ? wh.getPacking().getPackingCode()
+                            : null;
+
+                    return new OrderLinksShip(link, wh, packingCode);
+                })
+                .toList();
+
+        ShipLinks dto = new ShipLinks(order, orderLinksShips, order.getWarehouses().stream().toList());
+        result.add(dto);
+    }
+
+    return new PageImpl<>(result, pageable, ordersPage.getTotalElements());
+}
+
+
 
     public InfoShipmentCode inforShipmentCode(String shipmentCode) {
         List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
@@ -1111,4 +1165,16 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         // 6. SAVE TẤT CẢ ĐƠN HÀNG TRONG 1 LẦN DUY NHẤT (batch update)
         return ordersRepository.saveAll(updatedOrders);
     }
+            private static final List<OrderLinkStatus> DEFAULT_SHIP_STATUSES = List.of(
+                OrderLinkStatus.DA_NHAP_KHO_VN,
+                OrderLinkStatus.CHO_GIAO,
+                OrderLinkStatus.CHO_TRUNG_CHUYEN,
+                OrderLinkStatus.DANG_GIAO,
+                OrderLinkStatus.DA_GIAO
+        );
+    private OrderLinkStatus convert(ShipStatus s) {
+    return OrderLinkStatus.valueOf(s.name());
+}
+
+
 }
