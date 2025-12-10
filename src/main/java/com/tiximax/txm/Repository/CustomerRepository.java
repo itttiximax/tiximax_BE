@@ -36,7 +36,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 """)
 Page<Customer> searchByStaff(
         @Param("staffId") Long staffId,
-        @Param("keyword") Optional<String> keyword,
+        @Param("keyword") String keyword,
         Pageable pageable
 );
 
