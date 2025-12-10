@@ -193,7 +193,7 @@ public class OrdersController {
     @PutMapping("/refund-confirm/{orderId}/{image}")
     public ResponseEntity<Orders> processNegativeLeftoverMoney(
             @PathVariable Long orderId,
-            @PathVariable String image,
+            @PathVariable(required = false) String image,
             @RequestParam boolean refundToCustomer) {
         Orders updatedOrder = ordersService.processNegativeLeftoverMoney(orderId, image, refundToCustomer);
         return ResponseEntity.ok(updatedOrder);

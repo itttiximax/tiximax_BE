@@ -954,10 +954,10 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             throw new IllegalArgumentException("Đơn hàng này không có tiền hoàn trả!");
         }
 
-        List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
-        if (!validStatuses.contains(order.getStatus())) {
-            throw new IllegalArgumentException("Chỉ xử lý được đơn hàng trạng thái DA_HUY hoặc DA_GIAO!");
-        }
+//        List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
+//        if (!validStatuses.contains(order.getStatus())) {
+//            throw new IllegalArgumentException("Chỉ xử lý được đơn hàng trạng thái DA_HUY hoặc DA_GIAO!");
+//        }
 
         BigDecimal amountToProcess = order.getLeftoverMoney().abs();
         Customer customer = order.getCustomer();
