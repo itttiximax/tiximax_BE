@@ -24,23 +24,21 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Page<Customer> findByStaffId(Long staffId, Pageable pageable);
 
-    @Query("""
-       SELECT c FROM Customer c
-       WHERE c.staffId = :staffId
-       AND (
-            :keyword IS NULL 
-            OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(c.phone) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(c.customerCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
-       )
+@Query("""
+   SELECT c FROM Customer c
+   WHERE c.staffId = :staffId
+   AND (
+        :keyword IS NULL
+        OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(c.phone) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(c.customerCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+   )
 """)
-
 Page<Customer> searchByStaff(
         @Param("staffId") Long staffId,
-        @Param("keyword") String keyword,
+        @Param("keyword") Optional<String> keyword,
         Pageable pageable
 );
-
 
     @Query("SELECT COUNT(c) FROM Customer c WHERE c.staffId = :staffId AND c.createdAt BETWEEN :startDate AND :endDate")
     long countByStaffIdAndCreatedAtBetween(@Param("staffId") Long staffId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
