@@ -6,6 +6,7 @@ import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.*;
+import com.tiximax.txm.Model.EnumFilter.ShipStatus;
 import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -160,6 +161,24 @@ public class OrdersController {
         List<WareHouseOrderLink> links = ordersService.getLinksInWarehouseByCustomer(customerCode);
         return ResponseEntity.ok(links);
     }
+        @GetMapping("/warehouse-links/{page}/{size}")
+public Page<ShipLinks> getOrderLinksForWarehouse(
+        @PathVariable int page,
+        @PathVariable int size,
+        @RequestParam(required = false) ShipStatus status,
+        @RequestParam(required = false) String shipmentCode,
+        @RequestParam(required = false) String customerCode
+) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    return ordersService.getOrderLinksForWarehouse(
+            pageable,
+            status,
+            shipmentCode,
+            customerCode
+    );
+}
+
 
     @PutMapping("/buy-later/{orderId}/links/{orderLinkId}")
     public ResponseEntity<Orders> updateOrderLinkToBuyLater(@PathVariable Long orderId, @PathVariable Long orderLinkId) {
