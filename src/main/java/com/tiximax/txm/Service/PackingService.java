@@ -396,6 +396,7 @@ public class PackingService {
 
         List<String> productNames = new ArrayList<>();
         List<String> productLinks = new ArrayList<>();
+        List<Integer> quantities = new ArrayList<>();
         BigDecimal totalPurchasedPrice = BigDecimal.ZERO;
 
         if (!orderLinks.isEmpty()) {
@@ -413,6 +414,13 @@ public class PackingService {
                 if (link.getFinalPriceVnd() != null) {
                     totalPurchasedPrice = totalPurchasedPrice.add(link.getFinalPriceVnd());
                 }
+
+                Integer qty = link.getQuantity(); // hoặc getQty(), tùy entity của bạn
+                if (qty != null && qty > 0) {
+                    quantities.add(qty);
+                } else {
+                    quantities.add(0);
+                }
             }
         }
 
@@ -425,6 +433,7 @@ public class PackingService {
 
             dto.setProductNames(productNames);
             dto.setProductLink(productLinks);
+            dto.setQuantities(quantities);
             dto.setHeight(warehouse.getHeight());
             dto.setLength(warehouse.getLength());
             dto.setWidth(warehouse.getWidth());

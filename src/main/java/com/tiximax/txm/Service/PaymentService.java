@@ -15,6 +15,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -159,11 +160,6 @@ public class PaymentService {
         }
 
         BigDecimal unitPrice = ordersList.get(0).getPriceShip();
-        // if (ordersList.get(0).getOrderType() == OrderType.KY_GUI) {
-        //     unitPrice = ordersList.get(0).getRoute().getUnitDepositPrice();
-        // } else {
-        //     unitPrice = ordersList.get(0).getRoute().getUnitBuyingPrice();
-        // }
 
         boolean hasNullWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
@@ -172,15 +168,39 @@ public class PaymentService {
             throw new RuntimeException("Một hoặc nhiều đơn hàng chưa được cân, vui lòng kiểm tra lại!");
         }
 
-      BigDecimal totalWeight = ordersList.stream()
-        .flatMap(order -> order.getWarehouses().stream())
-        .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
-        .map(Warehouse::getNetWeight)
-        .map(BigDecimal::valueOf)
-        .reduce(BigDecimal.ZERO, BigDecimal::add)
-        .setScale(1, RoundingMode.HALF_UP); 
+//      BigDecimal totalWeight = ordersList.stream()
+//        .flatMap(order -> order.getWarehouses().stream())
+//        .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
+//        .map(Warehouse::getNetWeight)
+//        .map(BigDecimal::valueOf)
+//        .reduce(BigDecimal.ZERO, BigDecimal::add)
+//        .setScale(1, RoundingMode.HALF_UP);
 
-        BigDecimal totalAmount = totalWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal rawTotalWeight = ordersList.stream()
+                .flatMap(order -> order.getWarehouses().stream())
+                .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
+                .map(Warehouse::getNetWeight)
+                .map(BigDecimal::valueOf)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalWeight;
+        if (rawTotalWeight.compareTo(BigDecimal.ONE) < 0) {
+            if (ordersList.get(0).getRoute().getName().equals("JPY")){
+                if (rawTotalWeight.compareTo(new BigDecimal("0.5")) <= 0) {
+                    totalWeight = new BigDecimal("0.5");
+                } else {
+                    totalWeight = BigDecimal.ONE;
+                }
+            } else {
+                totalWeight = BigDecimal.ONE;
+            }
+        } else {
+            totalWeight = rawTotalWeight.setScale(1, RoundingMode.HALF_UP);
+        }
+
+
+        BigDecimal totalAmount = totalWeight.multiply(unitPrice).setScale(0, RoundingMode.HALF_UP);
 
         BigDecimal discount = BigDecimal.ZERO;
         CustomerVoucher customerVoucher = null;
@@ -216,13 +236,13 @@ public class PaymentService {
                 .map(Orders::getLeftoverMoney)
                 .filter(leftover -> leftover != null && leftover.compareTo(BigDecimal.ZERO) > 0)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .setScale(0, RoundingMode.HALF_UP);
 
         BigDecimal collect = totalAmount.add(totalDebt).add(priceShipDos).setScale(0, RoundingMode.HALF_UP);
 
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
-        payment.setContent(String.join(", ", orderCodes) + " + " + priceShipDos + "k ship");
+        payment.setContent(String.join(", ", orderCodes) + " + " + priceShipDos + " ship");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);
@@ -609,55 +629,69 @@ public class PaymentService {
         return objectMapper.readValue(jsonResponse, SmsRequest.class);  // Parse nhanh
     }
 
-    @Async("taskExecutor")
+    @Async("taskExecutor") // Bắt buộc phải ở bean khác, không được gọi trực tiếp trong cùng class
     public CompletableFuture<Void> processAutoConfirmsAsync(List<SmsRequest.SmsItem> data) {
         if (data == null || data.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
 
         for (SmsRequest.SmsItem item : data) {
-            String code = item.getContent().trim();
-            Optional<Payment> opt = paymentRepository.findByPaymentCode(code);
-
-            if (opt.isEmpty()) {
-                continue;
-            }
-
-            Payment payment = opt.get();
-            PaymentStatus status = payment.getStatus();
-
-            BigDecimal expected = payment.getCollectedAmount().setScale(0, RoundingMode.HALF_UP);
-            BigDecimal received = BigDecimal.valueOf(item.getAmount());
-            if (expected.compareTo(received) > 0) {
-                continue;
-            }
-
-            if (status == PaymentStatus.DA_THANH_TOAN || status == PaymentStatus.DA_THANH_TOAN_SHIP) {
-                break;
-            }
-
             try {
-                if (status == PaymentStatus.CHO_THANH_TOAN) {
-                    confirmedPayment(code);
-                } else if (status == PaymentStatus.CHO_THANH_TOAN_SHIP) {
-                    confirmedPaymentShipment(code);
+                String content = item.getContent().trim();
+                if (content.isBlank()) continue;
+
+                // Tìm payment theo mã trong nội dung tin nhắn
+                Optional<Payment> optPayment = paymentRepository.findByPaymentCode(content);
+                if (optPayment.isEmpty()) {
+                    continue;
                 }
+
+                Payment payment = optPayment.get();
+
+                if (payment.getStatus() == PaymentStatus.DA_THANH_TOAN ||
+                        payment.getStatus() == PaymentStatus.DA_THANH_TOAN_SHIP) {
+                    continue;
+                }
+
+                BigDecimal expected = payment.getCollectedAmount().setScale(0, RoundingMode.HALF_UP);
+                BigDecimal received = BigDecimal.valueOf(item.getAmount()).setScale(0, RoundingMode.HALF_UP);
+
+                if (expected.compareTo(received) != 0) {
+                    continue;
+                }
+
+                // Xác nhận thanh toán
+                if (payment.getStatus() == PaymentStatus.CHO_THANH_TOAN) {
+                    confirmedPayment(content);
+                }
+                else if (payment.getStatus() == PaymentStatus.CHO_THANH_TOAN_SHIP) {
+                    confirmedPaymentShipment(content);
+                }
+
             } catch (Exception e) {
-                System.err.println("[ERR] Confirm fail " + code + ": " + e.getMessage());
+
             }
         }
+
         return CompletableFuture.completedFuture(null);
     }
 
-//    @Scheduled(fixedRate = 600000)
-//    public void scheduledAutoSmsProcess() {
-//        try {
-//            SmsRequest smsData = getSmsFromExternalApi();
-//            if (smsData != null && smsData.isSuccess() && smsData.getData() != null && !smsData.getData().isEmpty()) {
-//                processAutoConfirmsAsync(smsData.getData());
-//            }
-//        } catch (Exception e) {
-//            System.err.println("[SCHEDULER ERR] " + e.getMessage());
-//        }
-//    }
+    @Scheduled(fixedRate = 600000) // 10 phút/lần
+    @Transactional(readOnly = true)
+    public void scheduledAutoSmsProcess() {
+        try {
+            SmsRequest smsData = getSmsFromExternalApi();
+
+            if (smsData == null || !smsData.isSuccess() || smsData.getData() == null || smsData.getData().isEmpty()) {
+                return;
+            }
+
+            processAutoConfirmsAsync(smsData.getData())
+                    .exceptionally(throwable -> {
+                        return null;
+                    });
+
+        } catch (Exception e) {
+        }
+    }
 }
