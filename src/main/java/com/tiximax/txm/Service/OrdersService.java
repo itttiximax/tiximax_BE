@@ -1196,4 +1196,33 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .toList();
         return dto;
     }
+
+    public Page<OrderWithLinks> searchOrdersByKeyword(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        boolean isAdminOrManager = Set.of(AccountRoles.ADMIN, AccountRoles.MANAGER)
+                .contains(staff.getRole());
+
+        String cleanKeyword = keyword.trim();
+
+        Page<Orders> ordersPage = ordersRepository.searchOrdersByCodeOrShipment(
+                cleanKeyword,
+                staff.getAccountId(),
+                isAdminOrManager,
+                pageable
+        );
+
+        return ordersPage.map(order -> {
+            OrderWithLinks dto = new OrderWithLinks(order);
+
+            List<OrderLinks> allLinks = order.getOrderLinks().stream()
+                    .toList();
+
+            dto.setOrderLinks(allLinks);
+            return dto;
+        });
+    }
 }
