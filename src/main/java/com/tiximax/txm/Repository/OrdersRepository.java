@@ -173,4 +173,23 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
             @Param("staffId") Long staffId,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT DISTINCT o FROM Orders o
+    LEFT JOIN FETCH o.orderLinks ol
+    WHERE (
+        UPPER(o.orderCode) LIKE UPPER(CONCAT('%', :keyword, '%'))
+        OR (ol.shipmentCode IS NOT NULL AND UPPER(ol.shipmentCode) LIKE UPPER(CONCAT('%', :keyword, '%')))
+    )
+    AND (
+        :isAdminOrManager = true 
+        OR o.staff.accountId = :staffId
+    )
+    """)
+    Page<Orders> searchOrdersByCodeOrShipment(
+            @Param("keyword") String keyword,
+            @Param("staffId") Long staffId,
+            @Param("isAdminOrManager") boolean isAdminOrManager,
+            Pageable pageable
+    );
 }

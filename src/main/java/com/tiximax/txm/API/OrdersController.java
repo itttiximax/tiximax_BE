@@ -270,4 +270,18 @@ public class OrdersController {
         OrderWithLinks updated = ordersService.updateShipmentCode(orderId, orderLinkId, shipmentCode.trim());
         return ResponseEntity.ok(updated);
     }
+
+    @GetMapping("/search/{keyword}/{page}/{size}")
+    public ResponseEntity<Page<OrderWithLinks>> searchOrders(
+            @PathVariable String keyword,
+            @PathVariable int page,
+            @PathVariable int size) {
+
+        Sort sort = Sort.by("createdAt").descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<OrderWithLinks> result = ordersService.searchOrdersByKeyword(keyword, pageable);
+        return ResponseEntity.ok(result);
+    }
+
 }
