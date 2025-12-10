@@ -888,28 +888,65 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .collect(Collectors.toList());
     }
 
-    public Page<Orders> getOrdersWithNegativeLeftoverMoney(Pageable pageable) {
+//    public Page<RefundResponse> getOrdersWithNegativeLeftoverMoney(Pageable pageable) {
+//        Account currentAccount = accountUtils.getAccountCurrent();
+//        if (!(currentAccount instanceof Staff)) {
+//            throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập danh sách đơn hàng này!");
+//        }
+//        Staff staff = (Staff) currentAccount;
+//        Long staffId = staff.getAccountId();
+//
+////        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
+//
+//        AccountRoles role = staff.getRole();
+//
+//        if (AccountRoles.MANAGER.equals(role)) {
+//            return ordersRepository.findByLeftoverMoneyLessThan(BigDecimal.ZERO, pageable);
+//        } else if (AccountRoles.STAFF_SALE.equals(role) || AccountRoles.LEAD_SALE.equals(role)) {
+//            return ordersRepository.findByStaffAccountIdAndLeftoverMoneyLessThan(staffId, BigDecimal.ZERO, pageable);
+//        } else {
+//            throw new IllegalStateException("Vai trò không hợp lệ!");
+//        }
+//    }
+
+    public Page<RefundResponse> getOrdersWithNegativeLeftoverMoney(Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
         if (!(currentAccount instanceof Staff)) {
             throw new IllegalStateException("Chỉ nhân viên mới có quyền truy cập danh sách đơn hàng này!");
         }
         Staff staff = (Staff) currentAccount;
         Long staffId = staff.getAccountId();
-
-        List<OrderStatus> statuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
-
         AccountRoles role = staff.getRole();
 
+        Page<Orders> ordersPage;
+
         if (AccountRoles.MANAGER.equals(role)) {
-            return ordersRepository.findByStatusInAndLeftoverMoneyLessThan(statuses, BigDecimal.ZERO, pageable);
+            ordersPage = ordersRepository.findOrdersWithRefundableCancelledLinks(
+                    BigDecimal.ZERO, pageable);
         } else if (AccountRoles.STAFF_SALE.equals(role) || AccountRoles.LEAD_SALE.equals(role)) {
-            return ordersRepository.findByStaffAccountIdAndStatusInAndLeftoverMoneyLessThan(staffId, statuses, BigDecimal.ZERO, pageable);
+            ordersPage = ordersRepository.findByStaffIdAndRefundableCancelledLinks(
+                    staffId, BigDecimal.ZERO, pageable);
         } else {
             throw new IllegalStateException("Vai trò không hợp lệ!");
         }
+
+        // Map sang RefundResponse, chỉ lấy các link DA_HUY
+        Page<RefundResponse> result = ordersPage.map(order -> {
+            RefundResponse response = new RefundResponse();
+            response.setOrder(order);
+
+            List<OrderLinks> cancelledLinks = order.getOrderLinks().stream()
+                    .filter(link -> link.getStatus() == OrderLinkStatus.DA_HUY)
+                    .toList();
+
+            response.setCancelledLinks(cancelledLinks);
+            return response;
+        });
+
+        return result;
     }
 
-    public Orders processNegativeLeftoverMoney(Long orderId, boolean refundToCustomer) {
+    public Orders processNegativeLeftoverMoney(Long orderId, String image, boolean refundToCustomer) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng này!"));
 
@@ -917,10 +954,10 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             throw new IllegalArgumentException("Đơn hàng này không có tiền hoàn trả!");
         }
 
-        List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
-        if (!validStatuses.contains(order.getStatus())) {
-            throw new IllegalArgumentException("Chỉ xử lý được đơn hàng trạng thái DA_HUY hoặc DA_GIAO!");
-        }
+//        List<OrderStatus> validStatuses = Arrays.asList(OrderStatus.DA_HUY, OrderStatus.DA_GIAO);
+//        if (!validStatuses.contains(order.getStatus())) {
+//            throw new IllegalArgumentException("Chỉ xử lý được đơn hàng trạng thái DA_HUY hoặc DA_GIAO!");
+//        }
 
         BigDecimal amountToProcess = order.getLeftoverMoney().abs();
         Customer customer = order.getCustomer();
@@ -929,7 +966,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         refundPayment.setPaymentCode(paymentService.generatePaymentCode());
         refundPayment.setPaymentType(PaymentType.MA_QR);
         refundPayment.setAmount(amountToProcess.negate());
-        refundPayment.setCollectedAmount(BigDecimal.ZERO);
         refundPayment.setStatus(PaymentStatus.DA_HOAN_TIEN);
         refundPayment.setActionAt(LocalDateTime.now());
         refundPayment.setCustomer(customer);
@@ -939,10 +975,13 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
         if (refundToCustomer) {
             refundPayment.setContent("Hoàn tiền cho đơn " + order.getOrderCode());
+            refundPayment.setQrCode(image);
+            refundPayment.setCollectedAmount(amountToProcess.negate());
             paymentRepository.save(refundPayment);
         } else {
             customer.setBalance(customer.getBalance().add(amountToProcess));
             refundPayment.setContent("Chuyển vào số dư cho đơn " + order.getOrderCode());
+            refundPayment.setCollectedAmount(BigDecimal.ZERO);
             paymentRepository.save(refundPayment);
         }
 
@@ -1117,12 +1156,10 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         if (shipmentCodes == null || shipmentCodes.isEmpty()) {
             throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
         }
-
-        // 1. Lấy destination mới 1 lần duy nhất
+        
         Destination newDestination = destinationRepository.findById(newDestinationId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy điểm đến với ID: " + newDestinationId));
-
-        // 2. Kiểm tra quyền
+        
         Account currentAccount = accountUtils.getAccountCurrent();
         if (!(currentAccount instanceof Staff staff)) {
             throw new IllegalStateException("Chỉ nhân viên mới được phép thực hiện thao tác này!");
@@ -1131,15 +1168,13 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         if (!allowedRoles.contains(staff.getRole())) {
             throw new IllegalStateException("Bạn không có quyền thay đổi điểm đến!");
         }
-
-        // 4. LẤY TẤT CẢ OrderLinks CỦA TẤT CẢ SHIPMENT CODE TRONG 1 QUERY DUY NHẤT
+        
         List<OrderLinks> allLinks = orderLinksRepository.findAllByShipmentCodeIn(shipmentCodes);
 
         if (allLinks.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy bất kỳ mã vận đơn nào trong danh sách!");
         }
-
-        // 5. Nhóm theo đơn hàng để tránh update trùng
+        
         Map<Orders, List<OrderLinks>> orderToLinksMap = allLinks.stream()
                 .collect(Collectors.groupingBy(OrderLinks::getOrders));
 
@@ -1148,21 +1183,17 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
         for (Map.Entry<Orders, List<OrderLinks>> entry : orderToLinksMap.entrySet()) {
             Orders order = entry.getKey();
-
-            // Cập nhật destination
+            
             Destination oldDestination = order.getDestination();
             order.setDestination(newDestination);
 
             updatedOrders.add(order);
 
         }
-
-        // Nếu có đơn không thể cập nhật → báo lỗi rõ ràng
+        
         if (!invalidCodes.isEmpty()) {
             throw new IllegalArgumentException("Không thể cập nhật điểm đến cho các đơn đã giao/hủy: " + String.join(", ", invalidCodes));
         }
-
-        // 6. SAVE TẤT CẢ ĐƠN HÀNG TRONG 1 LẦN DUY NHẤT (batch update)
         return ordersRepository.saveAll(updatedOrders);
     }
             private static final List<OrderLinkStatus> DEFAULT_SHIP_STATUSES = List.of(
@@ -1177,4 +1208,87 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 }
 
 
+
+    public Page<OrdersPendingShipment> getMyOrdersWithoutShipmentCode(Pageable pageable) {
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+
+        Page<Orders> ordersPage = ordersRepository.findOrdersWithEmptyShipmentCodeByStaff(
+                staff.getAccountId(), pageable);
+
+        return ordersPage.map(order -> {
+            List<OrderLinkPending> pendingLinks = order.getOrderLinks().stream()
+                    .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
+                    .map(OrderLinkPending::new)
+                    .toList();
+
+            return new OrdersPendingShipment(order, pendingLinks);
+        });
+    }
+
+    @Transactional
+    public OrderWithLinks updateShipmentCode(Long orderId, Long orderLinkId, String shipmentCode) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff staff)) {
+            throw new IllegalStateException("Chỉ nhân viên mới được thực hiện thao tác này!");
+        }
+    
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng: " + orderId));
+
+        OrderLinks link = order.getOrderLinks().stream()
+                .filter(l -> l.getLinkId().equals(orderLinkId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy link với ID: " + orderLinkId));
+
+        String oldCode = link.getShipmentCode();
+        link.setShipmentCode(shipmentCode);
+
+        addProcessLog(order,
+                "Cập nhật mã vận đơn: " + oldCode + " → " + shipmentCode +
+                        " (Link: " + link.getProductName() + ")",
+                ProcessLogAction.DA_CHINH_SUA);
+
+        messagingTemplate.convertAndSend("/topic/Tiximax", Map.of(
+                "event", "UPDATE_SHIPMENT",
+                "orderCode", order.getOrderCode(),
+                "linkId", orderLinkId,
+                "shipmentCode", shipmentCode
+        ));
+
+        OrderWithLinks dto = new OrderWithLinks(order);
+        List<OrderLinkPending> pendingLinks = order.getOrderLinks().stream()
+                .filter(l -> l.getShipmentCode() == null || l.getShipmentCode().trim().isEmpty())
+                .map(OrderLinkPending::new)
+                .toList();
+        return dto;
+    }
+
+    public Page<OrderWithLinks> searchOrdersByKeyword(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Staff staff = (Staff) accountUtils.getAccountCurrent();
+        boolean isAdminOrManager = Set.of(AccountRoles.ADMIN, AccountRoles.MANAGER)
+                .contains(staff.getRole());
+
+        String cleanKeyword = keyword.trim();
+
+        Page<Orders> ordersPage = ordersRepository.searchOrdersByCodeOrShipment(
+                cleanKeyword,
+                staff.getAccountId(),
+                isAdminOrManager,
+                pageable
+        );
+
+        return ordersPage.map(order -> {
+            OrderWithLinks dto = new OrderWithLinks(order);
+
+            List<OrderLinks> allLinks = order.getOrderLinks().stream()
+                    .toList();
+
+            dto.setOrderLinks(allLinks);
+            return dto;
+        });
+    }
 }

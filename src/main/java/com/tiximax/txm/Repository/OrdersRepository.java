@@ -162,4 +162,61 @@ Page<Orders> filterOrdersByLinkStatus(
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     List<Orders> findByCustomerAndLeftoverMoneyGreaterThan(Customer customer, BigDecimal zero);
+
+    @Query("SELECT o FROM Orders o " +
+            "WHERE o.leftoverMoney IS NOT NULL " +
+            "AND o.leftoverMoney < :threshold " +
+            "AND EXISTS (" +
+            "   SELECT 1 FROM OrderLinks ol " +
+            "   WHERE ol.orders = o AND ol.status = 'DA_HUY'" +
+            ")")
+    Page<Orders> findOrdersWithRefundableCancelledLinks(
+            @Param("threshold") BigDecimal threshold,
+            Pageable pageable
+    );
+
+    // Cho staff sale
+    @Query("SELECT o FROM Orders o " +
+            "WHERE o.staff.accountId = :staffId " +
+            "AND o.leftoverMoney IS NOT NULL " +
+            "AND o.leftoverMoney < :threshold " +
+            "AND EXISTS (" +
+            "   SELECT 1 FROM OrderLinks ol " +
+            "   WHERE ol.orders = o AND ol.status = 'DA_HUY'" +
+            ")")
+    Page<Orders> findByStaffIdAndRefundableCancelledLinks(
+            @Param("staffId") Long staffId,
+            @Param("threshold") BigDecimal threshold,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT DISTINCT o FROM Orders o
+    JOIN o.orderLinks ol
+    WHERE o.staff.accountId = :staffId
+      AND (ol.shipmentCode IS NULL OR TRIM(ol.shipmentCode) = '')
+    """)
+    Page<Orders> findOrdersWithEmptyShipmentCodeByStaff(
+            @Param("staffId") Long staffId,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT DISTINCT o FROM Orders o
+    LEFT JOIN FETCH o.orderLinks ol
+    WHERE (
+        UPPER(o.orderCode) LIKE UPPER(CONCAT('%', :keyword, '%'))
+        OR (ol.shipmentCode IS NOT NULL AND UPPER(ol.shipmentCode) LIKE UPPER(CONCAT('%', :keyword, '%')))
+    )
+    AND (
+        :isAdminOrManager = true 
+        OR o.staff.accountId = :staffId
+    )
+    """)
+    Page<Orders> searchOrdersByCodeOrShipment(
+            @Param("keyword") String keyword,
+            @Param("staffId") Long staffId,
+            @Param("isAdminOrManager") boolean isAdminOrManager,
+            Pageable pageable
+    );
 }
