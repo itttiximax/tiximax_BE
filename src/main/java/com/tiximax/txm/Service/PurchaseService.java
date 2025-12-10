@@ -511,8 +511,8 @@ public class PurchaseService {
         return purchasesRepository.save(purchase);
     }
     private BigDecimal round1(BigDecimal v) {
-    if (v == null) return BigDecimal.ZERO;
-    return v.setScale(1, RoundingMode.HALF_UP);
-}
+        if (v == null) return BigDecimal.ZERO;
+        return v.setScale(1, RoundingMode.HALF_UP);
+    }
 
 }
