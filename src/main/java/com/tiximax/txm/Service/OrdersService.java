@@ -443,7 +443,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .collect(Collectors.toList());
     }
 
-    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status ) {
+    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status,String orderCode ) {
     Account current = accountUtils.getAccountCurrent();
     Long staffId = current.getAccountId();
     AccountRoles role = current.getRole(); // 👈 lấy role
@@ -460,10 +460,15 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     if (status == null || !validStatuses.contains(status)) {
         throw new IllegalArgumentException("Trạng thái không hợp lệ!");
     }
+
+     if (orderCode != null && orderCode.trim().isEmpty()) {
+            orderCode = null;
+        }
+
     Page<Orders> ordersPage;
     if (role == AccountRoles.MANAGER) {
       
-        ordersPage = ordersRepository.findByStatusForPayment(status, pageable);
+        ordersPage = ordersRepository.findByStatusForPayment(status,orderCode ,pageable);
     } else {
        
         ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
