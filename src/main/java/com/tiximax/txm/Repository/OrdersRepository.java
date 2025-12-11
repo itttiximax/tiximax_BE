@@ -52,14 +52,22 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
             "WHERE o.staff.accountId = :staffId AND o.status = :status")
     Page<Orders> findByStaffAccountIdAndStatusForPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
 
-    @Query("SELECT DISTINCT o FROM Orders o " +
-       "LEFT JOIN FETCH o.payments p " +
-       "LEFT JOIN FETCH p.relatedOrders ro " +
-       "WHERE o.status = :status")
+@Query("""
+   SELECT DISTINCT o FROM Orders o 
+   LEFT JOIN o.payments p 
+   LEFT JOIN p.relatedOrders ro 
+   WHERE o.status = :status
+   AND (:orderCode IS NULL 
+        OR o.orderCode ILIKE CONCAT('%', CAST(:orderCode AS string), '%')
+   )
+""")
 Page<Orders> findByStatusForPayment(
         @Param("status") OrderStatus status,
+        @Param("orderCode") String orderCode,
         Pageable pageable
 );
+
+
 
     @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.orderLinks WHERE o.route.routeId IN :routeIds AND o.status = :status")
     Page<Orders> findByRouteRouteIdInAndStatusWithLinks(@Param("routeIds") Set<Long> routeIds, @Param("status") OrderStatus status, Pageable pageable);

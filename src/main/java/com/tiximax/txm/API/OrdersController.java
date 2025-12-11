@@ -105,11 +105,17 @@ public class OrdersController {
         return ResponseEntity.ok(orders);
     }
 
-    @GetMapping("/for-payment/{page}/{size}/{status}")
-    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
-        Sort sort = Sort.by("createdAt").descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<OrderPayment> ordersPage = ordersService.getOrdersForPayment(pageable, status);
+     @GetMapping("/for-payment/{page}/{size}/{status}")
+    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(
+            @PathVariable int page,
+            @PathVariable int size,
+            @PathVariable OrderStatus status,
+            @RequestParam(required = false) String orderCode
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<OrderPayment> ordersPage =
+            ordersService.getOrdersForPayment(pageable, status, orderCode);
         return ResponseEntity.ok(ordersPage);
     }
 
