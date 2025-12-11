@@ -17,6 +17,7 @@ public class WareHouseOrderLink {
     private Double height;
     private Double weight;
     private Double dim;
+    private Double netWeight;
     private Long linkId;
     private String productLink;
     private String productName;
