@@ -193,7 +193,7 @@ public class WarehouseService {
         return "Thành công nhập kho các mã vận đơn vừa truyền vào!";
     }
 
-    public Page<WarehouseSummary> getWarehousesForPacking(Pageable pageable) {
+    public Page<WarehouseSummary> getWarehousesForPacking(Pageable pageable,  String trackingCode) {
 
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff.getWarehouseLocation() == null) {
@@ -202,25 +202,47 @@ public class WarehouseService {
          WarehouseLocation location = new WarehouseLocation();
         location.setLocationId(staff.getWarehouseLocation().getLocationId());
 
+    List<OrderLinkStatus> validStatuses = List.of(
+            OrderLinkStatus.DA_NHAP_KHO_NN,
+            OrderLinkStatus.DA_DONG_GOI
+    );
+
+     if (trackingCode != null && trackingCode.trim().isEmpty()) {
+        trackingCode = null;
+    }
+
     Page<Warehouse> warehousePage =
-            warehouseRepository.findByStatusAndLocation_LocationId(
+            warehouseRepository.findWarehousesForPacking(
                     WarehouseStatus.DA_NHAP_KHO,
                     location.getLocationId(),
+                    validStatuses,
+                    trackingCode,
                     pageable
-            );        List<WarehouseSummary> summaries = warehousePage.getContent().stream()
-                .map(w -> new WarehouseSummary(
-                        w.getWarehouseId(),
-                        w.getTrackingCode(),
-                        w.getOrders().getOrderCode(),
-                         w.getOrders().getDestination().getDestinationName(),
-                        w.getWeight(),
-                        w.getNetWeight(),
-                        w.getDim(),
-                        w.getImage(),
-                        w.getImageCheck(),
-                        w.getCreatedAt()
-                ))
-                .collect(Collectors.toList());
+            );
+                 List<WarehouseSummary> summaries = warehousePage.getContent().stream()
+        .map(w -> {
+            OrderLinkStatus status = w.getOrderLinks()
+                    .stream()
+                    .findFirst()
+                    .map(OrderLinks::getStatus)
+                    .orElse(null);
+
+            return new WarehouseSummary(
+                    w.getWarehouseId(),
+                    w.getTrackingCode(),
+                    w.getOrders().getOrderCode(),
+                    w.getOrders().getCustomer().getCustomerCode(),
+                    w.getOrders().getDestination().getDestinationName(),
+                    w.getWeight(),
+                    w.getNetWeight(),
+                    w.getDim(),
+                    w.getImage(),
+                    w.getImageCheck(),
+                    w.getCreatedAt(),
+                    status
+            );
+        })
+        .collect(Collectors.toList());
         return new PageImpl<>(summaries, pageable, warehousePage.getTotalElements());
     }
 

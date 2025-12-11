@@ -1,6 +1,7 @@
 package com.tiximax.txm.Repository;
 
 import com.tiximax.txm.Entity.Warehouse;
+import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.WarehouseStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,15 +19,29 @@ import java.util.Optional;
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
     boolean existsByTrackingCode(String trackingCode);
-
-    @Query("SELECT w FROM Warehouse w WHERE w.status = :status")
-    Page<Warehouse> findByStatus(@Param("status") WarehouseStatus status, Pageable pageable);
-
-    Page<Warehouse> findByStatusAndLocation_LocationId(
-        WarehouseStatus status,
-        Long locationId,
+@Query("""
+    SELECT DISTINCT w
+    FROM Warehouse w
+    JOIN w.orderLinks ol
+    WHERE w.status = :status
+      AND w.location.locationId = :locationId
+      AND ol.status IN :validStatuses
+      AND w.trackingCode = ol.shipmentCode
+      AND (
+    :trackingCode IS NULL
+    OR w.trackingCode LIKE CONCAT('%', CAST(:trackingCode AS string), '%')
+)
+""")
+Page<Warehouse> findWarehousesForPacking(
+        @Param("status") WarehouseStatus status,
+        @Param("locationId") Long locationId,
+        @Param("validStatuses") List<OrderLinkStatus> validStatuses,
+        @Param("trackingCode") String trackingCode,
         Pageable pageable
 );
+
+
+
 
 
     List<Warehouse> findAllByStatus(WarehouseStatus warehouseStatus);
