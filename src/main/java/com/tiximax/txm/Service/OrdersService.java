@@ -6,6 +6,8 @@ import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Model.EnumFilter.ShipStatus;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
+
+
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -1028,7 +1030,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
         return ordersPage.map(orders -> {
             OrderWithLinks dto = new OrderWithLinks(orders);
-
             List<OrderLinks> buyLaterLinks = orders.getOrderLinks().stream()
                     .filter(link -> link.getStatus() == OrderLinkStatus.MUA_SAU)
                     .sorted(Comparator.comparing(
@@ -1036,11 +1037,69 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                             Comparator.nullsLast(Comparator.naturalOrder())
                     ))
                     .collect(Collectors.toList());
-
             dto.setOrderLinks(buyLaterLinks);
             return dto;
         });
     }
+
+    public Page<ShipLinkForegin> getOrderLinksForForeignWarehouse(
+        Pageable pageable,
+        String shipmentCode,
+        String customerCode
+    ) {
+    Account currentAccount = accountUtils.getAccountCurrent();
+    if (!currentAccount.getRole().equals(AccountRoles.STAFF_WAREHOUSE_FOREIGN)) {
+        throw new IllegalStateException("Chỉ nhân viên kho nước ngoài mới có quyền truy cập!");
+    }
+      List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+        Set<Long> routeIds = accountRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
+
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<OrderLinkStatus> statuses = new ArrayList<>();
+        statuses.add(OrderLinkStatus.DA_MUA);
+
+         Page<Orders> ordersPage = ordersRepository.filterOrdersByLinkStatusAndRoutes(
+            statuses,
+            (shipmentCode == null || shipmentCode.isBlank()) ? null : shipmentCode,
+            (customerCode == null || customerCode.isBlank()) ? null : customerCode,
+            routeIds,
+            pageable
+    );
+    List<ShipLinkForegin> result = new ArrayList<>();
+
+    for (Orders order : ordersPage.getContent()) {
+
+        List<OrderLinks> validLinks = order.getOrderLinks().stream()
+                .filter(link -> statuses.contains(link.getStatus()))
+                .filter(link -> shipmentCode == null 
+                        || link.getShipmentCode() != null 
+                        || link.getShipmentCode().contains(shipmentCode)) 
+                .sorted(Comparator.comparing(
+                        OrderLinks::getGroupTag,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ))
+                .toList();
+
+        if (validLinks.isEmpty())
+            continue;
+         List<OrderLinksShipForeign> orderLinksShips = validLinks.stream()
+                .map(link -> {
+                    return new OrderLinksShipForeign(link);
+                })
+                .toList();
+        ShipLinkForegin dto = new ShipLinkForegin(order,orderLinksShips);
+        result.add(dto);
+    }
+    return new PageImpl<>(result, pageable, ordersPage.getTotalElements());
+}
+
+    
 
  public Page<ShipLinks> getOrderLinksForWarehouse(
         Pageable pageable,
@@ -1101,6 +1160,8 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
     return new PageImpl<>(result, pageable, ordersPage.getTotalElements());
 }
+
+
 
 
 

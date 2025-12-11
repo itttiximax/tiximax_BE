@@ -154,6 +154,38 @@ Page<Orders> filterOrdersByLinkStatus(
 );
 
 
+@Query("""
+    SELECT DISTINCT o
+    FROM Orders o
+    JOIN o.orderLinks ol
+    WHERE ol.status IN :statuses
+
+    AND (
+        :shipmentCode IS NULL 
+        OR LOWER(CAST(ol.shipmentCode AS string)) 
+            LIKE LOWER(CAST(CONCAT('%', :shipmentCode, '%') AS string))
+    )
+
+    AND (
+        :customerCode IS NULL 
+        OR LOWER(CAST(o.customer.customerCode AS string)) 
+            LIKE LOWER(CAST(CONCAT('%', :customerCode, '%') AS string))
+    )
+
+    AND (
+        :routeIds IS NULL 
+        OR o.route.routeId IN :routeIds
+    )
+    """)
+Page<Orders> filterOrdersByLinkStatusAndRoutes(
+        @Param("statuses") List<OrderLinkStatus> statuses,
+        @Param("shipmentCode") String shipmentCode,
+        @Param("customerCode") String customerCode,
+        @Param("routeIds") Set<Long> routeIds,  
+        Pageable pageable
+);
+
+
 
     List<Orders> findByStaff_AccountIdAndCreatedAtBetween(Long accountId, LocalDateTime startDate, LocalDateTime endDate);
         Page<Orders> findByStaffAccountId(Long accountId, Pageable pageable);

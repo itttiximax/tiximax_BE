@@ -161,8 +161,8 @@ public class OrdersController {
         List<WareHouseOrderLink> links = ordersService.getLinksInWarehouseByCustomer(customerCode);
         return ResponseEntity.ok(links);
     }
-        @GetMapping("/warehouse-links/{page}/{size}")
-public Page<ShipLinks> getOrderLinksForWarehouse(
+    @GetMapping("/warehouse-links/{page}/{size}")
+        public ResponseEntity<Page<ShipLinks>> getOrderLinksForWarehouse(
         @PathVariable int page,
         @PathVariable int size,
         @RequestParam(required = false) ShipStatus status,
@@ -171,14 +171,31 @@ public Page<ShipLinks> getOrderLinksForWarehouse(
 ) {
     Pageable pageable = PageRequest.of(page, size);
 
-    return ordersService.getOrderLinksForWarehouse(
+    Page<ShipLinks> result  = ordersService.getOrderLinksForWarehouse(
             pageable,
             status,
             shipmentCode,
             customerCode
     );
+      return ResponseEntity.ok(result);
 }
 
+ @GetMapping("/warehouse-foreign-links/{page}/{size}")
+public ResponseEntity<Page<ShipLinkForegin>> getOrderLinksForWarehouseForeign(
+        @PathVariable int page,
+        @PathVariable int size,
+        @RequestParam(required = false) String shipmentCode,
+        @RequestParam(required = false) String customerCode
+) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<ShipLinkForegin> result = ordersService.getOrderLinksForForeignWarehouse(
+            pageable,   
+            shipmentCode,
+            customerCode      
+    );
+    return ResponseEntity.ok(result);
+}
 
     @PutMapping("/buy-later/{orderId}/links/{orderLinkId}")
     public ResponseEntity<Orders> updateOrderLinkToBuyLater(@PathVariable Long orderId, @PathVariable Long orderLinkId) {
