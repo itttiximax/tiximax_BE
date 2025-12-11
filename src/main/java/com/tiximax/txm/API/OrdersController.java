@@ -313,7 +313,7 @@ public ResponseEntity<Page<ShipLinkForegin>> getOrderLinksForWarehouseForeign(
         return ResponseEntity.ok(updated);
     }
 
-    @GetMapping("/search/{keyword}/{page}/{size}")
+    @GetMapping("/search-shipment/{keyword}/{page}/{size}")
     public ResponseEntity<Page<OrderWithLinks>> searchOrders(
             @PathVariable String keyword,
             @PathVariable int page,

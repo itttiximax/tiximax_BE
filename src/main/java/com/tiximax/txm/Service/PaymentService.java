@@ -199,7 +199,6 @@ public class PaymentService {
             totalWeight = rawTotalWeight.setScale(1, RoundingMode.HALF_UP);
         }
 
-
         BigDecimal totalAmount = totalWeight.multiply(unitPrice).setScale(0, RoundingMode.HALF_UP);
 
         BigDecimal discount = BigDecimal.ZERO;
