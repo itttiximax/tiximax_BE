@@ -54,10 +54,17 @@ public class WarehouseController {
     }
 
     @GetMapping("/{page}/{size}/ready-warehouses")
-    public ResponseEntity<Page<WarehouseSummary>> getReadyWarehouses(@PathVariable int page, int size) {
+    public ResponseEntity<Page<WarehouseSummary>> getReadyWarehouses(
+            @PathVariable int page,
+            @PathVariable int size,
+            @RequestParam(required = false) String trackingCode
+    ) {
         Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<WarehouseSummary> warehousePage = warehouseService.getWarehousesForPacking(pageable);
+
+        Page<WarehouseSummary> warehousePage =
+                warehouseService.getWarehousesForPacking(pageable, trackingCode);
+
         return ResponseEntity.ok(warehousePage);
     }
 
