@@ -728,6 +728,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         warehouseOrderLink.setHeight(link.getWarehouse().getHeight());
         warehouseOrderLink.setWeight(link.getWarehouse().getWeight());
         warehouseOrderLink.setDim(link.getWarehouse().getDim());
+        warehouseOrderLink.setNetWeight(link.getWarehouse().getNetWeight());
         warehouseOrderLink.setLinkId(link.getLinkId());
         warehouseOrderLink.setProductLink(link.getProductLink());
         warehouseOrderLink.setProductName(link.getProductName());
