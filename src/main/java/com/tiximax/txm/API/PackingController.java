@@ -41,6 +41,7 @@ public class PackingController {
         Packing packing = packingService.createPacking(request);
         return ResponseEntity.ok(packing);
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<Packing> getPackingById(@PathVariable Long id) {
         Packing packing = packingService.getPackingById(id);

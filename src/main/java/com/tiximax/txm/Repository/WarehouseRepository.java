@@ -45,4 +45,10 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     Double sumNetWeightByCreatedAtBetween(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    @Query("SELECT DISTINCT w FROM Warehouse w " +
+            "LEFT JOIN FETCH w.orders o " +
+            "LEFT JOIN FETCH w.orderLinks ol " +
+            "WHERE w.trackingCode IN :codes")
+    List<Warehouse> findByTrackingCodeInWithOrdersAndLinks(@Param("codes") List<String> codes);
 }

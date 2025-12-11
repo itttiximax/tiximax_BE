@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -85,6 +86,7 @@ public class PackingService {
         return new PageImpl<>(eligibleOrders, pageable, ordersPage.getTotalElements());
     }
 
+    @Transactional
     public Packing createPacking(PackingRequest request) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff.getWarehouseLocation() == null) {
@@ -98,20 +100,26 @@ public class PackingService {
             throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
         }
 
-        List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeIn(shipmentCodes);
+//        List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeIn(shipmentCodes);
+        List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeInWithOrdersAndLinks(shipmentCodes);
         if (warehouses.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy mã vận đơn bạn cung cấp!");
         }
         for (Warehouse warehouse : warehouses) {
-        if (warehouse.getPacking() != null) {
-            throw new IllegalArgumentException("Warehouse với mã vận đơn " + warehouse.getTrackingCode() + " đã có packingId, không thể tiếp tục.");
-        }
+            if (warehouse.getPacking() != null) {
+                throw new IllegalArgumentException("Warehouse với mã vận đơn " + warehouse.getTrackingCode() + " đã có packingId, không thể tiếp tục.");
+            }
         }
 
+//        Set<Orders> orders = warehouses.stream()
+//                .map(Warehouse::getOrders)
+//                .collect(Collectors.toSet());
 
         Set<Orders> orders = warehouses.stream()
                 .map(Warehouse::getOrders)
-                .collect(Collectors.toSet());
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
         if (orders.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng nào liên quan đến các mã vận đơn bạn cung cấp!");
         }
@@ -126,52 +134,73 @@ public class PackingService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy điểm đến này!"));
         for (Warehouse warehouse : warehouses) {
             if (!warehouse.getOrders().getDestination().getDestinationId().equals(destination.getDestinationId())) {
-                throw new IllegalArgumentException("Các mã vận đơn phải có cùng điểm đến và trùng với điểm đến chung!");
+                throw new IllegalArgumentException("Mã vận đơn " + warehouse.getTrackingCode() + " không cùng điểm đến!");
             }
         }
 
+//        for (Warehouse warehouse : warehouses) {
+//            if (!warehouse.getOrders().getDestination().getDestinationId().equals(destination.getDestinationId())) {
+//                throw new IllegalArgumentException("Các mã vận đơn phải có cùng điểm đến!");
+//            }
+//            for (OrderLinks orderLink : warehouse.getOrderLinks()) {
+//                orderLink.setStatus(OrderLinkStatus.DA_DONG_GOI);
+//            }
+//        }
+
+        Set<String> packingListSet = new HashSet<>();
         for (Warehouse warehouse : warehouses) {
-            if (!warehouse.getOrders().getDestination().getDestinationId().equals(destination.getDestinationId())) {
-                throw new IllegalArgumentException("Các mã vận đơn phải có cùng điểm đến!");
-            }
             for (OrderLinks orderLink : warehouse.getOrderLinks()) {
                 orderLink.setStatus(OrderLinkStatus.DA_DONG_GOI);
+                packingListSet.add(orderLink.getShipmentCode());
             }
         }
 
-        List<String> packingList = orders.stream()
-                .filter(Objects::nonNull)
-                .flatMap(order -> order.getOrderLinks().stream())
-                .filter(Objects::nonNull)
-                .map(OrderLinks::getShipmentCode)
-                .distinct()
-                .collect(Collectors.toList());
+//        List<String> packingList = orders.stream()
+//                .filter(Objects::nonNull)
+//                .flatMap(order -> order.getOrderLinks().stream())
+//                .filter(Objects::nonNull)
+//                .map(OrderLinks::getShipmentCode)
+//                .distinct()
+//                .collect(Collectors.toList());
 
+        List<String> packingList = new ArrayList<>(packingListSet);
         if (packingList.isEmpty()) {
-            throw new IllegalArgumentException("Không có mã đơn hàng nào để tạo packing list!");
+            throw new IllegalArgumentException("Không có mã vận đơn nào để tạo packing list!");
         }
 
         Packing packing = new Packing();
-            String location = ((Staff) accountUtils.getAccountCurrent()).getWarehouseLocation().getName();
-            packing.setPackingCode(generatePackingCode(location, destination.getDestinationName()));
-            packing.setDestination(destination);
-            packing.setPackingList(packingList);
-            packing.setPackedDate(LocalDateTime.now());
-            packing.setStaff(staff);
-            packing.setStatus(PackingStatus.CHO_BAY);
-            packing = packingRepository.save(packing);
+        String location = ((Staff) accountUtils.getAccountCurrent()).getWarehouseLocation().getName();
+        packing.setPackingCode(generatePackingCode(location, destination.getDestinationName()));
+        packing.setDestination(destination);
+        packing.setPackingList(packingList);
+        packing.setPackedDate(LocalDateTime.now());
+        packing.setStaff(staff);
+        packing.setStatus(PackingStatus.CHO_BAY);
 
-        Set<Warehouse> packingWarehouses = new HashSet<>(warehouses);
-        packing.setWarehouses(packingWarehouses);
+        packing = packingRepository.save(packing);
 
-        for (Warehouse warehouse : warehouses) {
-            warehouse.setPacking(packing);
-            warehouseRepository.save(warehouse);
+//        Set<Warehouse> packingWarehouses = new HashSet<>(warehouses);
+//        packing.setWarehouses(packingWarehouses);
+
+        packing.setWarehouses(new HashSet<>(warehouses));
+
+//        for (Warehouse warehouse : warehouses) {
+//            warehouse.setPacking(packing);
+//            warehouseRepository.save(warehouse);
+//        }
+
+        for (Warehouse w : warehouses) {
+            w.setPacking(packing);
         }
+        warehouseRepository.saveAll(warehouses);
 
-        for (Orders order : orders) {
-            order.setStatus(OrderStatus.DANG_XU_LY);
-        }
+//        for (Orders order : orders) {
+//            order.setStatus(OrderStatus.DANG_XU_LY);
+//        }
+
+        orders.forEach(order -> order.setStatus(OrderStatus.DANG_XU_LY));
+        ordersRepository.saveAll(new ArrayList<>(orders));
+
         ordersService.addProcessLog(null, packing.getPackingCode(), ProcessLogAction.DA_DONG_GOI);
 
         return packing;
