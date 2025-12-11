@@ -2,8 +2,11 @@ package com.tiximax.txm.Repository;
 
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.Orders;
+import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
+import com.tiximax.txm.Model.EnumFilter.ShipStatus;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -49,14 +52,22 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
             "WHERE o.staff.accountId = :staffId AND o.status = :status")
     Page<Orders> findByStaffAccountIdAndStatusForPayment(@Param("staffId") Long staffId, @Param("status") OrderStatus status, Pageable pageable);
 
-    @Query("SELECT DISTINCT o FROM Orders o " +
-       "LEFT JOIN FETCH o.payments p " +
-       "LEFT JOIN FETCH p.relatedOrders ro " +
-       "WHERE o.status = :status")
+@Query("""
+   SELECT DISTINCT o FROM Orders o 
+   LEFT JOIN o.payments p 
+   LEFT JOIN p.relatedOrders ro 
+   WHERE o.status = :status
+   AND (:orderCode IS NULL 
+        OR o.orderCode ILIKE CONCAT('%', CAST(:orderCode AS string), '%')
+   )
+""")
 Page<Orders> findByStatusForPayment(
         @Param("status") OrderStatus status,
+        @Param("orderCode") String orderCode,
         Pageable pageable
 );
+
+
 
     @Query("SELECT o FROM Orders o LEFT JOIN FETCH o.orderLinks WHERE o.route.routeId IN :routeIds AND o.status = :status")
     Page<Orders> findByRouteRouteIdInAndStatusWithLinks(@Param("routeIds") Set<Long> routeIds, @Param("status") OrderStatus status, Pageable pageable);
@@ -127,6 +138,62 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
             @Param("orderType") OrderType orderType,
             Pageable pageable
     );
+@Query("""
+    SELECT DISTINCT o
+    FROM Orders o
+    JOIN o.orderLinks ol
+    WHERE ol.status IN :statuses
+    AND (
+        :shipmentCode IS NULL 
+        OR LOWER(CAST(ol.shipmentCode AS string)) 
+            LIKE LOWER(CAST(CONCAT('%', :shipmentCode, '%') AS string))
+    )
+    AND (
+        :customerCode IS NULL 
+        OR LOWER(CAST(o.customer.customerCode AS string)) 
+            LIKE LOWER(CAST(CONCAT('%', :customerCode, '%') AS string))
+    )
+    """)
+Page<Orders> filterOrdersByLinkStatus(
+        @Param("statuses") List<OrderLinkStatus> statuses,
+        @Param("shipmentCode") String shipmentCode,
+        @Param("customerCode") String customerCode,
+        Pageable pageable
+);
+
+
+@Query("""
+    SELECT DISTINCT o
+    FROM Orders o
+    JOIN o.orderLinks ol
+    WHERE ol.status IN :statuses
+
+    AND (
+        :shipmentCode IS NULL 
+        OR LOWER(CAST(ol.shipmentCode AS string)) 
+            LIKE LOWER(CAST(CONCAT('%', :shipmentCode, '%') AS string))
+    )
+
+    AND (
+        :customerCode IS NULL 
+        OR LOWER(CAST(o.customer.customerCode AS string)) 
+            LIKE LOWER(CAST(CONCAT('%', :customerCode, '%') AS string))
+    )
+
+    AND (
+        :routeIds IS NULL 
+        OR o.route.routeId IN :routeIds
+    )
+    """)
+Page<Orders> filterOrdersByLinkStatusAndRoutes(
+        @Param("statuses") List<OrderLinkStatus> statuses,
+        @Param("shipmentCode") String shipmentCode,
+        @Param("customerCode") String customerCode,
+        @Param("routeIds") Set<Long> routeIds,  
+        Pageable pageable
+);
+
+
 
     List<Orders> findByStaff_AccountIdAndCreatedAtBetween(Long accountId, LocalDateTime startDate, LocalDateTime endDate);
         Page<Orders> findByStaffAccountId(Long accountId, Pageable pageable);

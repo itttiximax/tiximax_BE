@@ -3,12 +3,16 @@ package com.tiximax.txm.Service;
 import com.tiximax.txm.Entity.*;
 import com.tiximax.txm.Enums.*;
 import com.tiximax.txm.Model.*;
+import com.tiximax.txm.Model.EnumFilter.ShipStatus;
 import com.tiximax.txm.Repository.*;
 import com.tiximax.txm.Utils.AccountUtils;
+
+
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -33,8 +37,6 @@ public class OrdersService {
     @Autowired
     private OrdersRepository ordersRepository;
     
-  
-
     @Autowired
     private OrderLinksRepository orderLinksRepository;
 
@@ -441,7 +443,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .collect(Collectors.toList());
     }
 
-    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status ) {
+    public Page<OrderPayment> getOrdersForPayment(Pageable pageable, OrderStatus status,String orderCode ) {
     Account current = accountUtils.getAccountCurrent();
     Long staffId = current.getAccountId();
     AccountRoles role = current.getRole(); // 👈 lấy role
@@ -458,10 +460,15 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     if (status == null || !validStatuses.contains(status)) {
         throw new IllegalArgumentException("Trạng thái không hợp lệ!");
     }
+
+     if (orderCode != null && orderCode.trim().isEmpty()) {
+            orderCode = null;
+        }
+
     Page<Orders> ordersPage;
     if (role == AccountRoles.MANAGER) {
       
-        ordersPage = ordersRepository.findByStatusForPayment(status, pageable);
+        ordersPage = ordersRepository.findByStatusForPayment(status,orderCode ,pageable);
     } else {
        
         ordersPage = ordersRepository.findByStaffAccountIdAndStatusForPayment(staffId, status, pageable);
@@ -1052,7 +1059,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
         return ordersPage.map(orders -> {
             OrderWithLinks dto = new OrderWithLinks(orders);
-
             List<OrderLinks> buyLaterLinks = orders.getOrderLinks().stream()
                     .filter(link -> link.getStatus() == OrderLinkStatus.MUA_SAU)
                     .sorted(Comparator.comparing(
@@ -1060,19 +1066,133 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                             Comparator.nullsLast(Comparator.naturalOrder())
                     ))
                     .collect(Collectors.toList());
-
             dto.setOrderLinks(buyLaterLinks);
             return dto;
         });
     }
 
-        // public Page<OrderWithLinks> getOrderLinksCanShip(Pageable pageable, OrderStatus orderStatus, OrderLinkStatus orderLinkStatus) {
-        //         Account currentAccount = accountUtils.getAccountCurrent();
+    public Page<ShipLinkForegin> getOrderLinksForForeignWarehouse(
+        Pageable pageable,
+        String shipmentCode,
+        String customerCode
+    ) {
+    Account currentAccount = accountUtils.getAccountCurrent();
+    if (!currentAccount.getRole().equals(AccountRoles.STAFF_WAREHOUSE_FOREIGN)) {
+        throw new IllegalStateException("Chỉ nhân viên kho nước ngoài mới có quyền truy cập!");
+    }
+      List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+        Set<Long> routeIds = accountRoutes.stream()
+                .map(AccountRoute::getRoute)
+                .map(Route::getRouteId)
+                .collect(Collectors.toSet());
 
-        //     if (!currentAccount.getRole().equals(AccountRoles.STAFF_WAREHOUSE_DOMESTIC)) {
-        //         throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
-        //     }
-        // }       
+        if (routeIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<OrderLinkStatus> statuses = new ArrayList<>();
+        statuses.add(OrderLinkStatus.DA_MUA);
+
+         Page<Orders> ordersPage = ordersRepository.filterOrdersByLinkStatusAndRoutes(
+            statuses,
+            (shipmentCode == null || shipmentCode.isBlank()) ? null : shipmentCode,
+            (customerCode == null || customerCode.isBlank()) ? null : customerCode,
+            routeIds,
+            pageable
+    );
+    List<ShipLinkForegin> result = new ArrayList<>();
+
+    for (Orders order : ordersPage.getContent()) {
+
+        List<OrderLinks> validLinks = order.getOrderLinks().stream()
+                .filter(link -> statuses.contains(link.getStatus()))
+                .filter(link -> shipmentCode == null 
+                        || link.getShipmentCode() != null 
+                        || link.getShipmentCode().contains(shipmentCode)) 
+                .sorted(Comparator.comparing(
+                        OrderLinks::getGroupTag,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ))
+                .toList();
+
+        if (validLinks.isEmpty())
+            continue;
+         List<OrderLinksShipForeign> orderLinksShips = validLinks.stream()
+                .map(link -> {
+                    return new OrderLinksShipForeign(link);
+                })
+                .toList();
+        ShipLinkForegin dto = new ShipLinkForegin(order,orderLinksShips);
+        result.add(dto);
+    }
+    return new PageImpl<>(result, pageable, ordersPage.getTotalElements());
+}
+
+    
+
+ public Page<ShipLinks> getOrderLinksForWarehouse(
+        Pageable pageable,
+        ShipStatus status,
+        String shipmentCode,
+        String customerCode
+) {
+
+    Account currentAccount = accountUtils.getAccountCurrent();
+    if (!currentAccount.getRole().equals(AccountRoles.STAFF_WAREHOUSE_DOMESTIC)) {
+        throw new IllegalStateException("Chỉ nhân viên kho mới có quyền truy cập!");
+    }
+
+    List<OrderLinkStatus> statuses =
+            (status == null) ? DEFAULT_SHIP_STATUSES : List.of(convert(status));
+
+    // gọi repository đã thêm search
+    Page<Orders> ordersPage = ordersRepository.filterOrdersByLinkStatus(
+            statuses,
+            (shipmentCode == null || shipmentCode.isBlank()) ? null : shipmentCode,
+            (customerCode == null || customerCode.isBlank()) ? null : customerCode,
+            pageable
+    );
+
+    List<ShipLinks> result = new ArrayList<>();
+
+    for (Orders order : ordersPage.getContent()) {
+
+        List<OrderLinks> validLinks = order.getOrderLinks().stream()
+                .filter(link -> statuses.contains(link.getStatus()))
+                .filter(link -> shipmentCode == null 
+                        || link.getShipmentCode() != null 
+                        || link.getShipmentCode().contains(shipmentCode)) // nếu muốn lọc lần 2
+                .sorted(Comparator.comparing(
+                        OrderLinks::getGroupTag,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ))
+                .toList();
+
+        if (validLinks.isEmpty())
+            continue;
+
+        List<OrderLinksShip> orderLinksShips = validLinks.stream()
+                .map(link -> {
+
+                    Warehouse wh = link.getWarehouse();
+                    String packingCode = (wh != null && wh.getPacking() != null)
+                            ? wh.getPacking().getPackingCode()
+                            : null;
+
+                    return new OrderLinksShip(link, wh, packingCode);
+                })
+                .toList();
+
+        ShipLinks dto = new ShipLinks(order, orderLinksShips, order.getWarehouses().stream().toList());
+        result.add(dto);
+    }
+
+    return new PageImpl<>(result, pageable, ordersPage.getTotalElements());
+}
+
+
+
+
 
     public InfoShipmentCode inforShipmentCode(String shipmentCode) {
         List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
@@ -1166,6 +1286,18 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         }
         return ordersRepository.saveAll(updatedOrders);
     }
+            private static final List<OrderLinkStatus> DEFAULT_SHIP_STATUSES = List.of(
+                OrderLinkStatus.DA_NHAP_KHO_VN,
+                OrderLinkStatus.CHO_GIAO,
+                OrderLinkStatus.CHO_TRUNG_CHUYEN,
+                OrderLinkStatus.DANG_GIAO,
+                OrderLinkStatus.DA_GIAO
+        );
+    private OrderLinkStatus convert(ShipStatus s) {
+    return OrderLinkStatus.valueOf(s.name());
+}
+
+
 
     public Page<OrdersPendingShipment> getMyOrdersWithoutShipmentCode(Pageable pageable) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();

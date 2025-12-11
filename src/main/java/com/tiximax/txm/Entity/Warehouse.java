@@ -76,5 +76,4 @@ public class Warehouse {
     @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<OrderLinks> orderLinks;
-
 }

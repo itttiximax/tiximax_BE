@@ -6,6 +6,7 @@ import com.tiximax.txm.Enums.OrderDestination;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.OrderType;
 import com.tiximax.txm.Model.*;
+import com.tiximax.txm.Model.EnumFilter.ShipStatus;
 import com.tiximax.txm.Service.OrdersService;
 import com.tiximax.txm.Utils.AccountUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -104,11 +105,17 @@ public class OrdersController {
         return ResponseEntity.ok(orders);
     }
 
-    @GetMapping("/for-payment/{page}/{size}/{status}")
-    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(@PathVariable int page, @PathVariable int size, @PathVariable(required = false) OrderStatus status) {
-        Sort sort = Sort.by("createdAt").descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<OrderPayment> ordersPage = ordersService.getOrdersForPayment(pageable, status);
+     @GetMapping("/for-payment/{page}/{size}/{status}")
+    public ResponseEntity<Page<OrderPayment>> getOrdersForPayment(
+            @PathVariable int page,
+            @PathVariable int size,
+            @PathVariable OrderStatus status,
+            @RequestParam(required = false) String orderCode
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<OrderPayment> ordersPage =
+            ordersService.getOrdersForPayment(pageable, status, orderCode);
         return ResponseEntity.ok(ordersPage);
     }
 
@@ -160,6 +167,41 @@ public class OrdersController {
         List<WareHouseOrderLink> links = ordersService.getLinksInWarehouseByCustomer(customerCode);
         return ResponseEntity.ok(links);
     }
+    @GetMapping("/warehouse-links/{page}/{size}")
+        public ResponseEntity<Page<ShipLinks>> getOrderLinksForWarehouse(
+        @PathVariable int page,
+        @PathVariable int size,
+        @RequestParam(required = false) ShipStatus status,
+        @RequestParam(required = false) String shipmentCode,
+        @RequestParam(required = false) String customerCode
+) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<ShipLinks> result  = ordersService.getOrderLinksForWarehouse(
+            pageable,
+            status,
+            shipmentCode,
+            customerCode
+    );
+      return ResponseEntity.ok(result);
+}
+
+ @GetMapping("/warehouse-foreign-links/{page}/{size}")
+public ResponseEntity<Page<ShipLinkForegin>> getOrderLinksForWarehouseForeign(
+        @PathVariable int page,
+        @PathVariable int size,
+        @RequestParam(required = false) String shipmentCode,
+        @RequestParam(required = false) String customerCode
+) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<ShipLinkForegin> result = ordersService.getOrderLinksForForeignWarehouse(
+            pageable,   
+            shipmentCode,
+            customerCode      
+    );
+    return ResponseEntity.ok(result);
+}
 
     @PutMapping("/buy-later/{orderId}/links/{orderLinkId}")
     public ResponseEntity<Orders> updateOrderLinkToBuyLater(@PathVariable Long orderId, @PathVariable Long orderLinkId) {
