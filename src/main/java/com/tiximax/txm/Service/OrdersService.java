@@ -784,19 +784,43 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .map(order -> {
                     OrderPayment orderPayment = new OrderPayment(order);
 
-                    BigDecimal totalNetWeight = order.getWarehouses() != null
-                     ? order.getWarehouses().stream()
-                .map(Warehouse::getNetWeight)
-                .filter(Objects::nonNull)
-                .map(BigDecimal::valueOf)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(1, RoundingMode.HALF_UP)  
-                : BigDecimal.ZERO.setScale(1);
-                    orderPayment.setTotalNetWeight(totalNetWeight);
+//                    BigDecimal totalNetWeight = order.getWarehouses() != null
+//                     ? order.getWarehouses().stream()
+//                    .map(Warehouse::getNetWeight)
+//                    .filter(Objects::nonNull)
+//                    .map(BigDecimal::valueOf)
+//                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+//                    .setScale(1, RoundingMode.HALF_UP)
+//                    : BigDecimal.ZERO.setScale(1);
+//                        orderPayment.setTotalNetWeight(totalNetWeight);
 
-                    Route route = order.getRoute();
+                    BigDecimal rawTotalWeight = order.getWarehouses() != null && !order.getWarehouses().isEmpty()
+                            ? order.getWarehouses().stream()
+                            .map(Warehouse::getNetWeight)
+                            .filter(Objects::nonNull)
+                            .map(BigDecimal::valueOf)                 // ← an toàn tuyệt đối
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                            : BigDecimal.ZERO;
+
+                    BigDecimal totalWeight;
+                    if (rawTotalWeight.compareTo(BigDecimal.ONE) < 0) {
+                        if (orders.get(0).getRoute().getName().equals("JPY")){
+                            if (rawTotalWeight.compareTo(new BigDecimal("0.5")) <= 0) {
+                                totalWeight = new BigDecimal("0.5");
+                            } else {
+                                totalWeight = BigDecimal.ONE;
+                            }
+                        } else {
+                            totalWeight = BigDecimal.ONE;
+                        }
+                    } else {
+                        totalWeight = rawTotalWeight.setScale(1, RoundingMode.HALF_UP);
+                    }
+
+                    orderPayment.setTotalNetWeight(totalWeight);
+
                     BigDecimal unitPrice = order.getPriceShip();
-                    BigDecimal finalPriceOrder = totalNetWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal finalPriceOrder = totalWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
                     orderPayment.setFinalPriceOrder(finalPriceOrder);
                     orderPayment.setLeftoverMoney(order.getLeftoverMoney());
                     return orderPayment;
