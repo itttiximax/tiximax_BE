@@ -5,6 +5,7 @@ import com.tiximax.txm.Enums.OrderLinkStatus;
 import com.tiximax.txm.Enums.OrderStatus;
 import com.tiximax.txm.Enums.PackingStatus;
 import com.tiximax.txm.Enums.ProcessLogAction;
+import com.tiximax.txm.Model.PackingCheckResponse;
 import com.tiximax.txm.Model.PackingEligibleOrder;
 import com.tiximax.txm.Model.PackingExport;
 import com.tiximax.txm.Model.PackingInWarehouse;
@@ -92,6 +93,10 @@ public class PackingService {
         if (staff.getWarehouseLocation() == null) {
             throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
         }
+
+          PackingCheckResponse check =
+            checkCreatePacking(request.getShipmentCodes());
+            validateBeforeCreatePacking(check);
 
         List<String> shipmentCodes = request.getShipmentCodes().stream()
                 .distinct()
@@ -205,6 +210,111 @@ public class PackingService {
 
         return packing;
     }
+   public PackingCheckResponse checkCreatePacking(List<String> shipmentCodes) {
+
+    PackingCheckResponse response = new PackingCheckResponse();
+    response.setCanCreate(false);
+
+    if (shipmentCodes == null || shipmentCodes.isEmpty()) {
+        response.setMessage("Shipment code list must not be empty.");
+        return response;
+    }
+
+    List<String> codes = shipmentCodes.stream()
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .distinct()
+            .toList();
+
+    response.setTotalCodes(codes.size());
+
+    if (codes.isEmpty()) {
+        response.setMessage("Invalid shipment code list.");
+        return response;
+    }
+
+    List<Warehouse> warehouses =
+            warehouseRepository.findByTrackingCodeInWithOrdersAndLinks(codes);
+
+    Set<String> warehouseCodes = warehouses.stream()
+            .map(Warehouse::getTrackingCode)
+            .collect(Collectors.toSet());
+
+    response.setWarehouseCount(warehouses.size());
+
+    List<String> notInWarehouse = codes.stream()
+            .filter(code -> !warehouseCodes.contains(code))
+            .toList();
+
+    List<String> invalidCodes = new ArrayList<>();
+    List<String> notImportedCodes = new ArrayList<>();
+
+    if (!notInWarehouse.isEmpty()) {
+        List<OrderLinks> orderLinks =
+                orderLinksRepository.findByShipmentCodeIn(notInWarehouse);
+
+        Set<String> orderLinkCodes = orderLinks.stream()
+                .map(OrderLinks::getShipmentCode)
+                .collect(Collectors.toSet());
+
+        invalidCodes = notInWarehouse.stream()
+                .filter(code -> !orderLinkCodes.contains(code))
+                .toList();
+
+        notImportedCodes = orderLinks.stream()
+                .filter(ol -> ol.getWarehouse() == null)
+                .map(OrderLinks::getShipmentCode)
+                .distinct()
+                .toList();
+    }
+
+    response.setInvalidCodes(invalidCodes);
+    response.setNotImportedCodes(notImportedCodes);
+
+    List<String> alreadyPackedCodes = warehouses.stream()
+            .filter(w -> w.getPacking() != null)
+            .map(Warehouse::getTrackingCode)
+            .distinct()
+            .toList();
+
+    response.setAlreadyPackedCodes(alreadyPackedCodes);
+
+    boolean canCreate =
+            invalidCodes.isEmpty()
+            && notImportedCodes.isEmpty()
+            && alreadyPackedCodes.isEmpty()
+            && !warehouses.isEmpty();
+
+    response.setCanCreate(canCreate);
+
+    if (canCreate) {
+    response.setMessage("Shipment codes are valid. Packing can be created.");
+} else {
+
+    StringBuilder messageBuilder = new StringBuilder("Invalid shipment codes:");
+
+    if (!invalidCodes.isEmpty()) {
+        messageBuilder.append("\n- Not found: ")
+                .append(String.join(", ", invalidCodes));
+    }
+
+    if (!notImportedCodes.isEmpty()) {
+        messageBuilder.append("\n- Not imported to warehouse yet: ")
+                .append(String.join(", ", notImportedCodes));
+    }
+
+    if (!alreadyPackedCodes.isEmpty()) {
+        messageBuilder.append("\n- Already packed: ")
+                .append(String.join(", ", alreadyPackedCodes));
+    }
+
+    response.setMessage(messageBuilder.toString());
+}
+
+    return response;
+}
+
 
     public Page<PackingInWarehouse> getPackingsInWarehouse(Pageable pageable) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
@@ -489,4 +599,9 @@ public class PackingService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy packing này!"));
         return new ArrayList<>(packing.getWarehouses());
     }
+    private void validateBeforeCreatePacking(PackingCheckResponse check) {
+    if (!check.isCanCreate()) {
+        throw new IllegalArgumentException(check.getMessage());
+    }
+}
 }
