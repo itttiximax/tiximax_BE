@@ -573,7 +573,8 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(
         Pageable pageable,
         OrderType orderType,
-        String keyword
+        String orderCode,
+        String customerCode
 ) {
     Account currentAccount = accountUtils.getAccountCurrent();
 
@@ -593,8 +594,12 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         return Page.empty(pageable);
     }
 
-    if (keyword != null && keyword.trim().isEmpty()) {
-        keyword = null;
+    // ✅ Chuẩn hoá input: chuỗi rỗng → null
+    if (orderCode != null && orderCode.trim().isEmpty()) {
+        orderCode = null;
+    }
+    if (customerCode != null && customerCode.trim().isEmpty()) {
+        customerCode = null;
     }
 
     Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
@@ -608,7 +613,8 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                     routeIds,
                     OrderStatus.CHO_MUA,
                     orderType,
-                    keyword,
+                    orderCode,
+                    customerCode,
                     customPageable
             );
 
@@ -632,6 +638,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         return dto;
     });
 }
+
 
 
     public OrderLinkWithStaff getOrderLinkById(Long orderLinkId) {

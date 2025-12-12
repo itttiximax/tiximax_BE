@@ -84,7 +84,6 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
     Page<Orders> findByStatusWithWarehousesAndLinks(@Param("status") OrderStatus status, Pageable pageable);
 
     Page<Orders> findByStatusInAndWarehouses_Location_LocationId(List<OrderStatus> statuses, Long locationId, Pageable pageable);
-@EntityGraph(attributePaths = {"orderLinks", "customer"})
 @Query("""
     SELECT DISTINCT o
     FROM Orders o
@@ -92,16 +91,20 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
       AND o.status = :status
       AND o.orderType = :orderType
       AND (
-           :keyword IS NULL
-           OR LOWER(CAST(o.orderCode AS string)) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
-           OR LOWER(CAST(o.customer.customerCode AS string)) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
+           :orderCode IS NULL
+           OR LOWER(o.orderCode) LIKE LOWER(CONCAT('%', CAST(:orderCode AS string), '%'))
+      )
+      AND (
+           :customerCode IS NULL
+           OR LOWER(o.customer.customerCode) LIKE LOWER(CONCAT('%', CAST(:customerCode AS string), '%'))
       )
 """)
 Page<Orders> findByRouteAndStatusAndTypeWithSearch(
         @Param("routeIds") Set<Long> routeIds,
         @Param("status") OrderStatus status,
         @Param("orderType") OrderType orderType,
-        @Param("keyword") String keyword,
+        @Param("orderCode") String orderCode,
+        @Param("customerCode") String customerCode,
         Pageable pageable
 );
 
