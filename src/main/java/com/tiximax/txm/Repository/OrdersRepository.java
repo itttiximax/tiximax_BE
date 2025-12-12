@@ -9,6 +9,7 @@ import com.tiximax.txm.Model.EnumFilter.ShipStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -83,18 +84,28 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
     Page<Orders> findByStatusWithWarehousesAndLinks(@Param("status") OrderStatus status, Pageable pageable);
 
     Page<Orders> findByStatusInAndWarehouses_Location_LocationId(List<OrderStatus> statuses, Long locationId, Pageable pageable);
-
-     @Query("SELECT DISTINCT o FROM Orders o " +
-           "LEFT JOIN FETCH o.orderLinks " + 
-           "WHERE o.route.routeId IN :routeIds " +
-           "AND o.status = :status " +
-           "AND o.orderType = :orderType")
-    Page<Orders> findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(
+@EntityGraph(attributePaths = {"orderLinks", "customer"})
+@Query("""
+    SELECT DISTINCT o
+    FROM Orders o
+    WHERE o.route.routeId IN :routeIds
+      AND o.status = :status
+      AND o.orderType = :orderType
+      AND (
+           :keyword IS NULL
+           OR LOWER(CAST(o.orderCode AS string)) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
+           OR LOWER(CAST(o.customer.customerCode AS string)) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
+      )
+""")
+Page<Orders> findByRouteAndStatusAndTypeWithSearch(
         @Param("routeIds") Set<Long> routeIds,
-        @Param("status") OrderStatus status, 
+        @Param("status") OrderStatus status,
         @Param("orderType") OrderType orderType,
+        @Param("keyword") String keyword,
         Pageable pageable
-    );
+);
+
+
 
     List<Orders> findByStaff_AccountIdAndRoute_RouteIdInAndCreatedAtBetween(Long accountId, Set<Long> routeIds, LocalDateTime startDate, LocalDateTime endDate);
 
