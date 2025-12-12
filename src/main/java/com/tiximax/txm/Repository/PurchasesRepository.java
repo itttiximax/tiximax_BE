@@ -42,69 +42,79 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
     );
 
 @Query(
-    value = """
-        SELECT * FROM (
-            SELECT DISTINCT
-                p.*,
-                CASE
-                    WHEN EXISTS (
+        value = """
+            SELECT * FROM (
+                SELECT DISTINCT
+                    p.*,
+                    CASE
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM order_links ol2
+                            WHERE ol2.purchase_id = p.purchase_id
+                              AND (ol2.shipment_code IS NULL OR TRIM(ol2.shipment_code) = '')
+                              AND ol2.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
+                        ) THEN 0
+                        ELSE 1
+                    END AS sort_value
+                FROM purchases p
+                JOIN orders o ON o.order_id = p.order_id
+                JOIN customer c ON c.account_id = o.customer_id
+                JOIN order_links ol ON ol.purchase_id = p.purchase_id
+                WHERE o.route_id IN :routeIds
+                  AND (
+                        (:status IS NULL AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG'))
+                        OR (:status IS NOT NULL AND ol.status = :status)
+                      )
+                  AND p.is_purchased = true
+                  AND NOT EXISTS (
                         SELECT 1
-                        FROM order_links ol2
-                        WHERE ol2.purchase_id = p.purchase_id
-                        AND (ol2.shipment_code IS NULL OR TRIM(ol2.shipment_code) = '')
-                        AND ol2.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
-                    ) THEN 0
-                    ELSE 1
-                END AS sort_value
+                        FROM order_links olx
+                        WHERE olx.purchase_id = p.purchase_id
+                          AND olx.shipment_code IS NOT NULL
+                          AND TRIM(olx.shipment_code) <> ''
+                  )
+                  AND (
+                        :keyword IS NULL
+                        OR LOWER(o.order_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR LOWER(c.customer_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  )
+            ) t
+            ORDER BY t.sort_value ASC, t.purchase_id DESC
+            """,
+        countQuery = """
+            SELECT COUNT(DISTINCT p.purchase_id)
             FROM purchases p
             JOIN orders o ON o.order_id = p.order_id
+            JOIN customer c ON c.account_id = o.customer_id
             JOIN order_links ol ON ol.purchase_id = p.purchase_id
             WHERE o.route_id IN :routeIds
-            AND (
-                    :status IS NULL 
-                    AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
-                    OR :status IS NOT NULL 
-                    AND ol.status = :status
-                )
-            AND p.is_purchased = true  -- Sử dụng is_purchased thay vì purchased
-            AND NOT EXISTS (
-                SELECT 1 
-                FROM order_links olx
-                WHERE olx.purchase_id = p.purchase_id
-                AND olx.shipment_code IS NOT NULL
-                AND TRIM(olx.shipment_code) <> ''
-            )
-        ) AS t
-        ORDER BY t.sort_value ASC, t.purchase_id DESC
-        """,
-    countQuery = """
-        SELECT COUNT(DISTINCT p.purchase_id)
-        FROM purchases p
-        JOIN orders o ON o.order_id = p.order_id
-        JOIN order_links ol ON ol.purchase_id = p.purchase_id
-        WHERE o.route_id IN :routeIds
-        AND (
-                :status IS NULL 
-                AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
-                OR :status IS NOT NULL 
-                AND ol.status = :status
-            )
-        AND p.is_purchased = true  -- Cập nhật countQuery để sử dụng is_purchased
-        AND NOT EXISTS (
-            SELECT 1 
-            FROM order_links olx
-            WHERE olx.purchase_id = p.purchase_id
-            AND olx.shipment_code IS NOT NULL
-            AND TRIM(olx.shipment_code) <> ''
-        )
-        """,
-    nativeQuery = true
-)
-Page<Purchases> findPurchasesSortedByPendingShipment(
-        @Param("routeIds") Set<Long> routeIds,
-        @Param("status") String status,
-        Pageable pageable
-);
+              AND (
+                    (:status IS NULL AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG'))
+                    OR (:status IS NOT NULL AND ol.status = :status)
+                  )
+              AND p.is_purchased = true
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM order_links olx
+                    WHERE olx.purchase_id = p.purchase_id
+                      AND olx.shipment_code IS NOT NULL
+                      AND TRIM(olx.shipment_code) <> ''
+              )
+              AND (
+                    :keyword IS NULL
+                    OR LOWER(o.order_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    OR LOWER(c.customer_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+              )
+            """,
+        nativeQuery = true
+    )
+    Page<Purchases> findPurchasesSortedByPendingShipment(
+            @Param("routeIds") Set<Long> routeIds,
+            @Param("status") String status,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
 
  @Query(
     value = """

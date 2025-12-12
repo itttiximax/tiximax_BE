@@ -426,30 +426,47 @@ public class PurchaseService {
         });
     }
 
-    public Page<PurchasePendingShipment> getFullPurchases(PurchaseFilter status ,Pageable pageable) {
-        Account currentAccount = accountUtils.getAccountCurrent();
-        Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
-                .stream()
-                .map(AccountRoute::getRoute)
-                .map(Route::getRouteId)
-                .collect(Collectors.toSet());
-        if (routeIds.isEmpty()) {
-            return Page.empty(pageable);
-        }
+    public Page<PurchasePendingShipment> getFullPurchases(
+        PurchaseFilter status,
+        String keyword,
+        Pageable pageable
+) {
+    Account currentAccount = accountUtils.getAccountCurrent();
 
-        String statusValue = (status == null ? null : status.name());
-        Page<Purchases> purchasesPage =
-                purchasesRepository.findPurchasesSortedByPendingShipment(routeIds,statusValue, pageable);
+    Set<Long> routeIds = accountRouteRepository
+            .findByAccountAccountId(currentAccount.getAccountId())
+            .stream()
+            .map(AccountRoute::getRoute)
+            .map(Route::getRouteId)
+            .collect(Collectors.toSet());
 
-        return purchasesPage.map(purchase -> {
-            List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
-            //   .filter(link -> link.getShipmentCode() == null || link.getShipmentCode().trim().isEmpty())
-                    .map(OrderLinkPending::new)
-                    .collect(Collectors.toList());
-
-            return new PurchasePendingShipment(purchase, pendingLinks);
-        });
+    if (routeIds.isEmpty()) {
+        return Page.empty(pageable);
     }
+
+    String statusValue = (status == null ? null : status.name());
+
+    if (keyword != null && keyword.trim().isEmpty()) {
+        keyword = null;
+    }
+
+    Page<Purchases> purchasesPage =
+            purchasesRepository.findPurchasesSortedByPendingShipment(
+                    routeIds,
+                    statusValue,
+                    keyword,
+                    pageable
+            );
+
+    return purchasesPage.map(purchase -> {
+        List<OrderLinkPending> pendingLinks = purchase.getOrderLinks()
+                .stream()
+                .map(OrderLinkPending::new)
+                .collect(Collectors.toList());
+
+        return new PurchasePendingShipment(purchase, pendingLinks);
+    });
+}
 
     public Page<PurchasePendingShipment> getALLFullPurchases(PurchaseFilter status,Pageable pageable) {
         Account currentAccount = accountUtils.getAccountCurrent();
