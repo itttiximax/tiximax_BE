@@ -428,7 +428,8 @@ public class PurchaseService {
 
     public Page<PurchasePendingShipment> getFullPurchases(
         PurchaseFilter status,
-        String keyword,
+        String orderCode,
+        String customerCode,
         Pageable pageable
 ) {
     Account currentAccount = accountUtils.getAccountCurrent();
@@ -446,15 +447,15 @@ public class PurchaseService {
 
     String statusValue = (status == null ? null : status.name());
 
-    if (keyword != null && keyword.trim().isEmpty()) {
-        keyword = null;
-    }
+    orderCode = normalize(orderCode);
+    customerCode = normalize(customerCode);
 
     Page<Purchases> purchasesPage =
             purchasesRepository.findPurchasesSortedByPendingShipment(
                     routeIds,
                     statusValue,
-                    keyword,
+                    orderCode,
+                    customerCode,
                     pageable
             );
 
@@ -462,37 +463,54 @@ public class PurchaseService {
         List<OrderLinkPending> pendingLinks = purchase.getOrderLinks()
                 .stream()
                 .map(OrderLinkPending::new)
-                .collect(Collectors.toList());
+                .toList();
 
         return new PurchasePendingShipment(purchase, pendingLinks);
     });
 }
 
-    public Page<PurchasePendingShipment> getALLFullPurchases(PurchaseFilter status,Pageable pageable) {
-        Account currentAccount = accountUtils.getAccountCurrent();
+private String normalize(String value) {
+    if (value == null) return null;
+    value = value.trim();
+    return value.isEmpty() ? null : value;
+}
 
-        Set<Long> routeIds = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId())
-                .stream()
-                .map(AccountRoute::getRoute)
-                .map(Route::getRouteId)
-                .collect(Collectors.toSet());
 
-        if (routeIds.isEmpty()) {
-            return Page.empty(pageable);
-        }
+    public Page<Purchases> getPurchasesWithFilteredOrderLinks(
+        PurchaseFilter status,
+        String orderCode,
+        String customerCode,
+        String shipmentCode,
+        Pageable pageable
+) {
+    Account currentAccount = accountUtils.getAccountCurrent();
 
-        String statusValue = (status == null ? null : status.name());
+    Set<Long> routeIds = accountRouteRepository
+            .findByAccountAccountId(currentAccount.getAccountId())
+            .stream()
+            .map(AccountRoute::getRoute)
+            .map(Route::getRouteId)
+            .collect(Collectors.toSet());
 
-        Page<Purchases> purchasesPage =
-                purchasesRepository.findPurchasesWithFilteredOrderLinks(routeIds, statusValue,pageable);
-
-        return purchasesPage.map(purchase -> {
-            List<OrderLinkPending> pendingLinks = purchase.getOrderLinks().stream()
-                    .map(OrderLinkPending::new)
-                    .collect(Collectors.toList());
-            return new PurchasePendingShipment(purchase, pendingLinks);
-        });
+    if (routeIds.isEmpty()) {
+        return Page.empty(pageable);
     }
+
+    String statusValue = status == null ? null : status.name();
+
+    orderCode = normalize(orderCode);
+    customerCode = normalize(customerCode);
+    shipmentCode = normalize(shipmentCode);
+
+    return purchasesRepository.findPurchasesWithFilteredOrderLinks(
+            routeIds,
+            statusValue,
+            orderCode,
+            customerCode,
+            shipmentCode,
+            pageable
+    );
+}
 
     public Purchases updatePurchase(Long purchaseId, UpdatePurchaseRequest request) {
         Purchases purchase = purchasesRepository.findById(purchaseId)
