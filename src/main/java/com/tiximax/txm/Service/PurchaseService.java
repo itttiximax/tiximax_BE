@@ -475,8 +475,7 @@ private String normalize(String value) {
     return value.isEmpty() ? null : value;
 }
 
-
-    public Page<Purchases> getPurchasesWithFilteredOrderLinks(
+public Page<PurchasePendingShipment> getPurchasesWithFilteredOrderLinks(
         PurchaseFilter status,
         String orderCode,
         String customerCode,
@@ -484,6 +483,7 @@ private String normalize(String value) {
         Pageable pageable
 ) {
     Account currentAccount = accountUtils.getAccountCurrent();
+
 
     Set<Long> routeIds = accountRouteRepository
             .findByAccountAccountId(currentAccount.getAccountId())
@@ -496,21 +496,46 @@ private String normalize(String value) {
         return Page.empty(pageable);
     }
 
-    String statusValue = status == null ? null : status.name();
+    // 🔹 Normalize input (KHÔNG gán lại biến gốc)
+    final String normalizedOrderCode = normalize(orderCode);
+    final String normalizedCustomerCode = normalize(customerCode);
+    final String normalizedShipmentCode = normalize(shipmentCode);
+    final String statusValue = status == null ? null : status.name();
 
-    orderCode = normalize(orderCode);
-    customerCode = normalize(customerCode);
-    shipmentCode = normalize(shipmentCode);
+    // 🔹 Query DB
+    Page<Purchases> purchasesPage =
+            purchasesRepository.findPurchasesWithFilteredOrderLinks(
+                    routeIds,
+                    statusValue,
+                    normalizedOrderCode,
+                    normalizedCustomerCode,
+                    normalizedShipmentCode,
+                    pageable
+            );
 
-    return purchasesRepository.findPurchasesWithFilteredOrderLinks(
-            routeIds,
-            statusValue,
-            orderCode,
-            customerCode,
-            shipmentCode,
-            pageable
-    );
+    // 🔹 Map sang DTO
+    return purchasesPage.map(purchase -> {
+
+        List<OrderLinkPending> pendingLinks = purchase.getOrderLinks()
+                .stream()
+                .filter(ol ->
+                        // filter status
+                        (statusValue == null || ol.getStatus().name().equals(statusValue))
+                        // filter shipmentCode
+                        && (normalizedShipmentCode == null
+                            || (ol.getShipmentCode() != null
+                                && ol.getShipmentCode()
+                                     .toLowerCase()
+                                     .contains(normalizedShipmentCode)))
+                )
+                .map(OrderLinkPending::new)
+                .toList();
+
+        return new PurchasePendingShipment(purchase, pendingLinks);
+    });
 }
+
+
 
     public Purchases updatePurchase(Long purchaseId, UpdatePurchaseRequest request) {
         Purchases purchase = purchasesRepository.findById(purchaseId)

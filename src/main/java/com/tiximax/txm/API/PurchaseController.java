@@ -84,7 +84,7 @@ public class PurchaseController {
     }
     
    @GetMapping("/all-purchase/{page}/{size}")
-public ResponseEntity<Page<Purchases>> getFilteredPurchases(
+public ResponseEntity<Page<PurchasePendingShipment>> getFilteredPurchases(
         @PathVariable int page,
         @PathVariable int size,
         @RequestParam(required = false) PurchaseFilter status,
@@ -94,7 +94,7 @@ public ResponseEntity<Page<Purchases>> getFilteredPurchases(
 ) {
     Pageable pageable = PageRequest.of(page, size);
 
-    Page<Purchases> result =
+    Page<PurchasePendingShipment> result =
             purchaseService.getPurchasesWithFilteredOrderLinks(
                     status,
                     orderCode,
@@ -102,10 +102,8 @@ public ResponseEntity<Page<Purchases>> getFilteredPurchases(
                     shipmentCode,
                     pageable
             );
-
     return ResponseEntity.ok(result);
 }
-
 
 @GetMapping("/lack-shipment-code/{page}/{size}")
 public ResponseEntity<Page<PurchasePendingShipment>> getPendingShipmentFullPurchases(
