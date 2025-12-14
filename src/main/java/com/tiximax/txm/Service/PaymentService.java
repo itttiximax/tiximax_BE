@@ -168,15 +168,6 @@ public class PaymentService {
             throw new RuntimeException("Một hoặc nhiều đơn hàng chưa được cân, vui lòng kiểm tra lại!");
         }
 
-//      BigDecimal totalWeight = ordersList.stream()
-//        .flatMap(order -> order.getWarehouses().stream())
-//        .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
-//        .map(Warehouse::getNetWeight)
-//        .map(BigDecimal::valueOf)
-//        .reduce(BigDecimal.ZERO, BigDecimal::add)
-//        .setScale(1, RoundingMode.HALF_UP);
-
-
         BigDecimal rawTotalWeight = ordersList.stream()
                 .flatMap(order -> order.getWarehouses().stream())
                 .filter(warehouse -> warehouse != null && warehouse.getNetWeight() != null)
