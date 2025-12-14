@@ -1215,15 +1215,12 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     return new PageImpl<>(result, pageable, ordersPage.getTotalElements());
 }
 
-
-
-
-
     public InfoShipmentCode inforShipmentCode(String shipmentCode) {
         List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
         InfoShipmentCode infoShipmentCode = new InfoShipmentCode();
         if (!orderLinks.isEmpty()){
             infoShipmentCode.setOrders(orderLinks.get(0).getOrders());
+            infoShipmentCode.setPrice(orderLinks.get(0).getPurchase().getFinalPriceOrder());
             infoShipmentCode.setDestinationName(infoShipmentCode.getOrders().getDestination().getDestinationName());
         } else {
             throw new IllegalStateException("Không tìm thấy mã vận đơn này, vui lòng thử lại!");
