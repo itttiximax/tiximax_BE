@@ -578,50 +578,76 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         return detail;
     }
 
-    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(Pageable pageable, OrderType orderType) {
-        Account currentAccount = accountUtils.getAccountCurrent();
+    public Page<OrderWithLinks> getOrdersWithLinksForPurchaser(
+        Pageable pageable,
+        OrderType orderType,
+        String orderCode,
+        String customerCode
+) {
+    Account currentAccount = accountUtils.getAccountCurrent();
 
-        if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
-            throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
-        }
-
-        List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
-        Set<Long> routeIds = accountRoutes.stream()
-                .map(AccountRoute::getRoute)
-                .map(Route::getRouteId)
-                .collect(Collectors.toSet());
-
-        if (routeIds.isEmpty()) {
-            return Page.empty(pageable);
-        }
-
-        Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
-                .and(Sort.by(Sort.Order.desc("createdAt")));
-
-        Pageable customPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-
-        Page<Orders> ordersPage = ordersRepository.findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(routeIds, OrderStatus.CHO_MUA, orderType, customPageable);
-
-        return ordersPage.map(orders -> {
-            OrderWithLinks orderWithLinks = new OrderWithLinks(orders);
-
-            List<OrderLinks> sortedLinks = new ArrayList<>(orders.getOrderLinks());
-            sortedLinks.sort(Comparator.comparing(
-                    (OrderLinks link) -> {
-                        if (link.getStatus() == OrderLinkStatus.CHO_MUA) return 0;
-                        if (link.getStatus() == OrderLinkStatus.DA_MUA) return 1;
-                        return 2;
-                    }
-            ).thenComparing(
-                    OrderLinks::getGroupTag,
-                    Comparator.nullsLast(Comparator.naturalOrder())
-            ));
-
-            orderWithLinks.setOrderLinks(sortedLinks);
-            orderWithLinks.setPinnedAt(orders.getPinnedAt());
-            return orderWithLinks;
-        });
+    if (!currentAccount.getRole().equals(AccountRoles.STAFF_PURCHASER)) {
+        throw new IllegalStateException("Chỉ nhân viên mua hàng mới có quyền truy cập!");
     }
+
+    List<AccountRoute> accountRoutes =
+            accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
+
+    Set<Long> routeIds = accountRoutes.stream()
+            .map(AccountRoute::getRoute)
+            .map(Route::getRouteId)
+            .collect(Collectors.toSet());
+
+    if (routeIds.isEmpty()) {
+        return Page.empty(pageable);
+    }
+
+    // ✅ Chuẩn hoá input: chuỗi rỗng → null
+    if (orderCode != null && orderCode.trim().isEmpty()) {
+        orderCode = null;
+    }
+    if (customerCode != null && customerCode.trim().isEmpty()) {
+        customerCode = null;
+    }
+
+    Sort sort = Sort.by(Sort.Order.desc("pinnedAt").nullsLast())
+            .and(Sort.by(Sort.Order.desc("createdAt")));
+
+    Pageable customPageable =
+            PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+
+    Page<Orders> ordersPage =
+            ordersRepository.findByRouteAndStatusAndTypeWithSearch(
+                    routeIds,
+                    OrderStatus.CHO_MUA,
+                    orderType,
+                    orderCode,
+                    customerCode,
+                    customPageable
+            );
+
+    return ordersPage.map(orders -> {
+        OrderWithLinks dto = new OrderWithLinks(orders);
+
+        List<OrderLinks> sortedLinks = new ArrayList<>(orders.getOrderLinks());
+        sortedLinks.sort(
+                Comparator.comparing((OrderLinks link) -> {
+                    if (link.getStatus() == OrderLinkStatus.CHO_MUA) return 0;
+                    if (link.getStatus() == OrderLinkStatus.DA_MUA) return 1;
+                    return 2;
+                }).thenComparing(
+                        OrderLinks::getGroupTag,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                )
+        );
+
+        dto.setOrderLinks(sortedLinks);
+        dto.setPinnedAt(orders.getPinnedAt());
+        return dto;
+    });
+}
+
+
 
     public OrderLinkWithStaff getOrderLinkById(Long orderLinkId) {
 //        OrderLinks orderLink = orderLinksRepository.findById(orderLinkId)

@@ -83,26 +83,50 @@ public class PurchaseController {
         return ResponseEntity.ok(result);
     }
     
-    @GetMapping("/all-purchase/{page}/{size}")
-    public ResponseEntity<Page<PurchasePendingShipment>> getFullPurchases(
-            @PathVariable int page,
-            @PathVariable int size,
-            @RequestParam(required = false) PurchaseFilter filter) {
+   @GetMapping("/all-purchase/{page}/{size}")
+public ResponseEntity<Page<PurchasePendingShipment>> getFilteredPurchases(
+        @PathVariable int page,
+        @PathVariable int size,
+        @RequestParam(required = false) PurchaseFilter status,
+        @RequestParam(required = false) String orderCode,
+        @RequestParam(required = false) String customerCode,
+        @RequestParam(required = false) String shipmentCode
+) {
+    Pageable pageable = PageRequest.of(page, size);
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PurchasePendingShipment> result = purchaseService.getALLFullPurchases(filter,pageable);
-        return ResponseEntity.ok(result);
-    }
+    Page<PurchasePendingShipment> result =
+            purchaseService.getPurchasesWithFilteredOrderLinks(
+                    status,
+                    orderCode,
+                    customerCode,
+                    shipmentCode,
+                    pageable
+            );
+    return ResponseEntity.ok(result);
+}
 
-    @GetMapping("/lack-shipment-code/{page}/{size}")
-    public ResponseEntity<Page<PurchasePendingShipment>> getPendingShipmentFullPurchases(
-            @PathVariable int page,
-            @PathVariable int size,
-            @RequestParam(required = false) PurchaseFilter status) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PurchasePendingShipment> result = purchaseService.getFullPurchases(status,pageable);
-        return ResponseEntity.ok(result);
-    }
+@GetMapping("/lack-shipment-code/{page}/{size}")
+public ResponseEntity<Page<PurchasePendingShipment>> getPendingShipmentFullPurchases(
+        @PathVariable int page,
+        @PathVariable int size,
+        @RequestParam(required = false) PurchaseFilter status,
+        @RequestParam(required = false) String orderCode,
+        @RequestParam(required = false) String customerCode
+) {
+    Pageable pageable = PageRequest.of(page, size);
+
+    Page<PurchasePendingShipment> result =
+            purchaseService.getFullPurchases(
+                    status,
+                    orderCode,
+                    customerCode,
+                    pageable
+            );
+
+    return ResponseEntity.ok(result);
+}
+
+
 
     @PatchMapping("/{purchaseId}")
     public ResponseEntity<Purchases> updatePurchase(

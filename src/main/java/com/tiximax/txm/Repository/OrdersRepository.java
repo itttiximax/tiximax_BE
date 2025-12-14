@@ -9,6 +9,7 @@ import com.tiximax.txm.Model.EnumFilter.ShipStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -83,18 +84,31 @@ List<Orders> findByCustomerCustomerCodeAndStatusIn(String customerCode, List<Ord
     Page<Orders> findByStatusWithWarehousesAndLinks(@Param("status") OrderStatus status, Pageable pageable);
 
     Page<Orders> findByStatusInAndWarehouses_Location_LocationId(List<OrderStatus> statuses, Long locationId, Pageable pageable);
-
-     @Query("SELECT DISTINCT o FROM Orders o " +
-           "LEFT JOIN FETCH o.orderLinks " + 
-           "WHERE o.route.routeId IN :routeIds " +
-           "AND o.status = :status " +
-           "AND o.orderType = :orderType")
-    Page<Orders> findByRouteRouteIdInAndStatusAndOrderTypeWithLinks(
+@Query("""
+    SELECT DISTINCT o
+    FROM Orders o
+    WHERE o.route.routeId IN :routeIds
+      AND o.status = :status
+      AND o.orderType = :orderType
+      AND (
+           :orderCode IS NULL
+           OR LOWER(o.orderCode) LIKE LOWER(CONCAT('%', CAST(:orderCode AS string), '%'))
+      )
+      AND (
+           :customerCode IS NULL
+           OR LOWER(o.customer.customerCode) LIKE LOWER(CONCAT('%', CAST(:customerCode AS string), '%'))
+      )
+""")
+Page<Orders> findByRouteAndStatusAndTypeWithSearch(
         @Param("routeIds") Set<Long> routeIds,
-        @Param("status") OrderStatus status, 
+        @Param("status") OrderStatus status,
         @Param("orderType") OrderType orderType,
+        @Param("orderCode") String orderCode,
+        @Param("customerCode") String customerCode,
         Pageable pageable
-    );
+);
+
+
 
     List<Orders> findByStaff_AccountIdAndRoute_RouteIdInAndCreatedAtBetween(Long accountId, Set<Long> routeIds, LocalDateTime startDate, LocalDateTime endDate);
 

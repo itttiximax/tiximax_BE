@@ -51,111 +51,138 @@ public interface PurchasesRepository extends JpaRepository<Purchases, Long> {
                         SELECT 1
                         FROM order_links ol2
                         WHERE ol2.purchase_id = p.purchase_id
-                        AND (ol2.shipment_code IS NULL OR TRIM(ol2.shipment_code) = '')
-                        AND ol2.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
+                          AND (ol2.shipment_code IS NULL OR TRIM(ol2.shipment_code) = '')
+                          AND ol2.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
                     ) THEN 0
                     ELSE 1
                 END AS sort_value
             FROM purchases p
             JOIN orders o ON o.order_id = p.order_id
+            JOIN customer c ON c.account_id = o.customer_id
             JOIN order_links ol ON ol.purchase_id = p.purchase_id
             WHERE o.route_id IN :routeIds
-            AND (
-                    :status IS NULL 
-                    AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
-                    OR :status IS NOT NULL 
-                    AND ol.status = :status
-                )
-            AND p.is_purchased = true  -- Sử dụng is_purchased thay vì purchased
-            AND NOT EXISTS (
-                SELECT 1 
-                FROM order_links olx
-                WHERE olx.purchase_id = p.purchase_id
-                AND olx.shipment_code IS NOT NULL
-                AND TRIM(olx.shipment_code) <> ''
-            )
-        ) AS t
+              AND (
+                    (:status IS NULL AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG'))
+                    OR (:status IS NOT NULL AND ol.status = :status)
+                  )
+              AND p.is_purchased = true
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM order_links olx
+                    WHERE olx.purchase_id = p.purchase_id
+                      AND olx.shipment_code IS NOT NULL
+                      AND TRIM(olx.shipment_code) <> ''
+              )
+              AND (
+                    :orderCode IS NULL
+                    OR o.order_code ILIKE CONCAT('%', CAST(:orderCode AS TEXT), '%')
+              )
+              AND (
+                    :customerCode IS NULL
+                    OR c.customer_code ILIKE CONCAT('%', CAST(:customerCode AS TEXT), '%')
+              )
+        ) t
         ORDER BY t.sort_value ASC, t.purchase_id DESC
         """,
     countQuery = """
         SELECT COUNT(DISTINCT p.purchase_id)
         FROM purchases p
         JOIN orders o ON o.order_id = p.order_id
+        JOIN customer c ON c.account_id = o.customer_id
         JOIN order_links ol ON ol.purchase_id = p.purchase_id
         WHERE o.route_id IN :routeIds
-        AND (
-                :status IS NULL 
-                AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG')
-                OR :status IS NOT NULL 
-                AND ol.status = :status
-            )
-        AND p.is_purchased = true  -- Cập nhật countQuery để sử dụng is_purchased
-        AND NOT EXISTS (
-            SELECT 1 
-            FROM order_links olx
-            WHERE olx.purchase_id = p.purchase_id
-            AND olx.shipment_code IS NOT NULL
-            AND TRIM(olx.shipment_code) <> ''
-        )
+          AND (
+                (:status IS NULL AND ol.status IN ('DA_MUA', 'DAU_GIA_THANH_CONG'))
+                OR (:status IS NOT NULL AND ol.status = :status)
+              )
+          AND p.is_purchased = true
+          AND NOT EXISTS (
+                SELECT 1
+                FROM order_links olx
+                WHERE olx.purchase_id = p.purchase_id
+                  AND olx.shipment_code IS NOT NULL
+                  AND TRIM(olx.shipment_code) <> ''
+          )
+          AND (
+                :orderCode IS NULL
+                OR o.order_code ILIKE CONCAT('%', CAST(:orderCode AS TEXT), '%')
+          )
+          AND (
+                :customerCode IS NULL
+                OR c.customer_code ILIKE CONCAT('%', CAST(:customerCode AS TEXT), '%')
+          )
         """,
     nativeQuery = true
 )
 Page<Purchases> findPurchasesSortedByPendingShipment(
         @Param("routeIds") Set<Long> routeIds,
         @Param("status") String status,
+        @Param("orderCode") String orderCode,
+        @Param("customerCode") String customerCode,
         Pageable pageable
 );
 
+
  @Query(
     value = """
-        SELECT 
-            p.*,
-            ol.link_id,
-            ol.status AS ol_status,
-            ol.shipment_code AS ol_shipment_code,
-            CASE
-                WHEN EXISTS (
-                    SELECT 1
-                    FROM order_links ol2
-                    WHERE ol2.purchase_id = p.purchase_id
-                      AND (ol2.shipment_code IS NULL OR TRIM(ol2.shipment_code) = '')
-                      AND (
-                            (:status IS NULL AND ol2.status IN ('DA_NHAP_KHO_NN', 'DA_MUA'))
-                            OR (:status IS NOT NULL AND ol2.status = :status)
-                          )
-                ) THEN 0
-                ELSE 1
-            END AS sort_value
+        SELECT DISTINCT p.*
         FROM purchases p
-        JOIN orders o 
-            ON o.order_id = p.order_id
-        JOIN order_links ol 
+        JOIN orders o ON o.order_id = p.order_id
+        JOIN customer c ON c.account_id = o.customer_id
+        JOIN order_links ol
             ON ol.purchase_id = p.purchase_id
            AND (
                 (:status IS NULL AND ol.status IN ('DA_NHAP_KHO_NN', 'DA_MUA', 'DAU_GIA_THANH_CONG'))
                 OR (:status IS NOT NULL AND ol.status = :status)
            )
         WHERE o.route_id IN :routeIds
-        ORDER BY sort_value ASC, p.purchase_id DESC
+          AND (
+                :orderCode IS NULL
+                OR o.order_code ILIKE CONCAT('%', CAST(:orderCode AS TEXT), '%')
+          )
+          AND (
+                :customerCode IS NULL
+                OR c.customer_code ILIKE CONCAT('%', CAST(:customerCode AS TEXT), '%')
+          )
+          AND (
+                :shipmentCode IS NULL
+                OR ol.shipment_code ILIKE CONCAT('%', CAST(:shipmentCode AS TEXT), '%')
+          )
+        ORDER BY p.purchase_id DESC
         """,
     countQuery = """
         SELECT COUNT(DISTINCT p.purchase_id)
         FROM purchases p
-        JOIN orders o 
-            ON o.order_id = p.order_id
-        JOIN order_links ol 
+        JOIN orders o ON o.order_id = p.order_id
+        JOIN customer c ON c.account_id = o.customer_id
+        JOIN order_links ol
             ON ol.purchase_id = p.purchase_id
            AND (
-                (:status IS NULL AND ol.status IN ('DA_NHAP_KHO_NN', 'DA_MUA'))
+                (:status IS NULL AND ol.status IN ('DA_NHAP_KHO_NN', 'DA_MUA', 'DAU_GIA_THANH_CONG'))
                 OR (:status IS NOT NULL AND ol.status = :status)
            )
         WHERE o.route_id IN :routeIds
+          AND (
+                :orderCode IS NULL
+                OR o.order_code ILIKE CONCAT('%', CAST(:orderCode AS TEXT), '%')
+          )
+          AND (
+                :customerCode IS NULL
+                OR c.customer_code ILIKE CONCAT('%', CAST(:customerCode AS TEXT), '%')
+          )
+          AND (
+                :shipmentCode IS NULL
+                OR ol.shipment_code ILIKE CONCAT('%', CAST(:shipmentCode AS TEXT), '%')
+          )
         """,
     nativeQuery = true
 )
 Page<Purchases> findPurchasesWithFilteredOrderLinks(
         @Param("routeIds") Set<Long> routeIds,
         @Param("status") String status,
+        @Param("orderCode") String orderCode,
+        @Param("customerCode") String customerCode,
+        @Param("shipmentCode") String shipmentCode,
         Pageable pageable
 );
 

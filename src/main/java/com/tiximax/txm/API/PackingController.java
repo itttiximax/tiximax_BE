@@ -3,6 +3,7 @@ package com.tiximax.txm.API;
 import com.tiximax.txm.Entity.Packing;
 import com.tiximax.txm.Entity.Warehouse;
 import com.tiximax.txm.Model.AssignFlightRequest;
+import com.tiximax.txm.Model.PackingCheckResponse;
 import com.tiximax.txm.Model.PackingEligibleOrder;
 import com.tiximax.txm.Model.PackingExport;
 import com.tiximax.txm.Model.PackingInWarehouse;
@@ -98,6 +99,14 @@ public class PackingController {
         List<String> packingList = packingService.getPackingListByCode(packingCode);
         return ResponseEntity.ok(packingList);
     }
+
+   @PostMapping("/check")
+public ResponseEntity<PackingCheckResponse> checkPacking(
+        @RequestBody List<String> shipmentCodes) {
+    PackingCheckResponse result =
+            packingService.checkCreatePacking(shipmentCodes);
+    return ResponseEntity.ok(result);
+}
 
     @GetMapping("/export")
     public List<PackingExport> exportChoBay(
