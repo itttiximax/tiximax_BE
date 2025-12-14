@@ -90,6 +90,7 @@ public class DomesticService {
 
     List<String> shipmentCodes = packings.stream()
             .flatMap(p -> p.getPackingList().stream())
+            .filter(code -> code != null && !code.trim().isEmpty())
             .distinct()
             .collect(Collectors.toList());
 

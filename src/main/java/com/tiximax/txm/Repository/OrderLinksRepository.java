@@ -29,7 +29,14 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
     @Query("SELECT ol FROM OrderLinks ol LEFT JOIN FETCH ol.orders WHERE ol.shipmentCode = :shipmentCode")
     List<OrderLinks> findByShipmentCode(@Param("shipmentCode") String shipmentCode);
 
-    List<OrderLinks> findByShipmentCodeIn(List<String> shipmentCodes);
+    @Query("""
+    SELECT ol
+    FROM OrderLinks ol
+    WHERE ol.shipmentCode IN :shipmentCodes
+      AND ol.shipmentCode IS NOT NULL
+      AND TRIM(ol.shipmentCode) <> ''
+""")
+    List<OrderLinks> findByShipmentCodeIn( @Param("shipmentCodes") List<String> shipmentCodes);
 
         @Query("""
         SELECT ol
@@ -84,6 +91,13 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
             @Param("end") LocalDateTime end);
 
     // Trong OrderLinksRepository
-    Set<OrderLinks> findByShipmentCodeIn(Collection<String> shipmentCodes);
+    @Query("""
+    SELECT DISTINCT ol
+    FROM OrderLinks ol
+    WHERE ol.shipmentCode IN :shipmentCodes
+      AND ol.shipmentCode IS NOT NULL
+      AND TRIM(ol.shipmentCode) <> ''
+""")
+    Set<OrderLinks> findByShipmentCodeIn( @Param("shipmentCodes") Collection<String> shipmentCodes);
 
 }
