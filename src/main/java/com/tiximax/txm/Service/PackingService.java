@@ -53,7 +53,7 @@ public class PackingService {
     public Page<PackingEligibleOrder> getEligibleOrdersForPacking(Pageable pageable) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff == null || staff.getWarehouseLocation() == null) {
-            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+            throw new IllegalArgumentException("The current employee has not been assigned a warehouse location!");
         }
         List<OrderStatus> statuses = Arrays.asList(OrderStatus.CHO_DONG_GOI, OrderStatus.DANG_XU_LY);
         Page<Orders> ordersPage = ordersRepository.findByStatusInAndWarehouses_Location_LocationId(
@@ -91,7 +91,7 @@ public class PackingService {
     public Packing createPacking(PackingRequest request) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff.getWarehouseLocation() == null) {
-            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+            throw new IllegalArgumentException("The current employee has not been assigned a warehouse location!");
         }
 
           PackingCheckResponse check =
@@ -99,26 +99,22 @@ public class PackingService {
             validateBeforeCreatePacking(check);
 
         List<String> shipmentCodes = request.getShipmentCodes().stream()
+                .filter(s -> s != null && !s.trim().isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
         if (shipmentCodes.isEmpty()) {
-            throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
+            throw new IllegalArgumentException("The tracking code list cannot be empty!");
         }
 
-//        List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeIn(shipmentCodes);
         List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeInWithOrdersAndLinks(shipmentCodes);
         if (warehouses.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy mã vận đơn bạn cung cấp!");
+            throw new IllegalArgumentException("The tracking code you provided was not found!");
         }
         for (Warehouse warehouse : warehouses) {
             if (warehouse.getPacking() != null) {
-                throw new IllegalArgumentException("Warehouse với mã vận đơn " + warehouse.getTrackingCode() + " đã có packingId, không thể tiếp tục.");
+                throw new IllegalArgumentException("Warehouse with tracking code " + warehouse.getTrackingCode() + " already has packing, cannot continue!");
             }
         }
-
-//        Set<Orders> orders = warehouses.stream()
-//                .map(Warehouse::getOrders)
-//                .collect(Collectors.toSet());
 
         Set<Orders> orders = warehouses.stream()
                 .map(Warehouse::getOrders)
@@ -126,51 +122,36 @@ public class PackingService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         if (orders.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy đơn hàng nào liên quan đến các mã vận đơn bạn cung cấp!");
+            throw new IllegalArgumentException("No orders found related to the tracking codes you provided!");
         }
 
         for (Orders order : orders) {
             if (!(order.getStatus().equals(OrderStatus.CHO_DONG_GOI) || order.getStatus().equals(OrderStatus.DANG_XU_LY))) {
-                throw new IllegalArgumentException("Đơn hàng " + order.getOrderCode() + " chưa đủ điều kiện để đóng gói!");
+                throw new IllegalArgumentException("Order " + order.getOrderCode() + " is not eligible for packaging!");
             }
         }
 
         Destination destination = destinationRepository.findById(request.getDestinationId())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy điểm đến này!"));
+                .orElseThrow(() -> new IllegalArgumentException("This destination was not found!"));
         for (Warehouse warehouse : warehouses) {
             if (!warehouse.getOrders().getDestination().getDestinationId().equals(destination.getDestinationId())) {
-                throw new IllegalArgumentException("Mã vận đơn " + warehouse.getTrackingCode() + " không cùng điểm đến!");
+                throw new IllegalArgumentException("The tracking code " + warehouse.getTrackingCode() + " does not have the same destination!");
             }
         }
-
-//        for (Warehouse warehouse : warehouses) {
-//            if (!warehouse.getOrders().getDestination().getDestinationId().equals(destination.getDestinationId())) {
-//                throw new IllegalArgumentException("Các mã vận đơn phải có cùng điểm đến!");
-//            }
-//            for (OrderLinks orderLink : warehouse.getOrderLinks()) {
-//                orderLink.setStatus(OrderLinkStatus.DA_DONG_GOI);
-//            }
-//        }
 
         Set<String> packingListSet = new HashSet<>();
         for (Warehouse warehouse : warehouses) {
             for (OrderLinks orderLink : warehouse.getOrderLinks()) {
-                orderLink.setStatus(OrderLinkStatus.DA_DONG_GOI);
-                packingListSet.add(orderLink.getShipmentCode());
+                if (!orderLink.getShipmentCode().isEmpty()){
+                    orderLink.setStatus(OrderLinkStatus.DA_DONG_GOI);
+                    packingListSet.add(orderLink.getShipmentCode());
+                }
             }
         }
 
-//        List<String> packingList = orders.stream()
-//                .filter(Objects::nonNull)
-//                .flatMap(order -> order.getOrderLinks().stream())
-//                .filter(Objects::nonNull)
-//                .map(OrderLinks::getShipmentCode)
-//                .distinct()
-//                .collect(Collectors.toList());
-
         List<String> packingList = new ArrayList<>(packingListSet);
         if (packingList.isEmpty()) {
-            throw new IllegalArgumentException("Không có mã vận đơn nào để tạo packing list!");
+            throw new IllegalArgumentException("There is no tracking code to create packing list!");
         }
 
         Packing packing = new Packing();
@@ -184,24 +165,12 @@ public class PackingService {
 
         packing = packingRepository.save(packing);
 
-//        Set<Warehouse> packingWarehouses = new HashSet<>(warehouses);
-//        packing.setWarehouses(packingWarehouses);
-
         packing.setWarehouses(new HashSet<>(warehouses));
-
-//        for (Warehouse warehouse : warehouses) {
-//            warehouse.setPacking(packing);
-//            warehouseRepository.save(warehouse);
-//        }
 
         for (Warehouse w : warehouses) {
             w.setPacking(packing);
         }
         warehouseRepository.saveAll(warehouses);
-
-//        for (Orders order : orders) {
-//            order.setStatus(OrderStatus.DANG_XU_LY);
-//        }
 
         orders.forEach(order -> order.setStatus(OrderStatus.DANG_XU_LY));
         ordersRepository.saveAll(new ArrayList<>(orders));
@@ -319,7 +288,7 @@ public class PackingService {
     public Page<PackingInWarehouse> getPackingsInWarehouse(Pageable pageable) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff == null || staff.getWarehouseLocation() == null) {
-            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+            throw new IllegalArgumentException("The current employee has not been assigned a warehouse location!");
         }
 
         Page<Packing> packingsPage = packingRepository.findByFlightCodeIsNullAndWarehouses_Location_LocationId(staff.getWarehouseLocation().getLocationId(), pageable);
@@ -347,7 +316,7 @@ public class PackingService {
     public Page<Packing> getPackingsAwaitingFlight(Pageable pageable) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff == null || staff.getWarehouseLocation() == null) {
-            throw new IllegalArgumentException("Nhân viên hiện tại chưa được gán địa điểm kho!");
+            throw new IllegalArgumentException("The current employee has not been assigned a warehouse location!");
         }
         return packingRepository.findByFlightCodeIsNullAndWarehouses_Location_LocationId(staff.getWarehouseLocation().getLocationId(), pageable);
     }
@@ -360,7 +329,7 @@ public class PackingService {
                 .collect(Collectors.toList());
 
         if (packings.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy packing nào phù hợp hoặc đã được gán chuyến bay!");
+            throw new IllegalArgumentException("No suitable packages were found or flights have been assigned!");
         }
 
         for (Packing packing : packings) {
@@ -437,17 +406,17 @@ public class PackingService {
 
     public Packing removeShipmentFromPacking(String packingCode, List<String> shipmentCodesToRemove) {
         Packing packing = packingRepository.findByPackingCode(packingCode)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy " + packingCode));
+                .orElseThrow(() -> new IllegalArgumentException("Not found " + packingCode));
 
         if (packing.getStatus() == PackingStatus.DA_BAY) {
-            throw new IllegalArgumentException("Không thể gỡ hàng khỏi packing đã bay!");
+            throw new IllegalArgumentException("Items cannot be removed from packaging that has been shipped!");
         }
 
         List<Warehouse> warehousesToRemove = warehouseRepository.findByPackingPackingIdAndTrackingCodeIn(
                 packing.getPackingId(), shipmentCodesToRemove);
 
         if (warehousesToRemove.isEmpty()) {
-            throw new IllegalArgumentException("Không tìm thấy mã vận đơn nào để gỡ!");
+            throw new IllegalArgumentException("No tracking code found to remove!");
         }
 
         List<String> currentPackingList = new ArrayList<>(packing.getPackingList());
@@ -494,7 +463,7 @@ public class PackingService {
     public List<String> getPackingListByCode(String packingCode) {
         List<String> list = packingRepository.findPackingListByCode(packingCode);
         if (list == null || list.isEmpty()) {
-            throw new RuntimeException("Không tìm thấy packingList cho mã: " + packingCode);
+            throw new RuntimeException("Packing List not found for code:" + packingCode);
         }
         return list;
     }
@@ -596,7 +565,7 @@ public class PackingService {
 
     public List<Warehouse> getWarehousesByPackingId(Long packingId) {
         Packing packing = packingRepository.findById(packingId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy packing này!"));
+                .orElseThrow(() -> new IllegalArgumentException("Not found this packing list!"));
         return new ArrayList<>(packing.getWarehouses());
     }
     private void validateBeforeCreatePacking(PackingCheckResponse check) {
