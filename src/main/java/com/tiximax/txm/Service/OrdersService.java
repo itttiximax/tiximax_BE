@@ -31,6 +31,14 @@ import java.util.stream.Collectors;
 
 public class OrdersService {
 
+    private static final List<OrderLinkStatus> DEFAULT_SHIP_STATUSES = List.of(
+            OrderLinkStatus.DA_NHAP_KHO_VN,
+            OrderLinkStatus.CHO_GIAO,
+            OrderLinkStatus.CHO_TRUNG_CHUYEN,
+            OrderLinkStatus.DANG_GIAO,
+            OrderLinkStatus.DA_GIAO
+    );
+
     @Autowired
     private AuthenticationRepository authenticationRepository;
 
@@ -811,16 +819,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 .map(order -> {
                     OrderPayment orderPayment = new OrderPayment(order);
 
-//                    BigDecimal totalNetWeight = order.getWarehouses() != null
-//                     ? order.getWarehouses().stream()
-//                    .map(Warehouse::getNetWeight)
-//                    .filter(Objects::nonNull)
-//                    .map(BigDecimal::valueOf)
-//                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-//                    .setScale(1, RoundingMode.HALF_UP)
-//                    : BigDecimal.ZERO.setScale(1);
-//                        orderPayment.setTotalNetWeight(totalNetWeight);
-
                     BigDecimal rawTotalWeight = order.getWarehouses() != null && !order.getWarehouses().isEmpty()
                             ? order.getWarehouses().stream()
                             .map(Warehouse::getNetWeight)
@@ -844,7 +842,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                         totalWeight = rawTotalWeight.setScale(1, RoundingMode.HALF_UP);
                     }
 
-                    orderPayment.setTotalNetWeight(totalWeight);
+                    orderPayment.setTotalNetWeight(rawTotalWeight);
 
                     BigDecimal unitPrice = order.getPriceShip();
                     BigDecimal finalPriceOrder = totalWeight.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
@@ -1217,15 +1215,12 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     return new PageImpl<>(result, pageable, ordersPage.getTotalElements());
 }
 
-
-
-
-
     public InfoShipmentCode inforShipmentCode(String shipmentCode) {
         List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCode(shipmentCode);
         InfoShipmentCode infoShipmentCode = new InfoShipmentCode();
         if (!orderLinks.isEmpty()){
             infoShipmentCode.setOrders(orderLinks.get(0).getOrders());
+            infoShipmentCode.setPrice(orderLinks.get(0).getPurchase().getFinalPriceOrder());
             infoShipmentCode.setDestinationName(infoShipmentCode.getOrders().getDestination().getDestinationName());
         } else {
             throw new IllegalStateException("Không tìm thấy mã vận đơn này, vui lòng thử lại!");
@@ -1313,16 +1308,10 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         }
         return ordersRepository.saveAll(updatedOrders);
     }
-            private static final List<OrderLinkStatus> DEFAULT_SHIP_STATUSES = List.of(
-                OrderLinkStatus.DA_NHAP_KHO_VN,
-                OrderLinkStatus.CHO_GIAO,
-                OrderLinkStatus.CHO_TRUNG_CHUYEN,
-                OrderLinkStatus.DANG_GIAO,
-                OrderLinkStatus.DA_GIAO
-        );
+
     private OrderLinkStatus convert(ShipStatus s) {
-    return OrderLinkStatus.valueOf(s.name());
-}
+        return OrderLinkStatus.valueOf(s.name());
+    }
 
 
 
