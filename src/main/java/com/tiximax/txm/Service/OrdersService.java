@@ -1220,7 +1220,7 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         InfoShipmentCode infoShipmentCode = new InfoShipmentCode();
         if (!orderLinks.isEmpty()){
             infoShipmentCode.setOrders(orderLinks.get(0).getOrders());
-            infoShipmentCode.setPrice(orderLinks.get(0).getPurchase().getFinalPriceOrder());
+            infoShipmentCode.setPrice(orderLinks.get(0).getPurchase() != null ? orderLinks.get(0).getPurchase().getFinalPriceOrder() : BigDecimal.ZERO);
             infoShipmentCode.setDestinationName(infoShipmentCode.getOrders().getDestination().getDestinationName());
         } else {
             throw new IllegalStateException("Không tìm thấy mã vận đơn này, vui lòng thử lại!");
