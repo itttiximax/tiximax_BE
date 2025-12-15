@@ -1397,4 +1397,44 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
             return dto;
         });
     }
+
+    @Transactional
+    public void deleteOrder(Long orderId) {
+        Account currentAccount = accountUtils.getAccountCurrent();
+        if (!(currentAccount instanceof Staff staff)) {
+            throw new IllegalStateException("Chỉ nhân viên mới được phép thực hiện thao tác này!");
+        }
+
+        Set<AccountRoles> allowedRoles = Set.of(AccountRoles.ADMIN, AccountRoles.MANAGER, AccountRoles.STAFF_SALE, AccountRoles.LEAD_SALE);
+        if (!allowedRoles.contains(staff.getRole())) {
+            throw new IllegalStateException("Bạn không có quyền xóa đơn hàng!");
+        }
+
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (!order.getStatus().equals(OrderStatus.DA_XAC_NHAN)) {
+            throw new IllegalStateException("Không được xóa đơn hàng ở giai đoạn này!");
+        }
+
+        if (order.getOrderProcessLogs() != null) {
+            processLogRepository.deleteAll(order.getOrderProcessLogs());
+        }
+
+        if (order.getOrderLinks() != null) {
+            orderLinksRepository.deleteAll(order.getOrderLinks());
+        }
+
+        ordersRepository.delete(order);
+
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "DELETE",
+                        "orderCode", order.getOrderCode(),
+                        "customerCode", order.getCustomer().getCustomerCode(),
+                        "message", "Đơn hàng đã bị xóa!"
+                )
+        );
+    }
 }

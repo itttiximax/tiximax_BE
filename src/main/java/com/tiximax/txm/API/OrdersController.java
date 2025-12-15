@@ -341,5 +341,9 @@ public ResponseEntity<Page<ShipLinkForegin>> getOrderLinksForWarehouseForeign(
         return ResponseEntity.ok(result);
     }
 
-
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<Void> deleteOrder(@PathVariable Long orderId) {
+        ordersService.deleteOrder(orderId);
+        return ResponseEntity.noContent().build();
+    }
 }
