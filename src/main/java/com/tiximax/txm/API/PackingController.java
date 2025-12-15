@@ -93,6 +93,15 @@ public class PackingController {
         return ResponseEntity.ok(updatedPacking);
     }
 
+    @PatchMapping("/{packingCode}/add-shipments")
+    public ResponseEntity<Packing> addShipmentsToPacking(
+            @PathVariable String packingCode,
+            @RequestBody List<String> shipmentCodes) {
+
+        Packing updatedPacking = packingService.addShipmentsToPacking(packingCode, shipmentCodes);
+        return ResponseEntity.ok(updatedPacking);
+    }
+
     @GetMapping("/{packingCode}/list")
     public ResponseEntity<List<String>> getPackingList(
             @PathVariable String packingCode) {
@@ -101,9 +110,9 @@ public class PackingController {
     }
 
    @PostMapping("/check")
-public ResponseEntity<PackingCheckResponse> checkPacking(
+    public ResponseEntity<PackingCheckResponse> checkPacking(
         @RequestBody List<String> shipmentCodes) {
-    PackingCheckResponse result =
+        PackingCheckResponse result =
             packingService.checkCreatePacking(shipmentCodes);
     return ResponseEntity.ok(result);
 }

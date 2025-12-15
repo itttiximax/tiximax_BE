@@ -66,4 +66,11 @@ Page<Warehouse> findWarehousesForPacking(
             "LEFT JOIN FETCH w.orderLinks ol " +
             "WHERE w.trackingCode IN :codes")
     List<Warehouse> findByTrackingCodeInWithOrdersAndLinks(@Param("codes") List<String> codes);
+
+    @Query("SELECT w FROM Warehouse w " +
+            "LEFT JOIN FETCH w.orders o " +
+            "LEFT JOIN FETCH w.orderLinks ol " +
+            "WHERE w.trackingCode IN :codes AND w.packing IS NULL")
+    List<Warehouse> findByTrackingCodeInAndPackingIsNullWithOrdersAndLinks(
+            @Param("codes") List<String> codes);
 }
