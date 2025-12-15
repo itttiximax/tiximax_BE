@@ -313,6 +313,7 @@ public class PackingService {
     public Packing getPackingById(Long id) {
     return packingRepository.findById(id).orElse(null);
 }
+
     public Page<Packing> getPackingsAwaitingFlight(Pageable pageable) {
         Staff staff = (Staff) accountUtils.getAccountCurrent();
         if (staff == null || staff.getWarehouseLocation() == null) {

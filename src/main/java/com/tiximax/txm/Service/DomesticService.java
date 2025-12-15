@@ -74,8 +74,6 @@ public class DomesticService {
         }
     }
 
-    
-
     Packing firstPacking = packings.get(0);
     Set<Warehouse> warehouses = firstPacking.getWarehouses();
     if (warehouses.isEmpty()) {
@@ -88,11 +86,16 @@ public class DomesticService {
         throw new IllegalArgumentException("Kho nước ngoài của packing " + firstPacking.getPackingCode() + " không được tìm thấy!");
     }
 
-    List<String> shipmentCodes = packings.stream()
-            .flatMap(p -> p.getPackingList().stream())
-            .filter(code -> code != null && !code.trim().isEmpty())
-            .distinct()
-            .collect(Collectors.toList());
+//    List<String> shipmentCodes = packings.stream()
+//            .flatMap(p -> p.getPackingList().stream())
+//            .distinct()
+//            .collect(Collectors.toList());
+
+        List<String> shipmentCodes = packings.stream()
+                .flatMap(p -> p.getPackingList().stream())
+                .filter(code -> code != null && !code.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
 
     List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCodeIn(shipmentCodes);
     for (OrderLinks orderLink : orderLinks) {

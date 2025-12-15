@@ -21,7 +21,14 @@ public interface PackingRepository extends JpaRepository<Packing, Long> {
 
     Page<Packing> findByFlightCodeIsNull(Pageable pageable);
 
-    Page<Packing> findByFlightCodeIsNullAndWarehouses_Location_LocationId(Long warehouseLocationId, Pageable pageable);
+//    Page<Packing> findByFlightCodeIsNullAndWarehouses_Location_LocationId(Long warehouseLocationId, Pageable pageable);
+
+    @Query("SELECT DISTINCT p FROM Packing p " +
+            "JOIN p.warehouses w " +
+            "WHERE p.flightCode IS NULL " +
+            "AND w.location.locationId = :locationId")
+    Page<Packing> findByFlightCodeIsNullAndWarehouses_Location_LocationId(
+            @Param("locationId") Long locationId, Pageable pageable);
 
     @Query("SELECT p FROM Packing p JOIN p.warehouses w WHERE p.status = :status AND w.location.locationId = :warehouseLocationId")
     Page<Packing> findByStatusAndWarehouses_Location_LocationId(
