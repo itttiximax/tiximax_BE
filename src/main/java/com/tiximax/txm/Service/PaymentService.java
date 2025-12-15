@@ -230,9 +230,18 @@ public class PaymentService {
 
         BigDecimal collect = totalAmount.add(totalDebt).add(priceShipDos).setScale(0, RoundingMode.HALF_UP);
 
+        BigDecimal qrAmount = collect;
+        BigDecimal balance = (commonCustomer.getBalance() != null) ? commonCustomer.getBalance() : BigDecimal.ZERO;
+        BigDecimal usedBalance = BigDecimal.ZERO;
+        if (isUseBalance && balance.compareTo(BigDecimal.ZERO) > 0) {
+            usedBalance = balance.min(collect);
+            commonCustomer.setBalance(balance.subtract(usedBalance));
+            qrAmount = collect.subtract(usedBalance).max(BigDecimal.ZERO);
+        }
+
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
-        payment.setContent(String.join(", ", orderCodes) + " + " + priceShipDos + " ship");
+        payment.setContent(String.join(", ", orderCodes) + " + " + priceShipDos + " ship" + " - " + usedBalance + " số dư");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
         payment.setStatus(PaymentStatus.CHO_THANH_TOAN_SHIP);
@@ -242,15 +251,6 @@ public class PaymentService {
         payment.setIsMergedPayment(true);
         payment.setRelatedOrders(new HashSet<>(ordersList));
         payment.setOrders(null);
-
-        BigDecimal qrAmount = collect;
-        BigDecimal balance = (commonCustomer.getBalance() != null) ? commonCustomer.getBalance() : BigDecimal.ZERO;
-        BigDecimal usedBalance = BigDecimal.ZERO;
-        if (isUseBalance && balance.compareTo(BigDecimal.ZERO) > 0) {
-            usedBalance = balance.min(collect);
-            commonCustomer.setBalance(balance.subtract(usedBalance));
-            qrAmount = collect.subtract(usedBalance).max(BigDecimal.ZERO);
-        }
 
         payment.setCollectedAmount(qrAmount);
 
@@ -438,9 +438,18 @@ public class PaymentService {
             totalCollect = totalCollect.add(orderCollect);
         }
 
+        BigDecimal qrAmount = totalCollect;
+        BigDecimal balance = (commonCustomer.getBalance() != null) ? commonCustomer.getBalance() : BigDecimal.ZERO;
+        BigDecimal usedBalance = BigDecimal.ZERO;
+        if (isUseBalance && balance.compareTo(BigDecimal.ZERO) > 0) {
+            usedBalance = balance.min(totalCollect);
+            commonCustomer.setBalance(balance.subtract(usedBalance));
+            qrAmount = totalCollect.subtract(usedBalance);
+        }
+
         Payment payment = new Payment();
         payment.setPaymentCode(generateMergedPaymentCode());
-        payment.setContent(String.join(" ", orderCodes));
+        payment.setContent(String.join(" ", orderCodes) + " - " + usedBalance + " số dư");
         payment.setPaymentType(PaymentType.MA_QR);
         payment.setAmount(totalAmount);
         payment.setCollectedAmount(totalCollect);
@@ -451,14 +460,6 @@ public class PaymentService {
         payment.setStaff((Staff) accountUtils.getAccountCurrent());
         payment.setIsMergedPayment(true);
         payment.setRelatedOrders(new HashSet<>(ordersList));
-
-        BigDecimal qrAmount = totalCollect;
-        BigDecimal balance = (commonCustomer.getBalance() != null) ? commonCustomer.getBalance() : BigDecimal.ZERO;
-        if (isUseBalance && balance.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal usedBalance = balance.min(totalCollect);
-            commonCustomer.setBalance(balance.subtract(usedBalance));
-            qrAmount = totalCollect.subtract(usedBalance);
-        }
 
         payment.setCollectedAmount(qrAmount);
 
@@ -666,7 +667,7 @@ public class PaymentService {
         return CompletableFuture.completedFuture(null);
     }
 
-    @Scheduled(fixedRate = 600000) // 10 phút/lần
+    @Scheduled(fixedRate = 600000)
     @Transactional(readOnly = true)
     public void scheduledAutoSmsProcess() {
         try {
