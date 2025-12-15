@@ -105,7 +105,6 @@ public class PackingService {
             throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
         }
 
-//        List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeIn(shipmentCodes);
         List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeInWithOrdersAndLinks(filteredCodes);
         if (warehouses.isEmpty()) {
             throw new IllegalArgumentException("The tracking code you provided was not found!");
@@ -612,4 +611,106 @@ public void assignFlightCode(List<Long> packingIds, String flightCode) {
         throw new IllegalArgumentException(check.getMessage());
     }
 }
+
+    @Transactional
+    public Packing addShipmentsToPacking(String packingCode, List<String> shipmentCodes) {
+        if (shipmentCodes == null || shipmentCodes.isEmpty()) {
+            throw new IllegalArgumentException("The list of added waybill codes cannot be empty!");
+        }
+
+        Packing packing = packingRepository.findByPackingCode(packingCode)
+                .orElseThrow(() -> new IllegalArgumentException("Packing not found with code: " + packingCode));
+
+        if (packing.getStatus() == PackingStatus.DA_BAY ||
+                packing.getStatus() == PackingStatus.DA_NHAP_KHO_VN) {
+            throw new IllegalArgumentException("Cannot add packages to packing that have already been flown or imported into Vietnam warehouse!");
+        }
+
+        List<String> filteredCodes = shipmentCodes.stream()
+                .filter(code -> code != null && !code.trim().isEmpty())
+                .map(String::trim)
+                .toList();
+
+        if (filteredCodes.isEmpty()) {
+            throw new IllegalArgumentException("No valid tracking code to add!");
+        }
+
+        List<Warehouse> warehousesToAdd = warehouseRepository
+                .findByTrackingCodeInAndPackingIsNullWithOrdersAndLinks(filteredCodes);
+
+        if (warehousesToAdd.size() != filteredCodes.size()) {
+            Set<String> foundCodes = warehousesToAdd.stream()
+                    .map(Warehouse::getTrackingCode)
+                    .collect(Collectors.toSet());
+
+            List<String> missingOrPacked = filteredCodes.stream()
+                    .filter(code -> !foundCodes.contains(code))
+                    .toList();
+
+            throw new IllegalArgumentException(
+                    "The following tracking codes do not exist or have been packed:" + missingOrPacked);
+        }
+
+        Destination packingDestination = packing.getDestination();
+
+        Set<Orders> affectedOrders = new HashSet<>();
+        Set<String> newShipmentCodes = new HashSet<>();
+
+        for (Warehouse warehouse : warehousesToAdd) {
+            Orders order = warehouse.getOrders();
+            if (!order.getDestination().getDestinationId().equals(packingDestination.getDestinationId())) {
+                throw new IllegalArgumentException(
+                        "The tracking code " + warehouse.getTrackingCode() +
+                                " has a different destination than the current packing!");
+            }
+
+            if (!(order.getStatus() == OrderStatus.CHO_DONG_GOI ||
+                    order.getStatus() == OrderStatus.DANG_XU_LY)) {
+                throw new IllegalArgumentException(
+                        "The order " + order.getOrderCode() + " not in a suitable state for packaging!");
+            }
+
+            warehouse.setPacking(packing);
+
+            for (OrderLinks link : warehouse.getOrderLinks()) {
+                if (link.getShipmentCode() != null && !link.getShipmentCode().trim().isEmpty()) {
+                    link.setStatus(OrderLinkStatus.DA_DONG_GOI);
+                    newShipmentCodes.add(link.getShipmentCode());
+                }
+            }
+
+            affectedOrders.add(order);
+            warehouseRepository.save(warehouse);
+        }
+
+        List<String> currentList = new ArrayList<>(packing.getPackingList());
+        currentList.addAll(newShipmentCodes);
+        packing.setPackingList(currentList);
+
+        Set<Warehouse> warehouses = packing.getWarehouses();
+        if (warehouses == null) {
+            warehouses = new HashSet<>();
+            packing.setWarehouses(warehouses);
+        }
+        warehouses.addAll(warehousesToAdd);
+
+        for (Orders order : affectedOrders) {
+            boolean hadPackedBefore = order.getWarehouses().stream()
+                    .anyMatch(w -> w.getPacking() != null && !warehousesToAdd.contains(w));
+
+            if (!hadPackedBefore) {
+                order.setStatus(OrderStatus.DANG_XU_LY);
+                ordersRepository.save(order);
+            }
+        }
+
+        packingRepository.save(packing);
+
+        ordersService.addProcessLog(
+                null,
+                packing.getPackingCode() + " - Thêm " + newShipmentCodes.size() + " mã vận đơn",
+                ProcessLogAction.DA_CHINH_SUA);
+
+        return packing;
+    }
 }
