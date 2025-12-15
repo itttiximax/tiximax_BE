@@ -248,10 +248,10 @@ public ResponseEntity<Page<ShipLinkForegin>> getOrderLinksForWarehouseForeign(
         return ResponseEntity.ok(ordersPage);
     }
 
-    @PutMapping("/refund-confirm/{orderId}/{image}")
+    @PutMapping("/refund-confirm/{orderId}")
     public ResponseEntity<Orders> processNegativeLeftoverMoney(
             @PathVariable Long orderId,
-            @PathVariable(required = false) String image,
+            @RequestParam(required = false) String image,
             @RequestParam boolean refundToCustomer) {
         Orders updatedOrder = ordersService.processNegativeLeftoverMoney(orderId, image, refundToCustomer);
         return ResponseEntity.ok(updatedOrder);
