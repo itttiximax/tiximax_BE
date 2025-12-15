@@ -98,15 +98,15 @@ public class PackingService {
             checkCreatePacking(request.getShipmentCodes());
             validateBeforeCreatePacking(check);
 
-        List<String> shipmentCodes = request.getShipmentCodes().stream()
-                .filter(s -> s != null && !s.trim().isEmpty())
-                .distinct()
-                .collect(Collectors.toList());
-        if (shipmentCodes.isEmpty()) {
-            throw new IllegalArgumentException("The tracking code list cannot be empty!");
+        List<String> filteredCodes = request.getShipmentCodes().stream()
+        .filter(code -> code != null && !code.trim().isEmpty())
+        .toList();
+        if (filteredCodes.isEmpty()) {
+            throw new IllegalArgumentException("Danh sách mã vận đơn không được để trống!");
         }
 
-        List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeInWithOrdersAndLinks(shipmentCodes);
+//        List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeIn(shipmentCodes);
+        List<Warehouse> warehouses = warehouseRepository.findByTrackingCodeInWithOrdersAndLinks(filteredCodes);
         if (warehouses.isEmpty()) {
             throw new IllegalArgumentException("The tracking code you provided was not found!");
         }
@@ -322,32 +322,70 @@ public class PackingService {
         return packingRepository.findByFlightCodeIsNullAndWarehouses_Location_LocationId(staff.getWarehouseLocation().getLocationId(), pageable);
     }
 
-    public void assignFlightCode(List<Long> packingIds, String flightCode) {
-        List<Packing> packings = packingRepository.findAllById(packingIds)
-                .stream()
-                .filter(packing -> packing.getFlightCode() == null)
-                .peek(packing -> packing.setFlightCode(flightCode))
-                .collect(Collectors.toList());
+    @Transactional
+public void assignFlightCode(List<Long> packingIds, String flightCode) {
 
-        if (packings.isEmpty()) {
-            throw new IllegalArgumentException("No suitable packages were found or flights have been assigned!");
-        }
+    List<Packing> packings = packingRepository.findAllById(packingIds)
+            .stream()
+            .filter(p -> p.getFlightCode() == null)
+            .peek(p -> {
+                p.setFlightCode(flightCode);
+                p.setStatus(PackingStatus.DA_BAY);
+            })
+            .toList();
 
-        for (Packing packing : packings) {
-            packing.setStatus(PackingStatus.DA_BAY);
-            packingRepository.save(packing);
-
-            List<String> shipmentCodes = packing.getPackingList();
-            List<OrderLinks> orderLinks = orderLinksRepository.findByShipmentCodeIn(shipmentCodes);
-
-            for (OrderLinks orderLink : orderLinks) {
-                orderLink.setStatus(OrderLinkStatus.DANG_CHUYEN_VN);
-            }
-            orderLinksRepository.saveAll(orderLinks);
-
-            ordersService.addProcessLog(null, packing.getPackingCode(), ProcessLogAction.DA_BAY);
-        }
+    if (packings.isEmpty()) {
+        throw new IllegalArgumentException(
+                "Không tìm thấy packing nào phù hợp hoặc đã được gán chuyến bay!"
+        );
     }
+
+    // 🔹 Collect ALL shipmentCodes (1 lần)
+    Set<String> allShipmentCodes = packings.stream()
+            .flatMap(p -> p.getPackingList().stream())
+            .filter(code -> code != null && !code.trim().isEmpty())
+            .collect(Collectors.toSet());
+
+    
+    Map<String, List<OrderLinks>> orderLinksByShipment =
+            allShipmentCodes.isEmpty()
+                    ? Map.of()
+                    : orderLinksRepository
+                        .findByShipmentCodeIn(new ArrayList<>(allShipmentCodes))
+                        .stream()
+                        .collect(Collectors.groupingBy(OrderLinks::getShipmentCode));
+
+    
+    for (Packing packing : packings) {
+
+        packing.getPackingList().stream()
+                .filter(code -> code != null && !code.trim().isEmpty())
+                .flatMap(code ->
+                        orderLinksByShipment
+                                .getOrDefault(code, List.of())
+                                .stream()
+                )
+                .forEach(ol ->
+                        ol.setStatus(OrderLinkStatus.DANG_CHUYEN_VN)
+                );
+
+        ordersService.addProcessLog(
+                null,
+                packing.getPackingCode(),
+                ProcessLogAction.DA_BAY
+        );
+    }
+
+    // 🔹 Save 1 lần
+    packingRepository.saveAll(packings);
+    orderLinksRepository.saveAll(
+            orderLinksByShipment.values()
+                    .stream()
+                    .flatMap(List::stream)
+                    .toList()
+    );
+}
+
 
     private String generatePackingCode(String location, String destinationName) {
         String monthYear = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMyy"));

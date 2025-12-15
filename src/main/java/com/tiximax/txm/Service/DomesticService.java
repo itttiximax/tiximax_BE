@@ -92,12 +92,8 @@ public class DomesticService {
 //            .collect(Collectors.toList());
 
         List<String> shipmentCodes = packings.stream()
-                .filter(Objects::nonNull)
-                .map(Packing::getPackingList)
-                .filter(Objects::nonNull)
-                .flatMap(List::stream)
-                .map(String::trim)
-                .filter(code -> !code.isEmpty())
+                .flatMap(p -> p.getPackingList().stream())
+                .filter(code -> code != null && !code.trim().isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -156,6 +152,7 @@ public class DomesticService {
         throw new IllegalArgumentException("Không tìm thấy packing nào trong danh sách cung cấp!");
     }
 
+  
     Packing firstPacking = packings.get(0);
     Set<Warehouse> warehouses = firstPacking.getWarehouses();
     if (warehouses.isEmpty()) {
