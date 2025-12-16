@@ -83,13 +83,20 @@ public class OrdersController {
         return ResponseEntity.ok(orderType);
     }
 
-    @GetMapping("/{page}/{size}")
-    public ResponseEntity<Page<Orders>> getAllOrders(@PathVariable int page,@PathVariable int size) {
-        Sort sort = Sort.by("createdAt").descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Orders> ordersPage = ordersService.getAllOrdersPaging(pageable);
-        return ResponseEntity.ok(ordersPage);
-    }
+   @GetMapping("/{page}/{size}")
+public ResponseEntity<Page<Orders>> getAllOrders(
+        @PathVariable int page,
+        @PathVariable int size,
+        @RequestParam(required = false) String shipmentCode,
+        @RequestParam(required = false) String customerCode, 
+        @RequestParam(required = false) String orderCode
+) {
+    Sort sort = Sort.by("createdAt").descending();
+    Pageable pageable = PageRequest.of(page, size, sort);
+    Page<Orders> ordersPage = ordersService.getAllOrdersPaging(pageable, shipmentCode, customerCode, orderCode); // Pass filter params
+    return ResponseEntity.ok(ordersPage);
+}
+
 
     @GetMapping("/{page}/{size}/{status}/paging")
     public ResponseEntity<Page<Orders>> getOrdersPaging(@PathVariable int page, int size, @PathVariable(required = false) OrderStatus status) {

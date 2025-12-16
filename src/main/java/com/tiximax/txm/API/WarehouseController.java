@@ -61,7 +61,6 @@ public class WarehouseController {
     ) {
         Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-
         Page<WarehouseSummary> warehousePage =
                 warehouseService.getWarehousesForPacking(pageable, trackingCode);
 
@@ -99,5 +98,4 @@ public class WarehouseController {
         Warehouse updatedWarehouse = warehouseService.updateWarehouse(trackingCode, request);
         return ResponseEntity.ok(updatedWarehouse);
     }
-
 }
