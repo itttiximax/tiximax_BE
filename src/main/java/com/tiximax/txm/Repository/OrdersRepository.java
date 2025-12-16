@@ -273,4 +273,56 @@ Page<Orders> filterOrdersByLinkStatusAndRoutes(
             @Param("isAdminOrManager") boolean isAdminOrManager,
             Pageable pageable
     );
+    @Query("""
+        SELECT o FROM Orders o
+        LEFT JOIN o.customer c
+        LEFT JOIN o.orderLinks ol
+        WHERE 
+            (:shipmentCode IS NULL OR ol.shipmentCode LIKE %:shipmentCode%)
+            AND (:customerCode IS NULL OR c.customerCode LIKE %:customerCode%)
+            AND (:orderCode IS NULL OR o.orderCode LIKE %:orderCode%)
+    """)
+    Page<Orders> findAllWithFilters(
+            @Param("shipmentCode") String shipmentCode,
+            @Param("customerCode") String customerCode,
+            @Param("orderCode") String orderCode,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT o FROM Orders o
+        LEFT JOIN o.customer c
+        LEFT JOIN o.orderLinks ol
+        WHERE 
+            o.staff.accountId = :accountId
+            AND (:shipmentCode IS NULL OR ol.shipmentCode LIKE %:shipmentCode%)
+            AND (:customerCode IS NULL OR c.customerCode LIKE %:customerCode%)
+            AND (:orderCode IS NULL OR o.orderCode LIKE %:orderCode%)
+    """)
+    Page<Orders> findByStaffAccountIdWithFilters(
+            @Param("accountId") Long accountId,
+            @Param("shipmentCode") String shipmentCode,
+            @Param("customerCode") String customerCode,
+            @Param("orderCode") String orderCode,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT o FROM Orders o
+        LEFT JOIN o.customer c
+        LEFT JOIN o.orderLinks ol
+        WHERE 
+            o.route.routeId IN :routeIds
+            AND (:shipmentCode IS NULL OR ol.shipmentCode LIKE %:shipmentCode%)
+            AND (:customerCode IS NULL OR c.customerCode LIKE %:customerCode%)
+            AND (:orderCode IS NULL OR o.orderCode LIKE %:orderCode%)
+    """)
+    Page<Orders> findByRouteRouteIdInWithFilters(
+            @Param("routeIds") Set<Long> routeIds,
+            @Param("shipmentCode") String shipmentCode,
+            @Param("customerCode") String customerCode,
+            @Param("orderCode") String orderCode,
+            Pageable pageable
+    );
 }
+

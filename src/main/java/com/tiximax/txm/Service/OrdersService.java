@@ -357,6 +357,8 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 orderCode = "KG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
             } else if (orderType.equals(OrderType.DAU_GIA)) {
                 orderCode = "DG-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
+            } else if (orderType.equals(OrderType.CHUYEN_TIEN)) {
+                orderCode = "CT-" + UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();;
             } else {
                 throw new IllegalStateException("Không có kiểu đơn hàng " + orderType);
             }
@@ -383,13 +385,14 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         processLogRepository.save(orderProcessLog);
     }
 
-    public Page<Orders> getAllOrdersPaging(Pageable pageable) {
+    public Page<Orders> getAllOrdersPaging(Pageable pageable, String shipmentCode, String customerCode, String orderCode) {
     Account currentAccount = accountUtils.getAccountCurrent();
+    
     if (currentAccount.getRole().equals(AccountRoles.ADMIN) 
             || currentAccount.getRole().equals(AccountRoles.MANAGER)) {
-        return ordersRepository.findAll(pageable);
+        return ordersRepository.findAllWithFilters(shipmentCode, customerCode, orderCode, pageable);
     } else if (currentAccount.getRole().equals(AccountRoles.STAFF_SALE)) {
-        return ordersRepository.findByStaffAccountId(currentAccount.getAccountId(), pageable);
+        return ordersRepository.findByStaffAccountIdWithFilters(currentAccount.getAccountId(), shipmentCode, customerCode, orderCode, pageable);
     } else if (currentAccount.getRole().equals(AccountRoles.LEAD_SALE)) {
         List<AccountRoute> accountRoutes = accountRouteRepository.findByAccountAccountId(currentAccount.getAccountId());
         Set<Long> routeIds = accountRoutes.stream()
@@ -400,12 +403,12 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         if (routeIds.isEmpty()) {
             return Page.empty(pageable);
         }
-        return ordersRepository.findByRouteRouteIdIn(routeIds, pageable);
-
+        return ordersRepository.findByRouteRouteIdInWithFilters(routeIds, shipmentCode, customerCode, orderCode, pageable);
     } else {
         throw new IllegalStateException("Vai trò không hợp lệ!");
     }
 }
+
 
     public Page<Orders> getOrdersPaging(Pageable pageable, OrderStatus status) {
         Account currentAccount = accountUtils.getAccountCurrent();
@@ -568,8 +571,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         List<Payment> mergedPayments = paymentRepository.findByRelatedOrdersContaining(order);
         allPayments.addAll(mergedPayments);
 
-        // Gán vào order trước khi tạo DTO (nếu cần, hoặc truyền riêng)
-        // Nhưng tốt nhất là xử lý trong OrderDetail constructor
 
         // 3. Tạo OrderDetail và truyền thêm allPayments nếu cần
         OrderDetail detail = new OrderDetail(order);
@@ -602,7 +603,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         return Page.empty(pageable);
     }
 
-    // ✅ Chuẩn hoá input: chuỗi rỗng → null
     if (orderCode != null && orderCode.trim().isEmpty()) {
         orderCode = null;
     }
@@ -863,7 +863,6 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
         if (!orderLink.getStatus().equals(OrderLinkStatus.CHO_MUA)) {
             throw new IllegalArgumentException("Chỉ có thể chuyển sang MUA SAU nếu trạng thái hiện tại là CHỜ MUA!");
         }
-
         orderLink.setStatus(OrderLinkStatus.MUA_SAU);
         orderLinksRepository.save(orderLink);
 
@@ -1432,4 +1431,96 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
                 )
         );
     }
+   public Orders MoneyExchange(String customerCode, Long routeId, MoneyExchangeRequest ordersRequest) throws IOException {
+    if (customerCode == null) {
+        throw new IllegalArgumentException("Bạn phải nhập mã khách hàng để thực hiện hành động này!");
+    }
+
+    if (routeId == null) {
+        throw new IllegalArgumentException("Bạn phải chọn tuyến hàng để tiếp tục!");
+    }
+
+    Customer customer = authenticationRepository.findByCustomerCode(customerCode);
+    if (customer == null) {
+        throw new IllegalArgumentException("Mã khách hàng không được tìm thấy, vui lòng thử lại!");
+    }
+
+    Route route = routeRepository.findById(routeId)
+        .orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
+    Optional<Destination> destination = destinationRepository.findById(ordersRequest.getDestinationId());
+    if (destination.isEmpty()) {
+        throw new IllegalArgumentException("Không tìm thấy điểm đến!");
+    }
+
+   
+    if (ordersRequest.getExchangeRate().compareTo(route.getExchangeRate()) < 0) {
+        throw new IllegalArgumentException("Tỉ giá không được nhỏ hơn giá cố định, liên hệ quản lý để được hỗ trợ thay đổi tỉ giá!");
+    }
+
+    // Tạo đối tượng Orders mới
+    Orders order = new Orders();
+    order.setCustomer(customer);
+    order.setOrderCode(generateOrderCode(OrderType.CHUYEN_TIEN)); 
+    order.setOrderType(OrderType.CHUYEN_TIEN); // Đơn hàng chuyển tiền
+    order.setStatus(OrderStatus.DA_XAC_NHAN);
+    order.setCreatedAt(LocalDateTime.now());
+    order.setExchangeRate(ordersRequest.getExchangeRate());
+    order.setDestination(destination.get());
+    order.setCheckRequired(ordersRequest.getCheckRequired());
+    order.setPriceShip(BigDecimal.ZERO);
+    order.setRoute(route);
+    order.setStaff((Staff) accountUtils.getAccountCurrent());
+
+    // Khởi tạo các giá trị tính toán
+    BigDecimal totalPriceVnd = BigDecimal.ZERO;
+    BigDecimal priceBeforeFee = BigDecimal.ZERO;
+
+
+    OrderLinks orderLink = new OrderLinks();
+    orderLink.setOrders(order);
+    orderLink.setProductLink("N/A"); 
+    orderLink.setQuantity(1); 
+    orderLink.setPriceWeb(BigDecimal.ZERO); 
+    orderLink.setShipWeb(BigDecimal.ZERO); 
+    orderLink.setTotalWeb(BigDecimal.ZERO); 
+    orderLink.setPurchaseFee(ordersRequest.getFee()); 
+    orderLink.setProductName("Money Exchange"); 
+    orderLink.setFinalPriceVnd(
+        orderLink.getTotalWeb().multiply(order.getExchangeRate()) 
+    );
+    orderLink.setWebsite("N/A"); 
+    orderLink.setProductType(null); // Không có loại sản phẩm
+    orderLink.setClassify("Chuyển tiền"); // Phân loại là "Chuyển tiền"
+    orderLink.setStatus(OrderLinkStatus.CHO_MUA); // Trạng thái là "Chờ mua"
+    orderLink.setNote("Chuyển tiền cho khách hàng"); // Ghi chú là "Chuyển tiền cho khách hàng"
+    orderLink.setGroupTag("Chuyển tiền"); // Nhóm tag là "Chuyển tiền"
+    orderLink.setTrackingCode(generateOrderLinkCode()); // Mã theo dõi đơn hàng
+    orderLink.setPurchaseImage(null); // Không có hình ảnh mua
+    orderLink.setExtraCharge(BigDecimal.ZERO); // Không có phụ phí
+
+    // Thêm OrderLink vào danh sách
+    Set<OrderLinks> orderLinksList = new HashSet<>();
+    orderLinksList.add(orderLink);
+
+    // Cập nhật thông tin đơn hàng
+    order.setOrderLinks(orderLinksList);
+    order.setFinalPriceOrder(totalPriceVnd); // Cập nhật tổng giá trị
+    order.setPriceBeforeFee(priceBeforeFee); // Cập nhật giá trước phí
+    order = ordersRepository.save(order); // Lưu đơn hàng
+    orderLinksRepository.save(orderLink); // Lưu OrderLink
+
+    // Gửi thông báo
+    addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
+    messagingTemplate.convertAndSend(
+        "/topic/Tiximax",
+        Map.of(
+            "event", "INSERT",
+            "orderCode", order.getOrderCode(),
+            "customerCode", customerCode,
+            "message", "Đơn hàng mới được thêm!"
+        )
+    );
+
+    return order;
+}
 }
