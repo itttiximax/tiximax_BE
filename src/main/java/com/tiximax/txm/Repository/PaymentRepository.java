@@ -112,5 +112,14 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("status") PaymentStatus status,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    @Query("SELECT MONTH(p.actionAt), SUM(p.collectedAmount) FROM Payment p WHERE YEAR(p.actionAt) = :year AND p.status = 'DA_THANH_TOAN' GROUP BY MONTH(p.actionAt)")
+    List<Object[]> sumRevenueByMonth(@Param("year") int year);
+
+    @Query("SELECT MONTH(p.actionAt), SUM(p.amount) FROM Payment p WHERE YEAR(p.actionAt) = :year AND p.paymentType = 'PURCHASE' GROUP BY MONTH(p.actionAt)")  // Adjust based on actual purchase logic
+    List<Object[]> sumPurchaseByMonth(@Param("year") int year);
+
+    @Query("SELECT MONTH(p.actionAt), SUM(p.collectedAmount) FROM Payment p WHERE YEAR(p.actionAt) = :year AND p.status = 'DA_THANH_TOAN_SHIP' GROUP BY MONTH(p.actionAt)")
+    List<Object[]> sumShipByMonth(@Param("year") int year);
 }
 

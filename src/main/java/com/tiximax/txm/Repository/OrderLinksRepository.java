@@ -103,4 +103,7 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
 
     @Query("SELECT ol FROM OrderLinks ol WHERE ol.orders.customer = :customer AND ol.shipmentCode IS NOT NULL")
     List<OrderLinks> findByCustomerWithShipment(@Param("customer") Customer customer);
+
+    @Query("SELECT MONTH(ol.orders.createdAt), COUNT(ol) FROM OrderLinks ol WHERE YEAR(ol.orders.createdAt) = :year GROUP BY MONTH(ol.orders.createdAt)")
+    List<Object[]> countLinksByMonth(@Param("year") int year);
 }

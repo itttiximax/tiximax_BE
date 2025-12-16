@@ -324,5 +324,8 @@ Page<Orders> filterOrdersByLinkStatusAndRoutes(
             @Param("orderCode") String orderCode,
             Pageable pageable
     );
+
+    @Query("SELECT MONTH(o.createdAt), COUNT(o) FROM Orders o WHERE YEAR(o.createdAt) = :year GROUP BY MONTH(o.createdAt)")
+    List<Object[]> countOrdersByMonth(@Param("year") int year);
 }
 

@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.Map;
 
 import com.tiximax.txm.Entity.Customer;
+import com.tiximax.txm.Model.MonthlyStats;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.tiximax.txm.Enums.DashboardFilterType;
@@ -91,5 +93,10 @@ public class DashBoardController {
         Sort sort = Sort.by("createdAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         return dashBoardService.getCustomerDetail(pageable);
+    }
+
+    @GetMapping("/yearly/{year}")
+    public ResponseEntity<List<MonthlyStats>> getYearlyStats(@PathVariable int year) {
+        return ResponseEntity.ok(dashBoardService.getYearlyStats(year));
     }
 }

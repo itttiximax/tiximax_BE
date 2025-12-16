@@ -137,7 +137,14 @@ public class PaymentService {
                 ordersRepository.save(order);
                 ordersService.addProcessLog(order, payment.getPaymentCode(), ProcessLogAction.DA_THANH_TOAN);
             }
-
+            messagingTemplate.convertAndSend(
+                    "/topic/Tiximax",
+                    Map.of(
+                            "event", "INSERT",
+                            "paymentCode", paymentCode,
+                            "message", "Đã xác nhận thanh toán hàng!"
+                    )
+            );
         return paymentRepository.save(payment);
     }
 
@@ -374,6 +381,14 @@ public class PaymentService {
             }
             }
         }
+        messagingTemplate.convertAndSend(
+                "/topic/Tiximax",
+                Map.of(
+                        "event", "INSERT",
+                        "paymentCode", paymentCode,
+                        "message", "Đã xác nhận thanh toán ship!"
+                )
+        );
     return paymentRepository.save(payment);
     }
 
