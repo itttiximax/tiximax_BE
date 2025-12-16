@@ -1,5 +1,6 @@
 package com.tiximax.txm.Repository;
 
+import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Entity.OrderLinks;
 import com.tiximax.txm.Entity.Warehouse;
 import com.tiximax.txm.Enums.OrderLinkStatus;
@@ -100,4 +101,6 @@ public interface OrderLinksRepository extends JpaRepository<OrderLinks, Long> {
 """)
     Set<OrderLinks> findByShipmentCodeIn( @Param("shipmentCodes") Collection<String> shipmentCodes);
 
+    @Query("SELECT ol FROM OrderLinks ol WHERE ol.orders.customer = :customer AND ol.shipmentCode IS NOT NULL")
+    List<OrderLinks> findByCustomerWithShipment(@Param("customer") Customer customer);
 }

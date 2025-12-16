@@ -1,14 +1,18 @@
 package com.tiximax.txm.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Enums.PaymentStatus;
 import com.tiximax.txm.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -39,21 +43,21 @@ public class DashBoardService {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.plusDays(1).atStartOfDay();
         long totalOrders = ordersRepository.countByCreatedAtBetween(start, end);
-        BigDecimal totalRevenue = paymentRepository.sumCollectedAmountBetween(start, end);
-        BigDecimal totalPurchase = paymentRepository.sumPurchaseBetween(start, end);
-        BigDecimal totalShip = paymentRepository.sumShipRevenueBetween(start, end);
+        BigDecimal totalRevenue = paymentRepository.sumCollectedAmountBetween(start, end).setScale(0, RoundingMode.HALF_UP);;
+        BigDecimal totalPurchase = paymentRepository.sumPurchaseBetween(start, end).setScale(0, RoundingMode.HALF_UP);;
+        BigDecimal totalShip = paymentRepository.sumShipRevenueBetween(start, end).setScale(0, RoundingMode.HALF_UP);;
         long newCustomers = customerRepository.countByCreatedAtBetween(start, end);
         long totalLinks = orderLinksRepository.countByOrdersCreatedAtBetween(start, end);
-
+        Double totalWeight = warehouseRepository.sumNetWeightByCreatedAtBetween(start, end);
 
         DashboardResponse response = new DashboardResponse();
-        response.setTotalRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
-        response.setTotalPurchase(totalPurchase != null ? totalPurchase : BigDecimal.ZERO);
-        response.setTotalShip(totalShip != null ? totalShip : BigDecimal.ZERO);
+        response.setTotalRevenue(totalRevenue);
+        response.setTotalPurchase(totalPurchase);
+        response.setTotalShip(totalShip);
         response.setTotalOrders(totalOrders);
         response.setNewCustomers(newCustomers);
         response.setTotalLinks(totalLinks);
-
+        response.setTotalWeight(new BigDecimal(totalWeight).setScale(2, RoundingMode.HALF_UP).doubleValue());
         return response;
     }
 
@@ -92,4 +96,7 @@ public class DashBoardService {
         return map;
     }
 
+    public List<Customer> getCustomerDetail(Pageable pageable) {
+        return customerRepository.findByCreatedAtBetween(pageable,start(), end());
+    }
 }
