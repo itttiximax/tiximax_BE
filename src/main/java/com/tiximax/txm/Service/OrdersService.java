@@ -1523,4 +1523,24 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
     return order;
 }
+
+    public List<ShipmentGroup> getShipmentsByCustomerPhone(String phone) {
+        Account account = authenticationRepository.findByPhone(phone);
+        if (account == null || !(account instanceof Customer customer)) {
+            throw new IllegalArgumentException("Không tìm thấy khách hàng với số điện thoại: " + phone);
+        }
+
+        List<OrderLinks> links = orderLinksRepository.findByCustomerWithShipment(customer);
+
+        Map<String, ShipmentGroup> groups = new LinkedHashMap<>();
+
+        for (OrderLinks link : links) {
+            String code = link.getShipmentCode().trim();
+            groups.computeIfAbsent(code, k ->
+                            new ShipmentGroup(link.getOrders().getOrderCode(), code, link.getStatus()))
+                    .addProduct(link.getProductName(), link.getProductLink());
+        }
+
+        return new ArrayList<>(groups.values());
+    }
 }
