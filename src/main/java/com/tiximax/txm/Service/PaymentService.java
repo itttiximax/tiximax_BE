@@ -140,7 +140,7 @@ public class PaymentService {
             messagingTemplate.convertAndSend(
                     "/topic/Tiximax",
                     Map.of(
-                            "event", "INSERT",
+                            "event", "UPDATE",
                             "paymentCode", paymentCode,
                             "message", "Đã xác nhận thanh toán hàng!"
                     )
@@ -384,7 +384,7 @@ public class PaymentService {
         messagingTemplate.convertAndSend(
                 "/topic/Tiximax",
                 Map.of(
-                        "event", "INSERT",
+                        "event", "UPDATE",
                         "paymentCode", paymentCode,
                         "message", "Đã xác nhận thanh toán ship!"
                 )

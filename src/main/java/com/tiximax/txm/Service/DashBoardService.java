@@ -8,17 +8,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import com.tiximax.txm.Entity.Customer;
 import com.tiximax.txm.Enums.PaymentStatus;
-import com.tiximax.txm.Model.MonthlyStats;
+import com.tiximax.txm.Model.*;
 import com.tiximax.txm.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
-import com.tiximax.txm.Model.DashboardResponse;
 
 @Service
 public class DashBoardService {
@@ -59,7 +56,7 @@ public class DashBoardService {
         response.setTotalOrders(totalOrders);
         response.setNewCustomers(newCustomers);
         response.setTotalLinks(totalLinks);
-        response.setTotalWeight(new BigDecimal(totalWeight).setScale(2, RoundingMode.HALF_UP).doubleValue());
+        response.setTotalWeight(new BigDecimal(totalWeight).setScale(1, RoundingMode.HALF_UP).doubleValue());
         return response;
     }
 
@@ -102,10 +99,10 @@ public class DashBoardService {
         return customerRepository.findByCreatedAtBetween(pageable,start(), end());
     }
 
-    public List<MonthlyStats> getYearlyStats(int year) {
-        Map<Integer, MonthlyStats> monthStats = new HashMap<>();
+    public List<MonthlyStatsOrder> getYearlyStatsOrder(int year) {
+        Map<Integer, MonthlyStatsOrder> monthStats = new HashMap<>();
         for (int m = 1; m <= 12; m++) {
-            monthStats.put(m, new MonthlyStats(m));
+            monthStats.put(m, new MonthlyStatsOrder(m));
         }
 
         List<Object[]> ordersData = ordersRepository.countOrdersByMonth(year);
@@ -115,54 +112,60 @@ public class DashBoardService {
             monthStats.get(month).setTotalOrders(count);
         }
 
-        // Revenue
-        List<Object[]> revenueData = paymentRepository.sumRevenueByMonth(year);
-        for (Object[] row : revenueData) {
-            int month = (Integer) row[0];
-            BigDecimal sum = (BigDecimal) row[1];
-            monthStats.get(month).setTotalRevenue(sum.setScale(0, RoundingMode.HALF_UP));
-        }
-
-        // Purchase
-        List<Object[]> purchaseData = paymentRepository.sumPurchaseByMonth(year);
-        for (Object[] row : purchaseData) {
-            int month = (Integer) row[0];
-            BigDecimal sum = (BigDecimal) row[1];
-            monthStats.get(month).setTotalPurchase(sum.setScale(0, RoundingMode.HALF_UP));
-        }
-
-        // Ship
-        List<Object[]> shipData = paymentRepository.sumShipByMonth(year);
-        for (Object[] row : shipData) {
-            int month = (Integer) row[0];
-            BigDecimal sum = (BigDecimal) row[1];
-            monthStats.get(month).setTotalShip(sum.setScale(0, RoundingMode.HALF_UP));
-        }
-
-        // New Customers
-        List<Object[]> customersData = customerRepository.countNewCustomersByMonth(year);
-        for (Object[] row : customersData) {
-            int month = (Integer) row[0];
-            long count = (Long) row[1];
-            monthStats.get(month).setNewCustomers(count);
-        }
-
-        // Links
         List<Object[]> linksData = orderLinksRepository.countLinksByMonth(year);
         for (Object[] row : linksData) {
             int month = (Integer) row[0];
             long count = (Long) row[1];
             monthStats.get(month).setTotalLinks(count);
         }
+        return monthStats.values().stream().sorted(Comparator.comparingInt(MonthlyStatsOrder::getMonth)).toList();
+    }
 
-        // Weight
+    public List<MonthlyStatsPayment> getYearlyStatsPayment(int year) {
+        Map<Integer, MonthlyStatsPayment> monthStats = new HashMap<>();
+        for (int m = 1; m <= 12; m++) {
+            monthStats.put(m, new MonthlyStatsPayment(m));
+        }
+        List<Object[]> revenueData = paymentRepository.sumRevenueByMonth(year);
+        for (Object[] row : revenueData) {
+            int month = (Integer) row[0];
+            BigDecimal sum = (BigDecimal) row[1];
+            monthStats.get(month).setTotalRevenue(sum.setScale(0, RoundingMode.HALF_UP));
+        }
+        List<Object[]> shipData = paymentRepository.sumShipByMonth(year);
+        for (Object[] row : shipData) {
+            int month = (Integer) row[0];
+            BigDecimal sum = (BigDecimal) row[1];
+            monthStats.get(month).setTotalShip(sum.setScale(0, RoundingMode.HALF_UP));
+        }
+        return monthStats.values().stream().sorted(Comparator.comparingInt(MonthlyStatsPayment::getMonth)).toList();
+    }
+
+    public List<MonthlyStatsCustomer> getYearlyStatsCustomer(int year) {
+        Map<Integer, MonthlyStatsCustomer> monthStats = new HashMap<>();
+        for (int m = 1; m <= 12; m++) {
+            monthStats.put(m, new MonthlyStatsCustomer(m));
+        }
+        List<Object[]> customersData = customerRepository.countNewCustomersByMonth(year);
+        for (Object[] row : customersData) {
+            int month = (Integer) row[0];
+            long count = (Long) row[1];
+            monthStats.get(month).setNewCustomers(count);
+        }
+        return monthStats.values().stream().sorted(Comparator.comparingInt(MonthlyStatsCustomer::getMonth)).toList();
+    }
+
+    public List<MonthlyStatsWarehouse> getYearlyStatsWarehouse(int year) {
+        Map<Integer, MonthlyStatsWarehouse> monthStats = new HashMap<>();
+        for (int m = 1; m <= 12; m++) {
+            monthStats.put(m, new MonthlyStatsWarehouse(m));
+        }
         List<Object[]> weightData = warehouseRepository.sumWeightByMonth(year);
         for (Object[] row : weightData) {
             int month = (Integer) row[0];
             Double sum = (Double) row[1];
             monthStats.get(month).setTotalWeight(new BigDecimal(sum).setScale(2, RoundingMode.HALF_UP).doubleValue());
         }
-
-        return monthStats.values().stream().sorted(Comparator.comparingInt(MonthlyStats::getMonth)).toList();
+        return monthStats.values().stream().sorted(Comparator.comparingInt(MonthlyStatsWarehouse::getMonth)).toList();
     }
 }
