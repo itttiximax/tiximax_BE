@@ -4,5 +4,6 @@ public enum OrderType {
     MUA_HO,
     KY_GUI,
     DAU_GIA,
-    THANH_TOAN_HO
+    THANH_TOAN_HO,
+    CHUYEN_TIEN 
 }
