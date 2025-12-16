@@ -69,7 +69,8 @@ public class SecurityConfig {
                                 "/error",
                                 "/accounts/userinfo",
                                 "/ws/**",
-                                "/websocket/**"
+                                "/websocket/**",
+                                "/orders/shipments-by-phone/{phone}"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
