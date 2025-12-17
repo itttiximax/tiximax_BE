@@ -73,4 +73,7 @@ Page<Warehouse> findWarehousesForPacking(
             "WHERE w.trackingCode IN :codes AND w.packing IS NULL")
     List<Warehouse> findByTrackingCodeInAndPackingIsNullWithOrdersAndLinks(
             @Param("codes") List<String> codes);
+
+    @Query("SELECT MONTH(w.createdAt), SUM(w.netWeight) FROM Warehouse w WHERE YEAR(w.createdAt) = :year GROUP BY MONTH(w.createdAt)")
+    List<Object[]> sumWeightByMonth(@Param("year") int year);
 }

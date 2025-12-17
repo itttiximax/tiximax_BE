@@ -59,5 +59,8 @@ Page<Customer> searchByStaff(
     @Query("SELECT c.customerCode FROM Customer c ORDER BY c.customerCode DESC LIMIT 1")
     String findLatestCustomerCode();
 
+    List<Customer> findByCreatedAtBetween(Pageable pageable, LocalDateTime start, LocalDateTime end);
 
+    @Query("SELECT MONTH(c.createdAt), COUNT(c) FROM Customer c WHERE YEAR(c.createdAt) = :year GROUP BY MONTH(c.createdAt)")
+    List<Object[]> countNewCustomersByMonth(@Param("year") int year);
 }

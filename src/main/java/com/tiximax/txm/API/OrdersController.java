@@ -369,4 +369,9 @@ public ResponseEntity<Page<ShipLinkForegin>> getOrderLinksForWarehouseForeign(
         ordersService.deleteOrder(orderId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/shipments-by-phone/{phone}")
+    public ResponseEntity<List<ShipmentGroup>> getShipmentsByPhone(@PathVariable String phone) {
+        return ResponseEntity.ok(ordersService.getShipmentsByCustomerPhone(phone.trim()));
+    }
 }

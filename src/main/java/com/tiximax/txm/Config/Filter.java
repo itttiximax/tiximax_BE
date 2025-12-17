@@ -52,7 +52,8 @@ public class Filter extends OncePerRequestFilter {
             "/v3/api-docs/**",
             "/swagger-resources/**",
             "/websocket/**",
-            "/ws/info"
+            "/ws/info",
+            "/orders/shipments-by-phone/{phone}"
     );
 
     private boolean isPermitted(String uri) {
