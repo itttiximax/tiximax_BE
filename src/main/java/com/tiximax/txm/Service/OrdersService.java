@@ -1447,12 +1447,9 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
 
     Route route = routeRepository.findById(routeId)
         .orElseThrow(() -> new RuntimeException("Route not found for ID: " + routeId));
-    Optional<Destination> destination = destinationRepository.findById(ordersRequest.getDestinationId());
-    if (destination.isEmpty()) {
-        throw new IllegalArgumentException("Không tìm thấy điểm đến!");
-    }
+   Destination destination = destinationRepository.findById(17L)
+        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy điểm đến!"));
 
-   
     if (ordersRequest.getExchangeRate().compareTo(route.getExchangeRate()) < 0) {
         throw new IllegalArgumentException("Tỉ giá không được nhỏ hơn giá cố định, liên hệ quản lý để được hỗ trợ thay đổi tỉ giá!");
     }
@@ -1461,12 +1458,12 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     Orders order = new Orders();
     order.setCustomer(customer);
     order.setOrderCode(generateOrderCode(OrderType.CHUYEN_TIEN)); 
-    order.setOrderType(OrderType.CHUYEN_TIEN); // Đơn hàng chuyển tiền
+    order.setOrderType(OrderType.CHUYEN_TIEN);
+    order.setDestination(destination); 
     order.setStatus(OrderStatus.DA_XAC_NHAN);
     order.setCreatedAt(LocalDateTime.now());
     order.setExchangeRate(ordersRequest.getExchangeRate());
-    order.setDestination(destination.get());
-    order.setCheckRequired(ordersRequest.getCheckRequired());
+    order.setCheckRequired(false);
     order.setPriceShip(BigDecimal.ZERO);
     order.setRoute(route);
     order.setStaff((Staff) accountUtils.getAccountCurrent());
@@ -1482,34 +1479,34 @@ if (consignmentRequest.getConsignmentLinkRequests() != null) {
     orderLink.setQuantity(1); 
     orderLink.setPriceWeb(BigDecimal.ZERO); 
     orderLink.setShipWeb(BigDecimal.ZERO); 
-    orderLink.setTotalWeb(BigDecimal.ZERO); 
+    orderLink.setTotalWeb(ordersRequest.getMoneyExChange()); 
     orderLink.setPurchaseFee(ordersRequest.getFee()); 
     orderLink.setProductName("Money Exchange"); 
-    orderLink.setFinalPriceVnd(
-        orderLink.getTotalWeb().multiply(order.getExchangeRate()) 
-    );
+   
     orderLink.setWebsite("N/A"); 
-    orderLink.setProductType(null); // Không có loại sản phẩm
-    orderLink.setClassify("Chuyển tiền"); // Phân loại là "Chuyển tiền"
-    orderLink.setStatus(OrderLinkStatus.CHO_MUA); // Trạng thái là "Chờ mua"
-    orderLink.setNote("Chuyển tiền cho khách hàng"); // Ghi chú là "Chuyển tiền cho khách hàng"
-    orderLink.setGroupTag("Chuyển tiền"); // Nhóm tag là "Chuyển tiền"
-    orderLink.setTrackingCode(generateOrderLinkCode()); // Mã theo dõi đơn hàng
-    orderLink.setPurchaseImage(null); // Không có hình ảnh mua
-    orderLink.setExtraCharge(BigDecimal.ZERO); // Không có phụ phí
+    orderLink.setProductType(null);
+    orderLink.setClassify("Money Exchange"); 
+    orderLink.setStatus(OrderLinkStatus.CHO_MUA);
+    orderLink.setNote("Chuyển tiền cho khách hàng"); 
+    orderLink.setGroupTag("Chuyển tiền"); 
+    orderLink.setTrackingCode(generateOrderLinkCode()); 
+    orderLink.setPurchaseImage(null);
+    orderLink.setExtraCharge(BigDecimal.ZERO); 
+    orderLink.setFinalPriceVnd(
+        orderLink.getTotalWeb().add(orderLink.getPurchaseFee()).multiply(order.getExchangeRate()) 
+    );
+    totalPriceVnd =   orderLink.getTotalWeb().add(orderLink.getPurchaseFee()).multiply(order.getExchangeRate()); 
+    priceBeforeFee = orderLink.getTotalWeb();
 
-    // Thêm OrderLink vào danh sách
     Set<OrderLinks> orderLinksList = new HashSet<>();
     orderLinksList.add(orderLink);
 
-    // Cập nhật thông tin đơn hàng
     order.setOrderLinks(orderLinksList);
-    order.setFinalPriceOrder(totalPriceVnd); // Cập nhật tổng giá trị
-    order.setPriceBeforeFee(priceBeforeFee); // Cập nhật giá trước phí
-    order = ordersRepository.save(order); // Lưu đơn hàng
-    orderLinksRepository.save(orderLink); // Lưu OrderLink
+    order.setFinalPriceOrder(totalPriceVnd); 
+    order.setPriceBeforeFee(priceBeforeFee); 
+    order = ordersRepository.save(order); 
+    orderLinksRepository.save(orderLink); 
 
-    // Gửi thông báo
     addProcessLog(order, order.getOrderCode(), ProcessLogAction.XAC_NHAN_DON);
     messagingTemplate.convertAndSend(
         "/topic/Tiximax",

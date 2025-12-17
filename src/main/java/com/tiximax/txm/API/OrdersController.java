@@ -43,6 +43,22 @@ public class OrdersController {
         Orders orders = ordersService.addOrder(customerCode, routeId, addressId,ordersRequest);
         return ResponseEntity.ok(orders);
     }
+    @PostMapping("/money-exchange/{customerCode}/{routeId}")
+    public ResponseEntity<Orders> moneyExchange(
+            @PathVariable String customerCode,
+            @PathVariable Long routeId,
+            @RequestBody MoneyExchangeRequest moneyExchangeRequest
+    ) throws IOException {
+
+        Orders order = ordersService.MoneyExchange(
+                customerCode,
+                routeId,
+                moneyExchangeRequest
+        );
+
+        return ResponseEntity.ok(order);
+    }
+
 
     @PostMapping("/deposit/{customerCode}/{routeId}/{addressId}")
     public ResponseEntity<Orders> createdConsignment(@PathVariable String customerCode,
