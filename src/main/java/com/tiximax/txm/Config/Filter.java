@@ -37,6 +37,7 @@ public class Filter extends OncePerRequestFilter {
 
     private final List<String> AUTH_PERMISSION = List.of(
             "/accounts/login",
+            "/accounts/login",
             "/otp/send",
             "/accounts/verify-account",
             "/accounts/forgot-password/send-otp",
@@ -54,7 +55,27 @@ public class Filter extends OncePerRequestFilter {
             "/swagger-resources/**",
             "/websocket/**",
             "/ws/info",
-            "/orders/shipments-by-phone/{phone}"
+            "/orders/shipments-by-phone/{phone}",
+            "/api/accounts/login",
+        "/api/accounts/login",
+        "/api/otp/send",
+        "/api/accounts/verify-account",
+        "/api/accounts/forgot-password/send-otp",
+        "/api/accounts/forgot-password/reset",
+        "/api/accounts/verify",
+        "/api/accounts/register/staff",
+        "/api/accounts/register/customer",
+        "/api/accounts/update-all-passwords",
+        "/api/accounts/login-google",
+        "/api/accounts/callback",
+        "/api/images/upload-image",
+        "/api/swagger-ui.html",
+        "/api/swagger-ui/**",
+        "/api/v3/api-docs/**",
+        "/api/swagger-resources/**",
+        "/api/websocket/**",
+        "/api/ws/info",
+        "/api/orders/shipments-by-phone/{phone}"
     );
 
     private boolean isPermitted(String uri) {
