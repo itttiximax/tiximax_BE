@@ -119,7 +119,7 @@ public class Orders {
     private Set<PartialShipment> partialShipments = new HashSet<>();
 
     @ManyToOne
-    @JoinColumn(name = "address_id", nullable = false)
+    @JoinColumn(name = "address_id", nullable = true)
     @JsonIgnore
     private Address address;
     
