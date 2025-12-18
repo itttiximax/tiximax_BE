@@ -48,6 +48,7 @@ public class Filter extends OncePerRequestFilter {
             "/accounts/login-google",
             "/accounts/callback",
             "/images/upload-image",
+            "/swagger-ui.html",
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/swagger-resources/**",
