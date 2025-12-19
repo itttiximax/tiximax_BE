@@ -37,7 +37,6 @@ public class Filter extends OncePerRequestFilter {
 
     private final List<String> AUTH_PERMISSION = List.of(
             "/accounts/login",
-            "/accounts/login",
             "/otp/send",
             "/accounts/verify-account",
             "/accounts/forgot-password/send-otp",
